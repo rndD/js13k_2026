@@ -267,9 +267,11 @@ window.addEventListener('keydown', (e) => {
 function drawGrid(): void {
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
+  const midX = FIELD_W / 2;
   for (let x = 0; x <= FIELD_W; x += GRID_STEP) {
+    const center = x === midX;
     const major = (x / GRID_STEP) % GRID_MAJOR_EVERY === 0;
-    ctx.strokeStyle = major ? 'rgba(136,136,160,0.35)' : 'rgba(136,136,160,0.14)';
+    ctx.strokeStyle = center ? 'rgba(255,233,59,0.5)' : major ? 'rgba(136,136,160,0.35)' : 'rgba(136,136,160,0.14)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x + 0.5, 0);
@@ -285,16 +287,6 @@ function drawGrid(): void {
     ctx.lineTo(FIELD_W, y + 0.5);
     ctx.stroke();
   }
-
-  // Vertical centerline (horizontal symmetry axis) - brighter than the
-  // regular grid so it's easy to eyeball left/right symmetric placement.
-  const midX = FIELD_W / 2;
-  ctx.strokeStyle = 'rgba(255,233,59,0.5)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(midX + 0.5, 0);
-  ctx.lineTo(midX + 0.5, FIELD_H);
-  ctx.stroke();
 
   ctx.restore();
 }
