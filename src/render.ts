@@ -6,7 +6,7 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
+import { BALL_RADIUS, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
 import { LEVEL } from './level';
 import type { Ball, World } from './types';
 
@@ -32,6 +32,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
   drawShieldIndicator(ctx, world);
   drawPegs(ctx, world);
   drawLaunchPads(ctx, world);
+  drawLaunchZone(ctx, world);
   drawBoss(ctx, world);
   for (const b of world.bumpers) drawBumper(ctx, b, BUMPER_COLOR[b.kind]);
   drawFlippers(ctx, world);
@@ -147,6 +148,40 @@ function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.fill();
     ctx.restore();
   }
+}
+
+/** Plunger indicator at LEVEL.launch: a compressing spring plus a ball
+ * outline, so the (otherwise invisible) launch spot reads as "pull/hold
+ * here" before the first ball exists. Only relevant during the 'launch'
+ * phase - once a real ball is in play it's drawn by drawBalls() instead. */
+function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
+  if (world.phase !== 'launch') return;
+  const { x, y } = LEVEL.launch;
+  const power = world.launch.power;
+
+  const springTop = y + BALL_RADIUS + 4;
+  const springBottom = FIELD_H - 6;
+  const restLen = springBottom - springTop;
+  const len = restLen * (1 - power * 0.45); // compresses as it charges
+  const coils = 7;
+  const coilW = 7;
+
+  ctx.strokeStyle = world.launch.charging ? '#ffe93b' : '#8888a0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, springTop);
+  for (let i = 1; i < coils; i++) {
+    const t = i / coils;
+    ctx.lineTo(x + (i % 2 === 0 ? coilW : -coilW), springTop + len * t);
+  }
+  ctx.lineTo(x, springTop + len);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#e8e8f0';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y, BALL_RADIUS, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {

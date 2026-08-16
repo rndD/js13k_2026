@@ -7,6 +7,7 @@ import { createWorld } from './entities';
 import { bindInput } from './input';
 import { render } from './render';
 import { step } from './sim';
+import type { LevelData } from './level';
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 canvas.width = FIELD_W;
@@ -22,7 +23,18 @@ resize();
 
 const ctx = canvas.getContext('2d')!;
 const controls = bindInput(canvas);
-const world = createWorld();
+
+// Dev workflow only: the level editor's "Play" button saves its draft to
+// localStorage and opens this page with ?level=draft, so `LEVEL` can be
+// swapped for the draft without a rebuild. Storage key must match
+// leveleditor.ts's STORAGE_KEY. Harmless/inert for a normal play session.
+function loadLevelOverride(): LevelData | undefined {
+  if (new URLSearchParams(location.search).get('level') !== 'draft') return undefined;
+  const raw = localStorage.getItem('js13k-level-draft');
+  return raw ? JSON.parse(raw) : undefined;
+}
+
+const world = createWorld(loadLevelOverride());
 
 let acc = 0;
 let last = performance.now();

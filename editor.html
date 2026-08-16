@@ -46,11 +46,19 @@ canvas{background:#050208;touch-action:none}
     <button id="exportBtn">Export LevelData</button>
     <textarea id="exportBox" readonly placeholder="Click Export to generate..."></textarea>
 
+    <h2>Save / Play</h2>
+    <button id="saveBtn">Save to Browser</button>
+    <button id="playBtn">Play This Level &#9654;</button>
+    <div id="saveStatus" style="font-size:11px;color:#8888a0;margin-top:4px"></div>
+
     <div id="hint">
       Click to place/add points. In Wall mode, click adds polyline points -
       press Enter or the Finish button to commit the wall (a gap between two
       walls is a drain). In Select mode, drag existing points to move them,
-      Delete removes the selected point/element. This tool is dev-only: run
+      Delete removes the selected point/element. "Save to Browser" stores
+      your draft in localStorage (persists across reloads of this page).
+      "Play This Level" saves then opens the real game with this draft
+      loaded in place of the built-in level. This tool is dev-only: run
       it via the Vite dev server (this page, not index.html) - `vite build`
       only ever processes index.html, so editor.html/leveleditor.ts are never
       swept into the shipped game bundle.

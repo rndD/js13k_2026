@@ -6,7 +6,7 @@
 // Lets you visually place/move/delete every LevelData element (walls as
 // polylines, pegs, bumpers, flippers, launch pads, boss, launch point) and
 // export the result as a drop-in replacement for the LEVEL const in level.ts.
-import { CANVAS_H, FIELD_W, HUD_HEIGHT } from './constants';
+import { CANVAS_H, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
 import { createWorld } from './entities';
 import { LEVEL, type LevelData } from './level';
 import { render } from './render';
@@ -37,9 +37,25 @@ type Selection =
 const PEG_R = 9;
 const BUMPER_R = 18;
 const GRAB_R = 12; // click/drag tolerance for picking a point in select mode
+const GRID_STEP = 20; // px between minor grid lines, in level/playfield space
+const GRID_MAJOR_EVERY = 5; // every Nth line is a brighter major line (100px)
+// Must match main.ts's storage key - that's how "Play This Level" hands the
+// draft off to the real game (via ?level=draft, read from localStorage).
+const STORAGE_KEY = 'js13k-level-draft';
+
+function loadStoredLevel(): LevelData | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 // Deep clone so we never mutate the imported LEVEL module binding directly.
-const level: LevelData = JSON.parse(JSON.stringify(LEVEL));
+// Resumes a previously saved draft if one exists, so a page reload doesn't
+// silently discard unsaved work.
+const level: LevelData = loadStoredLevel() ?? JSON.parse(JSON.stringify(LEVEL));
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 canvas.width = FIELD_W;
@@ -66,6 +82,8 @@ document.getElementById('finishWall')!.addEventListener('click', finishWall);
 document.getElementById('cancelWall')!.addEventListener('click', cancelWall);
 document.getElementById('deleteSelected')!.addEventListener('click', deleteSelected);
 document.getElementById('exportBtn')!.addEventListener('click', exportLevel);
+document.getElementById('saveBtn')!.addEventListener('click', () => saveLevel(true));
+document.getElementById('playBtn')!.addEventListener('click', playLevel);
 
 function finishWall(): void {
   if (wallInProgress && wallInProgress.length >= 2) {
@@ -99,6 +117,19 @@ function exportLevel(): void {
   const box = document.getElementById('exportBox') as HTMLTextAreaElement;
   box.value = `export const LEVEL: LevelData = ${JSON.stringify(level, null, 2)};\n`;
   box.select();
+}
+
+function saveLevel(showStatus: boolean): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(level));
+  if (showStatus) {
+    const status = document.getElementById('saveStatus')!;
+    status.textContent = `saved at ${new Date().toLocaleTimeString()}`;
+  }
+}
+
+function playLevel(): void {
+  saveLevel(false);
+  window.open('/?level=draft', '_blank');
 }
 
 function toField(clientX: number, clientY: number): Vec2 {
@@ -233,6 +264,41 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
 });
 
+function drawGrid(): void {
+  ctx.save();
+  ctx.translate(0, HUD_HEIGHT);
+  for (let x = 0; x <= FIELD_W; x += GRID_STEP) {
+    const major = (x / GRID_STEP) % GRID_MAJOR_EVERY === 0;
+    ctx.strokeStyle = major ? 'rgba(136,136,160,0.35)' : 'rgba(136,136,160,0.14)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, FIELD_H);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= FIELD_H; y += GRID_STEP) {
+    const major = (y / GRID_STEP) % GRID_MAJOR_EVERY === 0;
+    ctx.strokeStyle = major ? 'rgba(136,136,160,0.35)' : 'rgba(136,136,160,0.14)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(FIELD_W, y + 0.5);
+    ctx.stroke();
+  }
+
+  // Vertical centerline (horizontal symmetry axis) - brighter than the
+  // regular grid so it's easy to eyeball left/right symmetric placement.
+  const midX = FIELD_W / 2;
+  ctx.strokeStyle = 'rgba(255,233,59,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(midX + 0.5, 0);
+  ctx.lineTo(midX + 0.5, FIELD_H);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 function drawOverlay(): void {
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
@@ -296,6 +362,11 @@ function selectionPoint(sel: NonNullable<Selection>): Vec2 | null {
 
 function frame(): void {
   const world = createWorld(level);
+  // render() never clears the canvas itself (main.ts does a trail-darken
+  // fillRect before calling it) - the editor wants a hard clear every
+  // frame instead, or dragged points/overlays would smear.
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
   render(ctx, world);
   drawOverlay();
   requestAnimationFrame(frame);
