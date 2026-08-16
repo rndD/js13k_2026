@@ -6,12 +6,13 @@
 // This file is intentionally the only place that touches the DOM for input;
 // sim.ts only ever sees the plain ControlsState shape, which is what makes
 // it possible to drive the simulation from scripted tests instead.
-import { FIELD_H, FIELD_W } from './constants';
+import { CANVAS_H, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
 import type { ControlsState } from './types';
 
 type Zone = 'left' | 'right' | 'shield' | 'launch' | null;
 
 function zoneAt(x: number, y: number): Zone {
+  if (y < 0) return null; // touch landed in the HUD strip, not the playfield
   if (y > FIELD_H * 0.6) {
     if (x < FIELD_W * 0.33) return 'left';
     if (x > FIELD_W * 0.67) return 'right';
@@ -49,7 +50,7 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
     const rect = canvas.getBoundingClientRect();
     return {
       x: ((clientX - rect.left) / rect.width) * FIELD_W,
-      y: ((clientY - rect.top) / rect.height) * FIELD_H,
+      y: ((clientY - rect.top) / rect.height) * CANVAS_H - HUD_HEIGHT,
     };
   }
 

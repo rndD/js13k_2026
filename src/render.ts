@@ -1,7 +1,12 @@
 // Canvas 2D rendering of a World snapshot. Primitives only, per the art
 // direction in dis_doc.md: dark field, bright thin geometry, color reserved
 // for charged/energized things. No image assets.
-import { BASE_Y, DRAIN_X0, DRAIN_X1, FIELD_H, FIELD_W, SHIELD_WIDTH, SHIELD_Y } from './constants';
+//
+// Layout: the top HUD_HEIGHT strip holds the boss/shield/base status bars,
+// drawn in untransformed canvas space. Everything else (the actual table) is
+// drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
+// space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
+import { DRAIN_X0, DRAIN_X1, FIELD_H, FIELD_W, HUD_HEIGHT, TABLE_FLOOR_Y } from './constants';
 import type { Ball, World } from './types';
 
 const COLOR_HEX: Record<Ball['color'], string> = {
@@ -12,15 +17,58 @@ const COLOR_HEX: Record<Ball['color'], string> = {
 };
 
 export function render(ctx: CanvasRenderingContext2D, world: World): void {
+  drawHudBar(ctx, world);
+
+  ctx.save();
+  ctx.translate(0, HUD_HEIGHT);
   drawWalls(ctx);
+  drawShieldIndicator(ctx, world);
+  drawPegs(ctx, world);
   drawBoss(ctx, world);
   drawBumper(ctx, world.paintBumper, '#ff3b6b');
   drawBumper(ctx, world.energyTarget, '#38d6ff');
   drawFlippers(ctx, world);
-  drawShieldAndBase(ctx, world);
   drawProjectiles(ctx, world);
   drawBalls(ctx, world);
-  drawHud(ctx, world);
+  drawFieldOverlay(ctx, world);
+  ctx.restore();
+}
+
+function drawBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, frac: number, color: string): void {
+  ctx.strokeStyle = '#444';
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w * Math.max(0, Math.min(1, frac)), h);
+}
+
+function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
+  const { boss, shield, base } = world;
+  const pad = 10;
+  const w = FIELD_W - pad * 2;
+  const barH = 6;
+
+  ctx.fillStyle = '#0a0612';
+  ctx.fillRect(0, 0, FIELD_W, HUD_HEIGHT);
+
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#8888a0';
+  ctx.fillText('BOSS', pad, 14);
+  drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, '#ff3b6b');
+
+  ctx.fillStyle = '#8888a0';
+  ctx.fillText('SHIELD', pad, 35);
+  drawBar(ctx, pad, 38, w * 0.45, barH, shield.energy / shield.maxEnergy, '#38d6ff');
+
+  ctx.fillStyle = '#8888a0';
+  ctx.fillText('BASE', pad + w * 0.55, 35);
+  drawBar(ctx, pad + w * 0.55, 38, w * 0.45, barH, base.hp / base.maxHp, '#ff8a3b');
+
+  ctx.strokeStyle = '#444';
+  ctx.beginPath();
+  ctx.moveTo(0, HUD_HEIGHT - 0.5);
+  ctx.lineTo(FIELD_W, HUD_HEIGHT - 0.5);
+  ctx.stroke();
 }
 
 function drawWalls(ctx: CanvasRenderingContext2D): void {
@@ -28,42 +76,103 @@ function drawWalls(ctx: CanvasRenderingContext2D): void {
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(0, FIELD_H);
+  ctx.lineTo(0, TABLE_FLOOR_Y);
   ctx.moveTo(FIELD_W, 0);
-  ctx.lineTo(FIELD_W, FIELD_H);
+  ctx.lineTo(FIELD_W, TABLE_FLOOR_Y);
   ctx.moveTo(0, 0);
   ctx.lineTo(FIELD_W, 0);
-  // bottom apron, with a gap for the drain
-  ctx.moveTo(0, FIELD_H);
-  ctx.lineTo(DRAIN_X0, FIELD_H);
-  ctx.moveTo(DRAIN_X1, FIELD_H);
-  ctx.lineTo(FIELD_W, FIELD_H);
+  // floor/apron, raised to flipper level, with a gap for the drain
+  ctx.moveTo(0, TABLE_FLOOR_Y);
+  ctx.lineTo(DRAIN_X0, TABLE_FLOOR_Y);
+  ctx.moveTo(DRAIN_X1, TABLE_FLOOR_Y);
+  ctx.lineTo(FIELD_W, TABLE_FLOOR_Y);
   ctx.stroke();
+
+  // Drain chute: thin guide lines showing a missed ball keeps falling
+  // (visibly, down to the true bottom of the field) instead of vanishing
+  // the instant it passes the raised apron.
+  ctx.strokeStyle = 'rgba(136,136,160,0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(DRAIN_X0, TABLE_FLOOR_Y);
+  ctx.lineTo(DRAIN_X0, FIELD_H);
+  ctx.moveTo(DRAIN_X1, TABLE_FLOOR_Y);
+  ctx.lineTo(DRAIN_X1, FIELD_H);
+  ctx.stroke();
+}
+
+/** Thin highlighted line across the floor while the shield is raised, as
+ * on-field feedback (the actual shield/base status lives in the HUD bar). */
+function drawShieldIndicator(ctx: CanvasRenderingContext2D, world: World): void {
+  if (!world.shield.active) return;
+  ctx.strokeStyle = 'rgba(56,214,255,0.85)';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, TABLE_FLOOR_Y);
+  ctx.lineTo(FIELD_W, TABLE_FLOOR_Y);
+  ctx.stroke();
+}
+
+function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
+  ctx.strokeStyle = '#8888a0';
+  ctx.lineWidth = 3;
+  for (const p of world.pegs) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 }
 
 function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const { boss } = world;
-  const hpFrac = boss.hp / boss.maxHp;
+  const r = boss.r;
+
   ctx.strokeStyle = boss.overloadCharging ? '#ffe93b' : '#ff3b6b';
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(boss.x, boss.y, boss.r, 0, Math.PI * 2);
+  ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
   ctx.stroke();
 
   if (boss.overloadCharging) {
     ctx.strokeStyle = 'rgba(255,233,59,0.6)';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.arc(boss.x, boss.y, boss.r + 10, -Math.PI / 2, -Math.PI / 2 + boss.overloadProgress * Math.PI * 2);
+    ctx.arc(boss.x, boss.y, r + 8, -Math.PI / 2, -Math.PI / 2 + boss.overloadProgress * Math.PI * 2);
     ctx.stroke();
   }
 
-  // hp bar above the boss
-  const barW = boss.r * 2;
-  ctx.strokeStyle = '#444';
-  ctx.strokeRect(boss.x - barW / 2, boss.y - boss.r - 16, barW, 6);
-  ctx.fillStyle = '#ff3b6b';
-  ctx.fillRect(boss.x - barW / 2, boss.y - boss.r - 16, barW * hpFrac, 6);
+  drawAngryFace(ctx, boss.x, boss.y, r);
+}
+
+/** A small angry face (angled eyebrows, dot eyes, frown) drawn inside the
+ * boss circle so it reads as a hostile enemy at a glance. */
+function drawAngryFace(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  const eyeY = cy - r * 0.15;
+  const eyeDx = r * 0.4;
+
+  ctx.strokeStyle = '#e8e8f0';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+
+  // eyebrows angled down toward the middle (angry)
+  ctx.beginPath();
+  ctx.moveTo(cx - eyeDx - r * 0.25, eyeY - r * 0.35);
+  ctx.lineTo(cx - eyeDx + r * 0.2, eyeY - r * 0.05);
+  ctx.moveTo(cx + eyeDx + r * 0.25, eyeY - r * 0.35);
+  ctx.lineTo(cx + eyeDx - r * 0.2, eyeY - r * 0.05);
+  ctx.stroke();
+
+  // eyes
+  ctx.fillStyle = '#e8e8f0';
+  ctx.beginPath();
+  ctx.arc(cx - eyeDx, eyeY + r * 0.15, r * 0.1, 0, Math.PI * 2);
+  ctx.arc(cx + eyeDx, eyeY + r * 0.15, r * 0.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // frown (arc bulging up in the middle)
+  ctx.beginPath();
+  ctx.arc(cx, cy + r * 0.75, r * 0.35, Math.PI, Math.PI * 2);
+  ctx.stroke();
 }
 
 function drawBumper(ctx: CanvasRenderingContext2D, b: { x: number; y: number; r: number; cooldown: number }, color: string): void {
@@ -89,38 +198,18 @@ function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
   }
 }
 
-function drawShieldAndBase(ctx: CanvasRenderingContext2D, world: World): void {
-  const { shield, base } = world;
-  const cx = FIELD_W / 2;
-
-  if (shield.active) {
-    ctx.strokeStyle = '#38d6ff';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.arc(cx, SHIELD_Y + 30, SHIELD_WIDTH / 2, Math.PI, 0);
-    ctx.stroke();
-  }
-
-  // base hp bar
-  const barW = SHIELD_WIDTH;
-  ctx.strokeStyle = '#444';
-  ctx.strokeRect(cx - barW / 2, BASE_Y + 10, barW, 8);
-  ctx.fillStyle = '#ff8a3b';
-  ctx.fillRect(cx - barW / 2, BASE_Y + 10, barW * (base.hp / base.maxHp), 8);
-
-  // shield energy bar
-  ctx.strokeStyle = '#444';
-  ctx.strokeRect(cx - barW / 2, BASE_Y + 22, barW, 5);
-  ctx.fillStyle = '#38d6ff';
-  ctx.fillRect(cx - barW / 2, BASE_Y + 22, barW * (shield.energy / shield.maxEnergy), 5);
-}
-
 function drawProjectiles(ctx: CanvasRenderingContext2D, world: World): void {
+  // Squares (not circles) so enemy shots are never mistaken for the player's
+  // ball at a glance, even when the ball is charged red from paint hits.
+  // Colors are chosen to not collide with any ball color (white/red/blue/yellow).
   for (const p of world.projectiles) {
-    ctx.fillStyle = p.big ? '#ffe93b' : '#ff3b6b';
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = p.big ? '#ff3bd6' : '#ff8a3b';
+    const size = p.r * 2;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(Math.atan2(p.vy, p.vx));
+    ctx.fillRect(-size / 2, -size / 2, size, size);
+    ctx.restore();
   }
 }
 
@@ -133,7 +222,7 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
   }
 }
 
-function drawHud(ctx: CanvasRenderingContext2D, world: World): void {
+function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillStyle = '#e8e8f0';
   ctx.font = '12px monospace';
   ctx.textAlign = 'left';

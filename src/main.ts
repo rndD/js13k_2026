@@ -2,7 +2,7 @@
 // drives sim.step(). This is the only file that touches requestAnimationFrame
 // / the DOM canvas — everything else (sim.ts, physics.ts) is headless and
 // unit-testable on its own.
-import { FIELD_H, FIELD_W, FIXED_DT } from './constants';
+import { CANVAS_H, FIELD_W, FIXED_DT } from './constants';
 import { createWorld } from './entities';
 import { bindInput } from './input';
 import { render } from './render';
@@ -10,12 +10,12 @@ import { step } from './sim';
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 canvas.width = FIELD_W;
-canvas.height = FIELD_H;
+canvas.height = CANVAS_H;
 
 function resize(): void {
-  const scale = Math.min(window.innerWidth / FIELD_W, window.innerHeight / FIELD_H);
+  const scale = Math.min(window.innerWidth / FIELD_W, window.innerHeight / CANVAS_H);
   canvas.style.width = `${FIELD_W * scale}px`;
-  canvas.style.height = `${FIELD_H * scale}px`;
+  canvas.style.height = `${CANVAS_H * scale}px`;
 }
 window.addEventListener('resize', resize);
 resize();
@@ -37,9 +37,10 @@ function frame(now: number): void {
   }
 
   // Darken instead of clear so balls/projectiles leave a short neon trail
-  // (afterimage effect from dis_doc.md), without a second FX canvas.
+  // (afterimage effect from dis_doc.md), without a second FX canvas. The HUD
+  // bar redraws itself opaquely every frame, so this doesn't smear it.
   ctx.fillStyle = 'rgba(5,2,8,0.35)';
-  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+  ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
   render(ctx, world);
 
   requestAnimationFrame(frame);

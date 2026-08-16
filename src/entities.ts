@@ -17,6 +17,7 @@ import {
   LAUNCH_Y,
   OVERLOAD_INTERVAL,
   PAINT_BUMPER,
+  PEGS,
   SHIELD_MAX_ENERGY,
   SHIELD_MAX_HP,
   BALL_RADIUS,
@@ -95,6 +96,7 @@ export function createWorld(): World {
     base: { hp: BASE_MAX_HP, maxHp: BASE_MAX_HP },
     paintBumper: createBumper(PAINT_BUMPER),
     energyTarget: createBumper(ENERGY_TARGET),
+    pegs: PEGS.map((p) => ({ ...p })),
     projectiles: [],
     launch: { charging: false, power: 0 },
   };

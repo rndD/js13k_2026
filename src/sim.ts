@@ -14,6 +14,7 @@ import {
   DIRECT_DAMAGE_BASE,
   ENERGY_TARGET_GAIN,
   ENERGY_TARGET_MULT_BONUS,
+  FIELD_H,
   FIELD_W,
   FLIPPER_ANGULAR_SPEED,
   FLIPPER_BOOST_SPEED,
@@ -29,7 +30,9 @@ import {
   PAINT_DAMAGE_BASE,
   PAINT_MULTIPLIER_MAX,
   PAINT_MULTIPLIER_STEP,
+  PEG_IMPULSE,
   SHIELD_DRAIN_RATE,
+  TABLE_FLOOR_Y,
 } from './constants';
 import { createBall } from './entities';
 import {
@@ -98,43 +101,63 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
   }
 }
 
+// Movement is subdivided into several substeps so that fast-moving balls
+// (near MAX_SPEED) can't tunnel straight through thin colliders like the
+// flippers in a single tick - at 60fps a ball at max speed can travel ~15px
+// per frame, which is close to the flipper's ~14px collision half-width.
+// Re-checking collisions every substep keeps per-tick displacement small.
+const BALL_SUBSTEPS = 4;
+
 function updateBalls(world: World, dt: number): void {
   const remaining: Ball[] = [];
+  const subDt = dt / BALL_SUBSTEPS;
 
   for (const ball of world.balls) {
-    integrate(ball, dt);
+    let drained = false;
 
-    const wallResult = resolveWalls(ball);
-    if (wallResult === 'drained') {
-      continue; // ball (and its accumulated build) is lost
+    for (let i = 0; i < BALL_SUBSTEPS && !drained; i++) {
+      integrate(ball, subDt);
+
+      const wallResult = resolveWalls(ball, FIELD_W, TABLE_FLOOR_Y, FIELD_H);
+      if (wallResult === 'drained') {
+        drained = true;
+        break;
+      }
+
+      for (const f of world.flippers) {
+        resolveFlipper(ball, f, FLIPPER_BOOST_SPEED, FLIPPER_THICKNESS);
+      }
+
+      for (const peg of world.pegs) {
+        resolveBumper(ball, peg, PEG_IMPULSE); // plain physical bounce, no scoring effect
+      }
+
+      if (resolveBumper(ball, world.paintBumper, BUMPER_IMPULSE) && world.paintBumper.cooldown <= 0) {
+        applyPaintHit(world, ball);
+        world.paintBumper.cooldown = BUMPER_COOLDOWN;
+      }
+
+      if (resolveBumper(ball, world.energyTarget, BUMPER_IMPULSE) && world.energyTarget.cooldown <= 0) {
+        applyEnergyHit(world, ball);
+        world.energyTarget.cooldown = BUMPER_COOLDOWN;
+      }
+
+      if (ball.bossCooldown > 0) {
+        ball.bossCooldown = Math.max(0, ball.bossCooldown - subDt);
+      }
+      if (ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
+        const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
+        world.boss.hp = Math.max(0, world.boss.hp - dmg);
+        ball.damage = dmg;
+        ball.bossCooldown = BOSS_HIT_COOLDOWN;
+      }
+
+      clampSpeed(ball);
     }
 
-    for (const f of world.flippers) {
-      resolveFlipper(ball, f, FLIPPER_BOOST_SPEED, FLIPPER_THICKNESS);
-    }
-
-    if (resolveBumper(ball, world.paintBumper, BUMPER_IMPULSE) && world.paintBumper.cooldown <= 0) {
-      applyPaintHit(world, ball);
-      world.paintBumper.cooldown = BUMPER_COOLDOWN;
-    }
-
-    if (resolveBumper(ball, world.energyTarget, BUMPER_IMPULSE) && world.energyTarget.cooldown <= 0) {
-      applyEnergyHit(world, ball);
-      world.energyTarget.cooldown = BUMPER_COOLDOWN;
-    }
-
-    if (ball.bossCooldown > 0) {
-      ball.bossCooldown = Math.max(0, ball.bossCooldown - dt);
-    }
-    if (ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
-      const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
-      world.boss.hp = Math.max(0, world.boss.hp - dmg);
-      ball.damage = dmg;
-      ball.bossCooldown = BOSS_HIT_COOLDOWN;
-    }
+    if (drained) continue; // ball (and its accumulated build) is lost
 
     ball.color = deriveColor(ball.charge > 0, ball.accent);
-    clampSpeed(ball);
     remaining.push(ball);
   }
 
@@ -169,6 +192,11 @@ function updateBumperCooldowns(world: World, dt: number): void {
 }
 
 function updateBoss(world: World, dt: number): void {
+  // The boss must not attack while the player has no ball in play (e.g. while
+  // still charging the launcher) - that felt unfair and let projectiles pile
+  // up against an undefended base before the round even started.
+  if (world.phase !== 'battle') return;
+
   const boss = world.boss;
 
   boss.shootTimer -= dt;

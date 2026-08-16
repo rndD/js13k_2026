@@ -35,9 +35,15 @@ export type WallResult = 'none' | 'bounced' | 'drained';
 
 /**
  * Resolve collisions with the field boundary. Left/right/top always hold the
- * ball; the bottom is open between DRAIN_X0..DRAIN_X1 (the drain).
+ * ball. The bottom has two thresholds: `apronY` is the raised, compact play
+ * area boundary (where the ball bounces off the solid apron next to the
+ * flippers), while `drainY` is the true bottom of the field. A ball that
+ * falls through the drain gap keeps falling (visibly, under gravity) from
+ * apronY down to drainY before it's actually removed - so it reads as
+ * rolling off the bottom of the screen instead of vanishing mid-field the
+ * instant it passes the raised apron.
  */
-export function resolveWalls(m: Movable, width = FIELD_W, height = FIELD_H): WallResult {
+export function resolveWalls(m: Movable, width = FIELD_W, apronY = FIELD_H, drainY = apronY): WallResult {
   let result: WallResult = 'none';
 
   if (m.x - m.r < 0) {
@@ -54,13 +60,17 @@ export function resolveWalls(m: Movable, width = FIELD_W, height = FIELD_H): Wal
     m.y = m.r;
     m.vy = Math.abs(m.vy) * WALL_RESTITUTION;
     result = 'bounced';
-  } else if (m.y - m.r > height) {
-    // Fell past the bottom edge entirely.
+  } else if (m.y - m.r > apronY) {
     const inDrain = m.x > DRAIN_X0 && m.x < DRAIN_X1;
-    if (inDrain) return 'drained';
+    if (inDrain) {
+      // Falling through the gap: only actually remove the ball once it
+      // reaches the true bottom of the field.
+      if (m.y - m.r > drainY) return 'drained';
+      return 'none';
+    }
     // Outside the drain gap: treat like a wall so the ball doesn't vanish
     // through the solid apron next to the flippers.
-    m.y = height - m.r;
+    m.y = apronY - m.r;
     m.vy = -Math.abs(m.vy) * WALL_RESTITUTION;
     result = 'bounced';
   }

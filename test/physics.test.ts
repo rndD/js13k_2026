@@ -72,6 +72,23 @@ describe('resolveWalls', () => {
     expect(result).toBe('bounced');
     expect(m.vy).toBeLessThan(0);
   });
+
+  it('lets a ball in the drain gap keep falling past a raised apron instead of vanishing instantly', () => {
+    // Regression: when apronY (the compact play area boundary) is raised well
+    // above drainY (the true bottom of the field), a ball inside the drain
+    // gap must NOT be removed the instant it clears the apron - it should
+    // keep falling visibly until it actually reaches drainY.
+    const apronY = 500;
+    const drainY = 640;
+    const m = { x: 180, y: apronY + 5 + 5, vx: 0, vy: 50, r: 5 }; // just past the apron, still well above drainY
+    const result = resolveWalls(m, 360, apronY, drainY);
+    expect(result).toBe('none'); // still falling, not drained, not bounced
+    expect(m.y).toBe(apronY + 10); // position untouched, no snap-back
+
+    // Once it actually reaches the true bottom, it drains.
+    const bottom = { x: 180, y: drainY + 10, vx: 0, vy: 50, r: 5 };
+    expect(resolveWalls(bottom, 360, apronY, drainY)).toBe('drained');
+  });
 });
 
 describe('overlapsCircle', () => {

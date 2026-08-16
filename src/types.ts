@@ -83,6 +83,13 @@ export interface Bumper {
   cooldown: number;
 }
 
+/** A plain physical bounce point - no scoring/state effect, just collision. */
+export interface Peg {
+  x: number;
+  y: number;
+  r: number;
+}
+
 export type Phase = 'launch' | 'battle' | 'win' | 'lose';
 
 export interface LaunchState {
@@ -101,6 +108,7 @@ export interface World {
   base: Base;
   paintBumper: Bumper;
   energyTarget: Bumper;
+  pegs: Peg[];
   projectiles: Projectile[];
   launch: LaunchState;
 }

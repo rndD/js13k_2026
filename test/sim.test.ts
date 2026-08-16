@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_MAX_HP, FIXED_DT } from '../src/constants';
+import { BASE_MAX_HP, FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createWorld } from '../src/entities';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
@@ -185,5 +185,33 @@ describe('drain', () => {
 
     expect(world.balls).toHaveLength(0);
     expect(world.phase).toBe('launch');
+  });
+});
+
+describe('flipper tunneling', () => {
+  it('does not let a max-speed ball tunnel through a resting flipper in one tick', () => {
+    // Regression test: a ball moving at MAX_SPEED covers ~15px per 60fps tick,
+    // close to the flipper's ~14px collision half-width. Without substepping
+    // the ball's position, a single-step overlap check taken only at the end
+    // of the tick could miss the flipper entirely (tunneling straight through).
+    const world = createWorld();
+    world.phase = 'battle';
+    const flipper = world.flippers[0]; // left, at rest
+    const tipX = flipper.pivot.x + Math.cos(flipper.angle) * flipper.length;
+    const tipY = flipper.pivot.y + Math.sin(flipper.angle) * flipper.length;
+    const midX = (flipper.pivot.x + tipX) / 2;
+    const midY = (flipper.pivot.y + tipY) / 2;
+
+    const ball = createBall(1, midX, midY - 12); // just above the flipper's surface
+    ball.vx = 0;
+    ball.vy = MAX_SPEED;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls).toHaveLength(1);
+    // The ball must have been stopped/deflected by the flipper, not have
+    // tunneled straight past it.
+    expect(world.balls[0].y).toBeLessThan(midY + 20);
   });
 });
