@@ -39,6 +39,8 @@ const BUMPER_R = 18;
 const GRAB_R = 12; // click/drag tolerance for picking a point in select mode
 const GRID_STEP = 20; // px between minor grid lines, in level/playfield space
 const GRID_MAJOR_EVERY = 5; // every Nth line is a brighter major line (100px)
+const DUPLICATE_OFFSET = 20; // px, x/y nudge applied to a duplicated element so it doesn't land exactly on top of the original
+const ROTATE_STEP = Math.PI / 12; // 15 degrees per rotate keypress/button, launch pads only
 // Must match main.ts's storage key - that's how "Play This Level" hands the
 // draft off to the real game (via ?level=draft, read from localStorage).
 const STORAGE_KEY = 'js13k-level-draft';
@@ -81,6 +83,10 @@ toolbar.querySelectorAll<HTMLButtonElement>('button[data-mode]').forEach((btn) =
 document.getElementById('finishWall')!.addEventListener('click', finishWall);
 document.getElementById('cancelWall')!.addEventListener('click', cancelWall);
 document.getElementById('deleteSelected')!.addEventListener('click', deleteSelected);
+document.getElementById('duplicateSelected')!.addEventListener('click', duplicateSelected);
+document.getElementById('flipSelected')!.addEventListener('click', flipSelected);
+document.getElementById('rotateCcw')!.addEventListener('click', () => rotateSelected(-ROTATE_STEP));
+document.getElementById('rotateCw')!.addEventListener('click', () => rotateSelected(ROTATE_STEP));
 document.getElementById('exportBtn')!.addEventListener('click', exportLevel);
 document.getElementById('saveBtn')!.addEventListener('click', () => saveLevel(true));
 document.getElementById('playBtn')!.addEventListener('click', playLevel);
@@ -111,6 +117,55 @@ function deleteSelected(): void {
   }
   // flippers/boss/launch are required singletons - not deletable.
   selection = null;
+}
+
+/** Clones the selected peg/bumper/launch pad/wall (offset by DUPLICATE_OFFSET
+ * so it doesn't land exactly on the original), then selects the copy so it
+ * can be dragged into place right away. Singletons (flipper/boss/launch)
+ * can't be duplicated - the sim assumes exactly one of each. */
+function duplicateSelected(): void {
+  if (!selection) return;
+  if (selection.kind === 'wallPoint') {
+    const wall = level.walls[selection.wallIndex];
+    const clone = wall.map((p) => ({ x: p.x + DUPLICATE_OFFSET, y: p.y + DUPLICATE_OFFSET }));
+    level.walls.push(clone);
+    selection = { kind: 'wallPoint', wallIndex: level.walls.length - 1, pointIndex: selection.pointIndex };
+  } else if (selection.kind === 'peg') {
+    const src = level.pegs[selection.index];
+    level.pegs.push({ ...src, x: src.x + DUPLICATE_OFFSET, y: src.y + DUPLICATE_OFFSET });
+    selection = { kind: 'peg', index: level.pegs.length - 1 };
+  } else if (selection.kind === 'bumper') {
+    const src = level.bumpers[selection.index];
+    level.bumpers.push({ ...src, x: src.x + DUPLICATE_OFFSET, y: src.y + DUPLICATE_OFFSET });
+    selection = { kind: 'bumper', index: level.bumpers.length - 1 };
+  } else if (selection.kind === 'launchPad') {
+    const src = level.launchPads[selection.index];
+    level.launchPads.push({ ...src, x: src.x + DUPLICATE_OFFSET, y: src.y + DUPLICATE_OFFSET });
+    selection = { kind: 'launchPad', index: level.launchPads.length - 1 };
+  }
+  // flippers/boss/launch are required singletons - not duplicable.
+}
+
+/** Mirrors the selected element's x coordinate about the field's horizontal
+ * centerline (FIELD_W/2) - handy for building a symmetric table by placing
+ * one side then flipping a copy across. Launch pad angles are mirrored too
+ * (angle -> PI - angle), since flipping x reverses the pad's horizontal
+ * aim while keeping its vertical aim the same. */
+function flipSelected(): void {
+  if (!selection) return;
+  const p = selectionPoint(selection);
+  if (!p) return;
+  p.x = FIELD_W - p.x;
+  if (selection.kind === 'launchPad') {
+    level.launchPads[selection.index].angle = Math.PI - level.launchPads[selection.index].angle;
+  }
+}
+
+/** Rotates the selected launch pad's aim by `delta` radians. No-op for any
+ * other selection kind since nothing else has a rotatable angle. */
+function rotateSelected(delta: number): void {
+  if (!selection || selection.kind !== 'launchPad') return;
+  level.launchPads[selection.index].angle += delta;
 }
 
 function exportLevel(): void {
@@ -262,6 +317,10 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') finishWall();
   else if (e.key === 'Escape') cancelWall();
   else if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+  else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); duplicateSelected(); }
+  else if (e.key === 'f' || e.key === 'F') flipSelected();
+  else if (e.key === '[') rotateSelected(-ROTATE_STEP);
+  else if (e.key === ']') rotateSelected(ROTATE_STEP);
 });
 
 function drawGrid(): void {

@@ -150,13 +150,13 @@ function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
   }
 }
 
-/** Plunger indicator at LEVEL.launch: a compressing spring plus a ball
+/** Plunger indicator at world.launch: a compressing spring plus a ball
  * outline, so the (otherwise invisible) launch spot reads as "pull/hold
  * here" before the first ball exists. Only relevant during the 'launch'
  * phase - once a real ball is in play it's drawn by drawBalls() instead. */
 function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
   if (world.phase !== 'launch') return;
-  const { x, y } = LEVEL.launch;
+  const { x, y } = world.launch;
   const power = world.launch.power;
 
   const springTop = y + BALL_RADIUS + 4;

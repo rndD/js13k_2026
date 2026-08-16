@@ -118,6 +118,8 @@ export interface LaunchPad {
 export type Phase = 'launch' | 'battle' | 'win' | 'lose';
 
 export interface LaunchState {
+  x: number;
+  y: number;
   charging: boolean;
   power: number; // 0..1
 }

@@ -94,7 +94,7 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
   if (world.launch.charging) {
     const power = world.launch.power;
     const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
-    const ball = createBall(world.nextBallId++, LEVEL.launch.x, LEVEL.launch.y);
+    const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
     ball.vx = -60; // small nudge toward the field, away from the lane wall
     ball.vy = -speed;
     world.balls.push(ball);
