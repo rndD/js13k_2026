@@ -6,7 +6,8 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { DRAIN_X0, DRAIN_X1, FIELD_H, FIELD_W, HUD_HEIGHT, TABLE_FLOOR_Y } from './constants';
+import { FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
+import { LEVEL } from './level';
 import type { Ball, World } from './types';
 
 const COLOR_HEX: Record<Ball['color'], string> = {
@@ -16,17 +17,23 @@ const COLOR_HEX: Record<Ball['color'], string> = {
   rainbow: '#ffe93b',
 };
 
+const BUMPER_COLOR: Record<'paint' | 'energy', string> = {
+  paint: '#ff3b6b',
+  energy: '#38d6ff',
+};
+
 export function render(ctx: CanvasRenderingContext2D, world: World): void {
   drawHudBar(ctx, world);
 
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
-  drawWalls(ctx);
+  drawFieldBorder(ctx);
+  drawWalls(ctx, world);
   drawShieldIndicator(ctx, world);
   drawPegs(ctx, world);
+  drawLaunchPads(ctx, world);
   drawBoss(ctx, world);
-  drawBumper(ctx, world.paintBumper, '#ff3b6b');
-  drawBumper(ctx, world.energyTarget, '#38d6ff');
+  for (const b of world.bumpers) drawBumper(ctx, b, BUMPER_COLOR[b.kind]);
   drawFlippers(ctx, world);
   drawProjectiles(ctx, world);
   drawBalls(ctx, world);
@@ -71,34 +78,34 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.stroke();
 }
 
-function drawWalls(ctx: CanvasRenderingContext2D): void {
+function drawFieldBorder(ctx: CanvasRenderingContext2D): void {
   ctx.strokeStyle = '#8888a0';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(0, TABLE_FLOOR_Y);
+  ctx.lineTo(0, FIELD_H);
   ctx.moveTo(FIELD_W, 0);
-  ctx.lineTo(FIELD_W, TABLE_FLOOR_Y);
+  ctx.lineTo(FIELD_W, FIELD_H);
   ctx.moveTo(0, 0);
   ctx.lineTo(FIELD_W, 0);
-  // floor/apron, raised to flipper level, with a gap for the drain
-  ctx.moveTo(0, TABLE_FLOOR_Y);
-  ctx.lineTo(DRAIN_X0, TABLE_FLOOR_Y);
-  ctx.moveTo(DRAIN_X1, TABLE_FLOOR_Y);
-  ctx.lineTo(FIELD_W, TABLE_FLOOR_Y);
   ctx.stroke();
+}
 
-  // Drain chute: thin guide lines showing a missed ball keeps falling
-  // (visibly, down to the true bottom of the field) instead of vanishing
-  // the instant it passes the raised apron.
-  ctx.strokeStyle = 'rgba(136,136,160,0.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(DRAIN_X0, TABLE_FLOOR_Y);
-  ctx.lineTo(DRAIN_X0, FIELD_H);
-  ctx.moveTo(DRAIN_X1, TABLE_FLOOR_Y);
-  ctx.lineTo(DRAIN_X1, FIELD_H);
-  ctx.stroke();
+/** Draws every Wall polyline in world.walls (the floor/apron, and anything
+ * else placed by the level - see level.ts). Gaps between/within walls are
+ * where the ball can fall through (drains). */
+function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
+  ctx.strokeStyle = '#8888a0';
+  ctx.lineWidth = 3;
+  for (const wall of world.walls) {
+    ctx.beginPath();
+    for (let i = 0; i < wall.length; i++) {
+      const p = wall[i];
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
 }
 
 /** Thin highlighted line across the floor while the shield is raised, as
@@ -108,8 +115,8 @@ function drawShieldIndicator(ctx: CanvasRenderingContext2D, world: World): void 
   ctx.strokeStyle = 'rgba(56,214,255,0.85)';
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.moveTo(0, TABLE_FLOOR_Y);
-  ctx.lineTo(FIELD_W, TABLE_FLOOR_Y);
+  ctx.moveTo(0, LEVEL.shield.y);
+  ctx.lineTo(FIELD_W, LEVEL.shield.y);
   ctx.stroke();
 }
 
@@ -120,6 +127,25 @@ function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.stroke();
+  }
+}
+
+/** Directional boost pads, drawn as small triangles pointing along their angle. */
+function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
+  const size = 12;
+  ctx.fillStyle = '#ffe93b';
+  for (const pad of world.launchPads) {
+    ctx.save();
+    ctx.translate(pad.x, pad.y);
+    ctx.rotate(pad.angle);
+    ctx.globalAlpha = pad.cooldown > 0 ? 0.4 : 1;
+    ctx.beginPath();
+    ctx.moveTo(size, 0);
+    ctx.lineTo(-size * 0.6, size * 0.6);
+    ctx.lineTo(-size * 0.6, -size * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 }
 

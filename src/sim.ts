@@ -3,7 +3,6 @@
 // system) drive the game headlessly by feeding scripted ControlsState
 // sequences and inspecting the resulting World.
 import {
-  BASE_Y,
   BOSS_HIT_COOLDOWN,
   BOSS_PROJECTILE_DAMAGE,
   BOSS_PROJECTILE_RADIUS,
@@ -22,8 +21,9 @@ import {
   LAUNCH_CHARGE_TIME,
   LAUNCH_MAX_SPEED,
   LAUNCH_MIN_SPEED,
-  LAUNCH_X,
-  LAUNCH_Y,
+  LAUNCH_PAD_BOOST,
+  LAUNCH_PAD_COOLDOWN,
+  LAUNCH_PAD_TRIGGER_R,
   OVERLOAD_CHARGE_TIME,
   OVERLOAD_DAMAGE,
   OVERLOAD_INTERVAL,
@@ -32,15 +32,18 @@ import {
   PAINT_MULTIPLIER_STEP,
   PEG_IMPULSE,
   SHIELD_DRAIN_RATE,
-  TABLE_FLOOR_Y,
+  WALL_THICKNESS,
 } from './constants';
 import { createBall } from './entities';
+import { LEVEL } from './level';
 import {
   clampSpeed,
   integrate,
   overlapsCircle,
   resolveBumper,
   resolveFlipper,
+  resolveLaunchPad,
+  resolveWall,
   resolveWalls,
 } from './physics';
 import type { Ball, ControlsState, World } from './types';
@@ -59,7 +62,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   // otherwise a projectile arriving this tick would see last tick's state.
   updateShield(world, controls, dt);
   updateBalls(world, dt);
-  updateBumperCooldowns(world, dt);
+  updateCooldowns(world, dt);
   updateBoss(world, dt);
   updateProjectiles(world, dt);
   checkOutcome(world);
@@ -91,7 +94,7 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
   if (world.launch.charging) {
     const power = world.launch.power;
     const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
-    const ball = createBall(world.nextBallId++, LAUNCH_X, LAUNCH_Y);
+    const ball = createBall(world.nextBallId++, LEVEL.launch.x, LEVEL.launch.y);
     ball.vx = -60; // small nudge toward the field, away from the lane wall
     ball.vy = -speed;
     world.balls.push(ball);
@@ -118,10 +121,14 @@ function updateBalls(world: World, dt: number): void {
     for (let i = 0; i < BALL_SUBSTEPS && !drained; i++) {
       integrate(ball, subDt);
 
-      const wallResult = resolveWalls(ball, FIELD_W, TABLE_FLOOR_Y, FIELD_H);
+      const wallResult = resolveWalls(ball, FIELD_W, FIELD_H);
       if (wallResult === 'drained') {
         drained = true;
         break;
+      }
+
+      for (const wall of world.walls) {
+        resolveWall(ball, wall, WALL_THICKNESS);
       }
 
       for (const f of world.flippers) {
@@ -132,14 +139,18 @@ function updateBalls(world: World, dt: number): void {
         resolveBumper(ball, peg, PEG_IMPULSE); // plain physical bounce, no scoring effect
       }
 
-      if (resolveBumper(ball, world.paintBumper, BUMPER_IMPULSE) && world.paintBumper.cooldown <= 0) {
-        applyPaintHit(world, ball);
-        world.paintBumper.cooldown = BUMPER_COOLDOWN;
+      for (const pad of world.launchPads) {
+        if (pad.cooldown <= 0 && resolveLaunchPad(ball, pad, LAUNCH_PAD_TRIGGER_R, LAUNCH_PAD_BOOST)) {
+          pad.cooldown = LAUNCH_PAD_COOLDOWN;
+        }
       }
 
-      if (resolveBumper(ball, world.energyTarget, BUMPER_IMPULSE) && world.energyTarget.cooldown <= 0) {
-        applyEnergyHit(world, ball);
-        world.energyTarget.cooldown = BUMPER_COOLDOWN;
+      for (const bumper of world.bumpers) {
+        if (resolveBumper(ball, bumper, BUMPER_IMPULSE) && bumper.cooldown <= 0) {
+          if (bumper.kind === 'paint') applyPaintHit(world, ball);
+          else applyEnergyHit(world, ball);
+          bumper.cooldown = BUMPER_COOLDOWN;
+        }
       }
 
       if (ball.bossCooldown > 0) {
@@ -186,9 +197,9 @@ function applyEnergyHit(world: World, ball: Ball): void {
   world.shield.energy = Math.min(world.shield.maxEnergy, world.shield.energy + ENERGY_TARGET_GAIN);
 }
 
-function updateBumperCooldowns(world: World, dt: number): void {
-  world.paintBumper.cooldown = Math.max(0, world.paintBumper.cooldown - dt);
-  world.energyTarget.cooldown = Math.max(0, world.energyTarget.cooldown - dt);
+function updateCooldowns(world: World, dt: number): void {
+  for (const b of world.bumpers) b.cooldown = Math.max(0, b.cooldown - dt);
+  for (const p of world.launchPads) p.cooldown = Math.max(0, p.cooldown - dt);
 }
 
 function updateBoss(world: World, dt: number): void {
@@ -225,7 +236,7 @@ function updateBoss(world: World, dt: number): void {
 function spawnProjectile(world: World, damage: number, speed: number, r: number, big: boolean): void {
   const boss = world.boss;
   const targetX = FIELD_W / 2;
-  const targetY = BASE_Y;
+  const targetY = LEVEL.base.y;
   const dx = targetX - boss.x;
   const dy = targetY - boss.y;
   const dist = Math.hypot(dx, dy) || 1;
@@ -246,7 +257,7 @@ function updateProjectiles(world: World, dt: number): void {
     p.x += p.vx * dt;
     p.y += p.vy * dt;
 
-    if (p.y >= BASE_Y) {
+    if (p.y >= LEVEL.base.y) {
       const blocked = world.shield.active && world.shield.energy > 0;
       if (blocked) {
         world.shield.hp = Math.max(0, world.shield.hp - p.damage);

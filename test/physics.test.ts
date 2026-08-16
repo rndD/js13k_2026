@@ -5,6 +5,8 @@ import {
   overlapsCircle,
   resolveBumper,
   resolveFlipper,
+  resolveLaunchPad,
+  resolveWall,
   resolveWalls,
 } from '../src/physics';
 import { createFlippers } from '../src/entities';
@@ -60,34 +62,55 @@ describe('resolveWalls', () => {
     expect(m.vy).toBeGreaterThan(0);
   });
 
-  it('drains a ball that falls through the drain gap', () => {
-    const m = { x: 180, y: 700, vx: 0, vy: 50, r: 5 }; // center x is inside the drain gap
-    const result = resolveWalls(m, 360, 640);
-    expect(result).toBe('drained');
+  it('drains any ball that falls past the true bottom of the field, regardless of x', () => {
+    // There's no more x-range/drain-gap concept in resolveWalls itself - a
+    // gap in the level's wall polylines is what makes a spot a "drain" (see
+    // resolveWall/level.ts). resolveWalls only knows about the field's true
+    // bottom edge.
+    const m = { x: 180, y: 700, vx: 0, vy: 50, r: 5 };
+    expect(resolveWalls(m, 360, 640)).toBe('drained');
+
+    const edge = { x: 10, y: 700, vx: 0, vy: 50, r: 5 };
+    expect(resolveWalls(edge, 360, 640)).toBe('drained');
   });
 
-  it('bounces off the bottom apron outside the drain gap', () => {
-    const m = { x: 10, y: 700, vx: 0, vy: 50, r: 5 }; // near the left edge, outside drain
-    const result = resolveWalls(m, 360, 640);
-    expect(result).toBe('bounced');
-    expect(m.vy).toBeLessThan(0);
+  it('does not touch a ball that is still above the bottom edge', () => {
+    const m = { x: 180, y: 300, vx: 0, vy: 50, r: 5 };
+    expect(resolveWalls(m, 360, 640)).toBe('none');
+  });
+});
+
+describe('resolveWall', () => {
+  it('bounces off a wall polyline segment, but lets a ball pass through a gap', () => {
+    const wall = [
+      { x: 0, y: 500 },
+      { x: 100, y: 500 },
+    ];
+    const onSegment = { x: 50, y: 502, vx: 0, vy: 50, r: 5 };
+    expect(resolveWall(onSegment, wall, 3)).toBe(true);
+    expect(onSegment.vy).toBeLessThan(0);
+
+    // Past the end of the polyline (the "gap") - no collision.
+    const pastGap = { x: 150, y: 502, vx: 0, vy: 50, r: 5 };
+    expect(resolveWall(pastGap, wall, 3)).toBe(false);
+    expect(pastGap.vy).toBe(50);
+  });
+});
+
+describe('resolveLaunchPad', () => {
+  it('sets velocity along the pad angle when the ball is in range', () => {
+    const m = { x: 10, y: 10, vx: 0, vy: 100, r: 5 };
+    const hit = resolveLaunchPad(m, { x: 12, y: 12, angle: Math.PI / 2 }, 16, 500);
+    expect(hit).toBe(true);
+    expect(m.vx).toBeCloseTo(0, 5);
+    expect(m.vy).toBeCloseTo(500, 5);
   });
 
-  it('lets a ball in the drain gap keep falling past a raised apron instead of vanishing instantly', () => {
-    // Regression: when apronY (the compact play area boundary) is raised well
-    // above drainY (the true bottom of the field), a ball inside the drain
-    // gap must NOT be removed the instant it clears the apron - it should
-    // keep falling visibly until it actually reaches drainY.
-    const apronY = 500;
-    const drainY = 640;
-    const m = { x: 180, y: apronY + 5 + 5, vx: 0, vy: 50, r: 5 }; // just past the apron, still well above drainY
-    const result = resolveWalls(m, 360, apronY, drainY);
-    expect(result).toBe('none'); // still falling, not drained, not bounced
-    expect(m.y).toBe(apronY + 10); // position untouched, no snap-back
-
-    // Once it actually reaches the true bottom, it drains.
-    const bottom = { x: 180, y: drainY + 10, vx: 0, vy: 50, r: 5 };
-    expect(resolveWalls(bottom, 360, apronY, drainY)).toBe('drained');
+  it('does nothing when out of range', () => {
+    const m = { x: 10, y: 10, vx: 0, vy: 100, r: 5 };
+    const hit = resolveLaunchPad(m, { x: 500, y: 500, angle: 0 }, 16, 500);
+    expect(hit).toBe(false);
+    expect(m.vy).toBe(100);
   });
 });
 

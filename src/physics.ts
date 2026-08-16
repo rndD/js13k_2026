@@ -1,8 +1,8 @@
 // Small, dependency-free 2D collision helpers used by sim.ts. Everything
 // operates on plain Ball-like objects ({x,y,vx,vy,r}) and mutates them in
 // place — this is a js13k game, not a general-purpose physics library.
-import { DRAIN_X0, DRAIN_X1, FIELD_H, FIELD_W, GRAVITY, MAX_SPEED, WALL_RESTITUTION } from './constants';
-import type { Flipper, Vec2 } from './types';
+import { FIELD_H, FIELD_W, GRAVITY, MAX_SPEED, WALL_RESTITUTION } from './constants';
+import type { Flipper, LaunchPad, Vec2, Wall } from './types';
 
 export interface Movable {
   x: number;
@@ -34,16 +34,14 @@ export function integrate(m: Movable, dt: number, gravity: Vec2 = { x: 0, y: GRA
 export type WallResult = 'none' | 'bounced' | 'drained';
 
 /**
- * Resolve collisions with the field boundary. Left/right/top always hold the
- * ball. The bottom has two thresholds: `apronY` is the raised, compact play
- * area boundary (where the ball bounces off the solid apron next to the
- * flippers), while `drainY` is the true bottom of the field. A ball that
- * falls through the drain gap keeps falling (visibly, under gravity) from
- * apronY down to drainY before it's actually removed - so it reads as
- * rolling off the bottom of the screen instead of vanishing mid-field the
- * instant it passes the raised apron.
+ * Resolve collisions with the implicit field boundary (left/right/top of the
+ * canvas). There is no bottom wall here at all - the table's actual floor is
+ * built out of level.ts's `walls` polylines (see resolveWallSegment/
+ * resolveWall below). Wherever those polylines have a gap is a drain: a ball
+ * simply keeps falling under gravity through any gap until it passes the
+ * true bottom of the field, at which point it's removed.
  */
-export function resolveWalls(m: Movable, width = FIELD_W, apronY = FIELD_H, drainY = apronY): WallResult {
+export function resolveWalls(m: Movable, width = FIELD_W, height = FIELD_H): WallResult {
   let result: WallResult = 'none';
 
   if (m.x - m.r < 0) {
@@ -60,22 +58,64 @@ export function resolveWalls(m: Movable, width = FIELD_W, apronY = FIELD_H, drai
     m.y = m.r;
     m.vy = Math.abs(m.vy) * WALL_RESTITUTION;
     result = 'bounced';
-  } else if (m.y - m.r > apronY) {
-    const inDrain = m.x > DRAIN_X0 && m.x < DRAIN_X1;
-    if (inDrain) {
-      // Falling through the gap: only actually remove the ball once it
-      // reaches the true bottom of the field.
-      if (m.y - m.r > drainY) return 'drained';
-      return 'none';
-    }
-    // Outside the drain gap: treat like a wall so the ball doesn't vanish
-    // through the solid apron next to the flippers.
-    m.y = apronY - m.r;
-    m.vy = -Math.abs(m.vy) * WALL_RESTITUTION;
-    result = 'bounced';
+  } else if (m.y - m.r > height) {
+    return 'drained';
   }
 
   return result;
+}
+
+/** Nearest point on segment a->b to point p, plus the distance from p to it. */
+function closestPointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const apx = px - ax;
+  const apy = py - ay;
+  const abLenSq = abx * abx + aby * aby || 0.0001;
+  let t = (apx * abx + apy * aby) / abLenSq;
+  t = Math.max(0, Math.min(1, t));
+  const x = ax + abx * t;
+  const y = ay + aby * t;
+  const dx = px - x;
+  const dy = py - y;
+  const dist = Math.hypot(dx, dy) || 0.0001;
+  return { x, y, dist, nx: dx / dist, ny: dy / dist };
+}
+
+/**
+ * Ball-vs-static-segment collision (one segment of a Wall polyline). Purely
+ * passive: reflects velocity about the segment normal with some damping,
+ * like bouncing off a solid edge. Returns true if a collision was resolved.
+ */
+export function resolveWallSegment(
+  m: Movable,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  thickness: number,
+): boolean {
+  const c = closestPointOnSegment(m.x, m.y, ax, ay, bx, by);
+  const minDist = m.r + thickness;
+  if (c.dist >= minDist) return false;
+
+  m.x = c.x + c.nx * minDist;
+  m.y = c.y + c.ny * minDist;
+  const dot = m.vx * c.nx + m.vy * c.ny;
+  m.vx = (m.vx - 2 * dot * c.nx) * WALL_RESTITUTION;
+  m.vy = (m.vy - 2 * dot * c.ny) * WALL_RESTITUTION;
+  return true;
+}
+
+/** Resolve collision against every segment of a Wall polyline (open, not auto-closed). */
+export function resolveWall(m: Movable, wall: Wall, thickness: number): boolean {
+  let hit = false;
+  for (let i = 0; i < wall.length - 1; i++) {
+    const a = wall[i];
+    const b = wall[i + 1];
+    if (resolveWallSegment(m, a.x, a.y, b.x, b.y, thickness)) hit = true;
+  }
+  return hit;
 }
 
 /**
@@ -99,6 +139,27 @@ export function resolveBumper(
   m.y = bumper.y + ny * minDist;
   m.vx = nx * impulseSpeed;
   m.vy = ny * impulseSpeed;
+  return true;
+}
+
+/**
+ * Directional one-shot boost pad. If the ball is within `triggerR` of the
+ * pad center, its velocity is set along `pad.angle` at `boostSpeed`
+ * (unlike a bumper, this doesn't reflect - it always fires the same way).
+ */
+export function resolveLaunchPad(
+  m: Movable,
+  pad: LaunchPad,
+  triggerR: number,
+  boostSpeed: number,
+): boolean {
+  const dx = m.x - pad.x;
+  const dy = m.y - pad.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist >= m.r + triggerR) return false;
+
+  m.vx = Math.cos(pad.angle) * boostSpeed;
+  m.vy = Math.sin(pad.angle) * boostSpeed;
   return true;
 }
 
@@ -128,35 +189,22 @@ function flipperTip(f: Flipper): Vec2 {
  */
 export function resolveFlipper(m: Movable, f: Flipper, boostSpeed: number, thickness: number): boolean {
   const tip = flipperTip(f);
-  const abx = tip.x - f.pivot.x;
-  const aby = tip.y - f.pivot.y;
-  const apx = m.x - f.pivot.x;
-  const apy = m.y - f.pivot.y;
-  const abLenSq = abx * abx + aby * aby || 0.0001;
-  let t = (apx * abx + apy * aby) / abLenSq;
-  t = Math.max(0, Math.min(1, t));
-  const closestX = f.pivot.x + abx * t;
-  const closestY = f.pivot.y + aby * t;
-  const dx = m.x - closestX;
-  const dy = m.y - closestY;
-  const dist = Math.hypot(dx, dy) || 0.0001;
+  const c = closestPointOnSegment(m.x, m.y, f.pivot.x, f.pivot.y, tip.x, tip.y);
   const minDist = m.r + thickness;
-  if (dist >= minDist) return false;
+  if (c.dist >= minDist) return false;
 
-  const nx = dx / dist;
-  const ny = dy / dist;
-  m.x = closestX + nx * minDist;
-  m.y = closestY + ny * minDist;
+  m.x = c.x + c.nx * minDist;
+  m.y = c.y + c.ny * minDist;
 
   if (f.active) {
     // Strong, readable boost roughly along the flipper normal (up and outward).
-    m.vx = nx * boostSpeed;
-    m.vy = ny * boostSpeed - boostSpeed * 0.3;
+    m.vx = c.nx * boostSpeed;
+    m.vy = c.ny * boostSpeed - boostSpeed * 0.3;
   } else {
     // Passive bounce: reflect velocity about the normal with some damping.
-    const dot = m.vx * nx + m.vy * ny;
-    m.vx = (m.vx - 2 * dot * nx) * WALL_RESTITUTION;
-    m.vy = (m.vy - 2 * dot * ny) * WALL_RESTITUTION;
+    const dot = m.vx * c.nx + m.vy * c.ny;
+    m.vx = (m.vx - 2 * dot * c.nx) * WALL_RESTITUTION;
+    m.vy = (m.vy - 2 * dot * c.ny) * WALL_RESTITUTION;
   }
   return true;
 }

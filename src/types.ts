@@ -80,6 +80,8 @@ export interface Bumper {
   x: number;
   y: number;
   r: number;
+  /** which scoring effect this bumper applies on hit */
+  kind: 'paint' | 'energy';
   cooldown: number;
 }
 
@@ -88,6 +90,29 @@ export interface Peg {
   x: number;
   y: number;
   r: number;
+}
+
+/**
+ * A static wall segment chain the ball bounces off. Just a list of points -
+ * consecutive points form segments (open polyline, not auto-closed). Gaps
+ * between separate Wall entries are how drains/openings are created; there's
+ * no separate "drain gap" concept, it just emerges from wherever no wall
+ * covers.
+ */
+export type Wall = Vec2[];
+
+/**
+ * A directional one-shot boost pad (drawn as a small triangle pointing along
+ * `angle`). Any ball touching it gets its velocity set along `angle` at a
+ * fixed boost speed - unlike a flipper, it has no moving parts and always
+ * fires in the same direction.
+ */
+export interface LaunchPad {
+  x: number;
+  y: number;
+  /** direction the pad launches balls, in radians */
+  angle: number;
+  cooldown: number;
 }
 
 export type Phase = 'launch' | 'battle' | 'win' | 'lose';
@@ -102,13 +127,14 @@ export interface World {
   phase: Phase;
   nextBallId: number;
   balls: Ball[];
+  walls: Wall[];
   flippers: Flipper[];
   boss: Boss;
   shield: Shield;
   base: Base;
-  paintBumper: Bumper;
-  energyTarget: Bumper;
+  bumpers: Bumper[];
   pegs: Peg[];
+  launchPads: LaunchPad[];
   projectiles: Projectile[];
   launch: LaunchState;
 }

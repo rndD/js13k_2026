@@ -70,7 +70,7 @@ describe('paint bumper', () => {
   it('grows the ball build and damages the boss on hit', () => {
     const world = createWorld();
     world.phase = 'battle';
-    const bumper = world.paintBumper;
+    const bumper = world.bumpers.find((b) => b.kind === 'paint')!;
     const ball = createBall(1, bumper.x + bumper.r + 3, bumper.y);
     ball.vx = -10;
     ball.vy = 0;
@@ -91,7 +91,7 @@ describe('energy target', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.shield.energy = 0;
-    const target = world.energyTarget;
+    const target = world.bumpers.find((b) => b.kind === 'energy')!;
     const ball = createBall(1, target.x + target.r + 3, target.y);
     ball.vx = -10;
     ball.vy = 0;

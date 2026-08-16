@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>level editor (dev only - not part of the game build)</title>
+<style>
+html,body{margin:0;height:100%;background:#141018;color:#e8e8f0;font-family:monospace;font-size:13px}
+#app{display:flex;height:100%}
+#toolbar{width:220px;box-sizing:border-box;padding:10px;overflow-y:auto;background:#0a0612;border-right:1px solid #333}
+#toolbar h1{font-size:13px;margin:0 0 8px}
+#toolbar h2{font-size:11px;color:#8888a0;margin:14px 0 4px;text-transform:uppercase}
+#toolbar button{display:block;width:100%;text-align:left;margin:2px 0;padding:5px 7px;background:#1c1626;color:#e8e8f0;border:1px solid #333;border-radius:3px;cursor:pointer;font-family:monospace;font-size:12px}
+#toolbar button.active{background:#38d6ff;color:#0a0612;border-color:#38d6ff}
+#toolbar button:hover{border-color:#8888a0}
+#canvasWrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto}
+canvas{background:#050208;touch-action:none}
+#hint{font-size:11px;color:#8888a0;margin-top:10px;line-height:1.5}
+#exportBox{width:100%;height:160px;box-sizing:border-box;background:#1c1626;color:#e8e8f0;border:1px solid #333;font-family:monospace;font-size:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <h1>Level Editor <span style="color:#ff8a3b">(dev only)</span></h1>
+
+    <h2>Mode</h2>
+    <button data-mode="select" class="active">Select / Move</button>
+    <button data-mode="wall">Draw Wall</button>
+    <button data-mode="peg">Place Peg</button>
+    <button data-mode="bumper-paint">Place Paint Bumper</button>
+    <button data-mode="bumper-energy">Place Energy Bumper</button>
+    <button data-mode="launchpad">Place Launch Pad</button>
+    <button data-mode="flipper-left">Move Left Flipper</button>
+    <button data-mode="flipper-right">Move Right Flipper</button>
+    <button data-mode="boss">Move Boss</button>
+    <button data-mode="launch">Move Launch Point</button>
+
+    <h2>Wall drawing</h2>
+    <button id="finishWall">Finish Wall (Enter)</button>
+    <button id="cancelWall">Cancel Wall (Esc)</button>
+
+    <h2>Selection</h2>
+    <button id="deleteSelected">Delete Selected (Del)</button>
+
+    <h2>Export</h2>
+    <button id="exportBtn">Export LevelData</button>
+    <textarea id="exportBox" readonly placeholder="Click Export to generate..."></textarea>
+
+    <div id="hint">
+      Click to place/add points. In Wall mode, click adds polyline points -
+      press Enter or the Finish button to commit the wall (a gap between two
+      walls is a drain). In Select mode, drag existing points to move them,
+      Delete removes the selected point/element. This tool is dev-only: run
+      it via the Vite dev server (this page, not index.html) - `vite build`
+      only ever processes index.html, so editor.html/leveleditor.ts are never
+      swept into the shipped game bundle.
+    </div>
+  </div>
+  <div id="canvasWrap">
+    <canvas id="c"></canvas>
+  </div>
+</div>
+<script type="module" src="/src/leveleditor.ts"></script>
+</body>
+</html>

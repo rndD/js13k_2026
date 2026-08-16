@@ -1,57 +1,44 @@
 // Factory functions that build the initial World and its entities. Kept
 // separate from sim.ts (behavior) so tests can construct fresh worlds and
-// custom fixtures easily.
+// custom fixtures easily. Positions/shapes come from a LevelData (level.ts
+// by default) - this file only assembles behavioral fields from constants.ts.
 import {
+  BALL_RADIUS,
   BASE_MAX_HP,
   BOSS_MAX_HP,
-  BOSS_POS,
-  BOSS_RADIUS,
   BOSS_SHOOT_INTERVAL,
-  ENERGY_TARGET,
   FLIPPER_ACTIVE_ANGLE,
-  FLIPPER_LEFT_PIVOT,
   FLIPPER_LENGTH,
   FLIPPER_REST_ANGLE,
-  FLIPPER_RIGHT_PIVOT,
-  LAUNCH_X,
-  LAUNCH_Y,
   OVERLOAD_INTERVAL,
-  PAINT_BUMPER,
-  PEGS,
   SHIELD_MAX_ENERGY,
   SHIELD_MAX_HP,
-  BALL_RADIUS,
 } from './constants';
+import { LEVEL, type LevelData, type LevelFlipper } from './level';
 import type { Ball, Bumper, Flipper, World } from './types';
 
-export function createFlippers(): Flipper[] {
-  return [
-    {
-      side: 'left',
-      pivot: { ...FLIPPER_LEFT_PIVOT },
+export function createFlippers(levelFlippers: LevelFlipper[] = LEVEL.flippers): Flipper[] {
+  return levelFlippers.map((lf) => {
+    const mirror = lf.side === 'right';
+    const restAngle = mirror ? Math.PI - FLIPPER_REST_ANGLE : FLIPPER_REST_ANGLE;
+    const activeAngle = mirror ? Math.PI - FLIPPER_ACTIVE_ANGLE : FLIPPER_ACTIVE_ANGLE;
+    return {
+      side: lf.side,
+      pivot: { ...lf.pivot },
       length: FLIPPER_LENGTH,
-      angle: FLIPPER_REST_ANGLE,
-      restAngle: FLIPPER_REST_ANGLE,
-      activeAngle: FLIPPER_ACTIVE_ANGLE,
+      angle: restAngle,
+      restAngle,
+      activeAngle,
       active: false,
-    },
-    {
-      side: 'right',
-      pivot: { ...FLIPPER_RIGHT_PIVOT },
-      length: FLIPPER_LENGTH,
-      angle: Math.PI - FLIPPER_REST_ANGLE,
-      restAngle: Math.PI - FLIPPER_REST_ANGLE,
-      activeAngle: Math.PI - FLIPPER_ACTIVE_ANGLE,
-      active: false,
-    },
-  ];
+    };
+  });
 }
 
-export function createBumper(base: { x: number; y: number; r: number }): Bumper {
+export function createBumper(base: { x: number; y: number; r: number; kind: Bumper['kind'] }): Bumper {
   return { ...base, cooldown: 0 };
 }
 
-export function createBall(id: number, x = LAUNCH_X, y = LAUNCH_Y): Ball {
+export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y): Ball {
   return {
     id,
     x,
@@ -68,17 +55,18 @@ export function createBall(id: number, x = LAUNCH_X, y = LAUNCH_Y): Ball {
   };
 }
 
-export function createWorld(): World {
+export function createWorld(level: LevelData = LEVEL): World {
   return {
     time: 0,
     phase: 'launch',
     nextBallId: 1,
     balls: [],
-    flippers: createFlippers(),
+    walls: level.walls.map((wall) => wall.map((p) => ({ ...p }))),
+    flippers: createFlippers(level.flippers),
     boss: {
-      x: BOSS_POS.x,
-      y: BOSS_POS.y,
-      r: BOSS_RADIUS,
+      x: level.boss.x,
+      y: level.boss.y,
+      r: level.boss.r,
       hp: BOSS_MAX_HP,
       maxHp: BOSS_MAX_HP,
       shootTimer: BOSS_SHOOT_INTERVAL,
@@ -94,9 +82,9 @@ export function createWorld(): World {
       active: false,
     },
     base: { hp: BASE_MAX_HP, maxHp: BASE_MAX_HP },
-    paintBumper: createBumper(PAINT_BUMPER),
-    energyTarget: createBumper(ENERGY_TARGET),
-    pegs: PEGS.map((p) => ({ ...p })),
+    bumpers: level.bumpers.map((b) => createBumper(b)),
+    pegs: level.pegs.map((p) => ({ ...p })),
+    launchPads: level.launchPads.map((p) => ({ ...p, cooldown: 0 })),
     projectiles: [],
     launch: { charging: false, power: 0 },
   };
