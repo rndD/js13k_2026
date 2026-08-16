@@ -267,11 +267,12 @@ window.addEventListener('keydown', (e) => {
 function drawGrid(): void {
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
-  const midX = FIELD_W / 2;
   for (let x = 0; x <= FIELD_W; x += GRID_STEP) {
-    const center = x === midX;
-    const major = (x / GRID_STEP) % GRID_MAJOR_EVERY === 0;
-    ctx.strokeStyle = center ? 'rgba(255,233,59,0.5)' : major ? 'rgba(136,136,160,0.35)' : 'rgba(136,136,160,0.14)';
+    // Major lines are phase-shifted one cell left so one of them lands
+    // exactly on the centerline (FIELD_W/2=180 isn't a multiple of the
+    // major spacing on its own - shifting the pattern by +1 cell fixes that).
+    const major = (x / GRID_STEP + 1) % GRID_MAJOR_EVERY === 0;
+    ctx.strokeStyle = major ? 'rgba(136,136,160,0.35)' : 'rgba(136,136,160,0.14)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x + 0.5, 0);
