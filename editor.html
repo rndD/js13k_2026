@@ -46,6 +46,10 @@ canvas{background:#050208;touch-action:none}
     <button id="rotateCcw">Rotate -15&deg; ([)</button>
     <button id="rotateCw">Rotate +15&deg; (])</button>
 
+    <h2>History</h2>
+    <button id="undoBtn">Undo (Ctrl+Z)</button>
+    <button id="redoBtn">Redo (Ctrl+Shift+Z)</button>
+
     <h2>Export</h2>
     <button id="exportBtn">Export LevelData</button>
     <textarea id="exportBox" readonly placeholder="Click Export to generate..."></textarea>
@@ -58,13 +62,15 @@ canvas{background:#050208;touch-action:none}
     <div id="hint">
       Click to place/add points. In Wall mode, click adds polyline points -
       press Enter or the Finish button to commit the wall (a gap between two
-      walls is a drain). In Select mode, drag existing points to move them;
-      click on a wall's line itself (not a vertex) to grab and drag the
-      whole wall as one piece instead of reshaping it. Delete removes the
+      walls is a drain). In Select mode, clicking a wall (a vertex or its
+      line) selects the whole wall first, so a wall made of many points can
+      be dragged as one piece; click again on one of that wall's own
+      vertices to drill in and reshape just that point. Delete removes the
       selected point/element/wall, Duplicate clones it with a small offset,
       Flip mirrors its x position across the field's center (and its aim
       angle, for launch pads), Rotate turns a selected launch pad's aim by
-      15&deg;. "Save to Browser" stores your draft in
+      15&deg;. Undo/Redo (Ctrl+Z / Ctrl+Shift+Z) step back and forward
+      through edits. "Save to Browser" stores your draft in
       localStorage (persists across reloads of this page). "Play This
       Level" saves then opens the real game with this draft loaded in place
       of the built-in level. This tool is dev-only: run it via the Vite dev

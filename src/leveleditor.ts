@@ -61,6 +61,43 @@ function loadStoredLevel(): LevelData | null {
 // silently discard unsaved work.
 const level: LevelData = loadStoredLevel() ?? JSON.parse(JSON.stringify(LEVEL));
 
+// Undo/redo history: snapshots of the whole level as JSON strings. A snapshot
+// of the pre-mutation state is pushed onto undoStack right before any action
+// changes the level (see pushUndo()); undo pops it back and pushes the
+// current state onto redoStack so redo can restore it again. Capped so an
+// unbounded editing session doesn't grow memory forever.
+const HISTORY_LIMIT = 100;
+let undoStack: string[] = [];
+let redoStack: string[] = [];
+
+function snapshot(): string {
+  return JSON.stringify(level);
+}
+
+function pushUndo(): void {
+  undoStack.push(snapshot());
+  if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+  redoStack = [];
+}
+
+function restoreLevel(json: string): void {
+  const data = JSON.parse(json) as LevelData;
+  Object.assign(level, data);
+  selection = null;
+}
+
+function undo(): void {
+  if (undoStack.length === 0) return;
+  redoStack.push(snapshot());
+  restoreLevel(undoStack.pop()!);
+}
+
+function redo(): void {
+  if (redoStack.length === 0) return;
+  undoStack.push(snapshot());
+  restoreLevel(redoStack.pop()!);
+}
+
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 canvas.width = FIELD_W;
 canvas.height = CANVAS_H;
@@ -70,6 +107,7 @@ let mode: Mode = 'select';
 let selection: Selection = null;
 let dragging = false;
 let dragAnchor: Vec2 | null = null; // last pointer position while dragging a whole wall, for incremental delta
+let dragStartSnapshot: string | null = null; // pre-drag level snapshot, for folding a whole drag into one undo step
 let wallInProgress: Vec2[] | null = null;
 
 const toolbar = document.getElementById('toolbar')!;
@@ -90,12 +128,15 @@ document.getElementById('duplicateSelected')!.addEventListener('click', duplicat
 document.getElementById('flipSelected')!.addEventListener('click', flipSelected);
 document.getElementById('rotateCcw')!.addEventListener('click', () => rotateSelected(-ROTATE_STEP));
 document.getElementById('rotateCw')!.addEventListener('click', () => rotateSelected(ROTATE_STEP));
+document.getElementById('undoBtn')!.addEventListener('click', undo);
+document.getElementById('redoBtn')!.addEventListener('click', redo);
 document.getElementById('exportBtn')!.addEventListener('click', exportLevel);
 document.getElementById('saveBtn')!.addEventListener('click', () => saveLevel(true));
 document.getElementById('playBtn')!.addEventListener('click', playLevel);
 
 function finishWall(): void {
   if (wallInProgress && wallInProgress.length >= 2) {
+    pushUndo();
     level.walls.push(wallInProgress);
   }
   wallInProgress = null;
@@ -107,6 +148,7 @@ function cancelWall(): void {
 
 function deleteSelected(): void {
   if (!selection) return;
+  pushUndo();
   if (selection.kind === 'wall') {
     level.walls.splice(selection.index, 1);
   } else if (selection.kind === 'wallPoint') {
@@ -130,6 +172,7 @@ function deleteSelected(): void {
  * can't be duplicated - the sim assumes exactly one of each. */
 function duplicateSelected(): void {
   if (!selection) return;
+  pushUndo();
   if (selection.kind === 'wall') {
     const clone = level.walls[selection.index].map((p) => ({ x: p.x + DUPLICATE_OFFSET, y: p.y + DUPLICATE_OFFSET }));
     level.walls.push(clone);
@@ -162,6 +205,7 @@ function duplicateSelected(): void {
  * aim while keeping its vertical aim the same. */
 function flipSelected(): void {
   if (!selection) return;
+  pushUndo();
   if (selection.kind === 'wall') {
     for (const p of level.walls[selection.index]) p.x = FIELD_W - p.x;
     return;
@@ -178,6 +222,7 @@ function flipSelected(): void {
  * other selection kind since nothing else has a rotatable angle. */
 function rotateSelected(delta: number): void {
   if (!selection || selection.kind !== 'launchPad') return;
+  pushUndo();
   level.launchPads[selection.index].angle += delta;
 }
 
@@ -212,20 +257,29 @@ function dist(a: Vec2, b: Vec2): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-/** Find the closest draggable/deletable point under the cursor, in select mode. */
+/** Find the closest draggable/deletable point under the cursor, in select
+ * mode. Whole walls take priority over their individual vertices - clicking
+ * anywhere on a wall (vertex or line) selects the whole thing first, so a
+ * wall made of many closely-spaced points can still be grabbed and dragged
+ * as a unit. Click again while that same wall is already selected to drill
+ * down and grab one of its vertices for reshaping. */
 function pickAt(p: Vec2): Selection {
+  // Drill-down: a wall is already selected and the click landed on one of
+  // its own vertices - edit that point instead of re-selecting the wall.
+  if (selection && selection.kind === 'wall') {
+    const wall = level.walls[selection.index];
+    let bestPi = -1;
+    let bestPd = GRAB_R;
+    wall.forEach((pt, pi) => {
+      const d = dist(p, pt);
+      if (d < bestPd) { bestPd = d; bestPi = pi; }
+    });
+    if (bestPi >= 0) return { kind: 'wallPoint', wallIndex: selection.index, pointIndex: bestPi };
+  }
+
   let best: Selection = null;
   let bestDist = GRAB_R;
 
-  level.walls.forEach((wall, wi) => {
-    wall.forEach((pt, pi) => {
-      const d = dist(p, pt);
-      if (d < bestDist) {
-        bestDist = d;
-        best = { kind: 'wallPoint', wallIndex: wi, pointIndex: pi };
-      }
-    });
-  });
   level.pegs.forEach((peg, i) => {
     const d = dist(p, peg);
     if (d < bestDist) { bestDist = d; best = { kind: 'peg', index: i }; }
@@ -245,19 +299,21 @@ function pickAt(p: Vec2): Selection {
   if (dist(p, level.boss) < bestDist) { bestDist = dist(p, level.boss); best = { kind: 'boss' }; }
   if (dist(p, level.launch) < bestDist) { bestDist = dist(p, level.launch); best = { kind: 'launch' }; }
 
-  // No vertex was close enough - see if the click landed on a wall's line
-  // itself, so the whole wall can be grabbed and dragged as one piece
-  // (handy right after flipping/duplicating a wall, when you just want to
-  // reposition it rather than reshape it point-by-point).
-  if (!best) {
-    let bestWallDist = WALL_LINE_GRAB_R;
-    level.walls.forEach((wall, wi) => {
-      for (let i = 0; i < wall.length - 1; i++) {
-        const d = distToSegment(p, wall[i], wall[i + 1]);
-        if (d < bestWallDist) { bestWallDist = d; best = { kind: 'wall', index: wi }; }
-      }
+  // Whole-wall hit test: within GRAB_R of any vertex, or within
+  // WALL_LINE_GRAB_R of any segment. Checked after the small fixed-size
+  // elements above (so those stay individually pickable) but takes priority
+  // over ever returning a single wallPoint on a first click.
+  let bestWallDist = Math.max(GRAB_R, WALL_LINE_GRAB_R);
+  level.walls.forEach((wall, wi) => {
+    wall.forEach((pt) => {
+      const d = dist(p, pt);
+      if (d < GRAB_R && d < bestWallDist) { bestWallDist = d; best = { kind: 'wall', index: wi }; }
     });
-  }
+    for (let i = 0; i < wall.length - 1; i++) {
+      const d = distToSegment(p, wall[i], wall[i + 1]);
+      if (d < WALL_LINE_GRAB_R && d < bestWallDist) { bestWallDist = d; best = { kind: 'wall', index: wi }; }
+    }
+  });
 
   return best;
 }
@@ -307,6 +363,9 @@ canvas.addEventListener('pointerdown', (e) => {
     selection = pickAt(p);
     dragging = selection !== null;
     dragAnchor = selection && selection.kind === 'wall' ? p : null;
+    // Snapshot before the drag so pointerup can turn it into a single undo
+    // step (only if the drag actually changed anything).
+    dragStartSnapshot = dragging ? snapshot() : null;
     return;
   }
   if (mode === 'wall') {
@@ -315,37 +374,45 @@ canvas.addEventListener('pointerdown', (e) => {
     return;
   }
   if (mode === 'peg') {
+    pushUndo();
     level.pegs.push({ x: p.x, y: p.y, r: PEG_R });
     return;
   }
   if (mode === 'bumper-paint') {
+    pushUndo();
     level.bumpers.push({ x: p.x, y: p.y, r: BUMPER_R, kind: 'paint' });
     return;
   }
   if (mode === 'bumper-energy') {
+    pushUndo();
     level.bumpers.push({ x: p.x, y: p.y, r: BUMPER_R, kind: 'energy' });
     return;
   }
   if (mode === 'launchpad') {
     // Point the new pad at the boss by default; drag its wall-point-less
     // angle later isn't supported yet, but you can edit the exported JSON.
+    pushUndo();
     const angle = Math.atan2(level.boss.y - p.y, level.boss.x - p.x);
     level.launchPads.push({ x: p.x, y: p.y, angle });
     return;
   }
   if (mode === 'flipper-left') {
+    pushUndo();
     level.flippers[0].pivot = { x: p.x, y: p.y };
     return;
   }
   if (mode === 'flipper-right') {
+    pushUndo();
     level.flippers[1].pivot = { x: p.x, y: p.y };
     return;
   }
   if (mode === 'boss') {
+    pushUndo();
     level.boss.x = p.x; level.boss.y = p.y;
     return;
   }
   if (mode === 'launch') {
+    pushUndo();
     level.launch.x = p.x; level.launch.y = p.y;
     return;
   }
@@ -356,11 +423,35 @@ canvas.addEventListener('pointermove', (e) => {
   moveSelection(toField(e.clientX, e.clientY));
 });
 
-canvas.addEventListener('pointerup', () => { dragging = false; dragAnchor = null; });
-canvas.addEventListener('pointerleave', () => { dragging = false; dragAnchor = null; });
+/** Ends a select-mode drag, folding the whole drag into a single undo step
+ * (rather than one per pointermove tick) - but only if it actually moved
+ * something, so plain clicks-to-select don't clutter the undo history. */
+function finalizeDrag(): void {
+  if (dragging && dragStartSnapshot !== null) {
+    const after = snapshot();
+    if (after !== dragStartSnapshot) {
+      undoStack.push(dragStartSnapshot);
+      if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+      redoStack = [];
+    }
+  }
+  dragging = false;
+  dragAnchor = null;
+  dragStartSnapshot = null;
+}
+
+canvas.addEventListener('pointerup', finalizeDrag);
+canvas.addEventListener('pointerleave', finalizeDrag);
 
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') finishWall();
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && (e.key === 'z' || e.key === 'Z')) {
+    e.preventDefault();
+    if (e.shiftKey) redo(); else undo();
+  } else if (mod && (e.key === 'y' || e.key === 'Y')) {
+    e.preventDefault();
+    redo();
+  } else if (e.key === 'Enter') finishWall();
   else if (e.key === 'Escape') cancelWall();
   else if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
   else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); duplicateSelected(); }
