@@ -26,6 +26,7 @@ type Mode =
 
 type Selection =
   | { kind: 'wallPoint'; wallIndex: number; pointIndex: number }
+  | { kind: 'wall'; index: number }
   | { kind: 'peg'; index: number }
   | { kind: 'bumper'; index: number }
   | { kind: 'launchPad'; index: number }
@@ -37,6 +38,7 @@ type Selection =
 const PEG_R = 9;
 const BUMPER_R = 18;
 const GRAB_R = 12; // click/drag tolerance for picking a point in select mode
+const WALL_LINE_GRAB_R = 8; // click tolerance for grabbing a whole wall by its line, not a vertex
 const GRID_STEP = 20; // px between minor grid lines, in level/playfield space
 const GRID_MAJOR_EVERY = 5; // every Nth line is a brighter major line (100px)
 const DUPLICATE_OFFSET = 20; // px, x/y nudge applied to a duplicated element so it doesn't land exactly on top of the original
@@ -67,6 +69,7 @@ const ctx = canvas.getContext('2d')!;
 let mode: Mode = 'select';
 let selection: Selection = null;
 let dragging = false;
+let dragAnchor: Vec2 | null = null; // last pointer position while dragging a whole wall, for incremental delta
 let wallInProgress: Vec2[] | null = null;
 
 const toolbar = document.getElementById('toolbar')!;
@@ -104,7 +107,9 @@ function cancelWall(): void {
 
 function deleteSelected(): void {
   if (!selection) return;
-  if (selection.kind === 'wallPoint') {
+  if (selection.kind === 'wall') {
+    level.walls.splice(selection.index, 1);
+  } else if (selection.kind === 'wallPoint') {
     const wall = level.walls[selection.wallIndex];
     wall.splice(selection.pointIndex, 1);
     if (wall.length < 2) level.walls.splice(selection.wallIndex, 1);
@@ -125,7 +130,11 @@ function deleteSelected(): void {
  * can't be duplicated - the sim assumes exactly one of each. */
 function duplicateSelected(): void {
   if (!selection) return;
-  if (selection.kind === 'wallPoint') {
+  if (selection.kind === 'wall') {
+    const clone = level.walls[selection.index].map((p) => ({ x: p.x + DUPLICATE_OFFSET, y: p.y + DUPLICATE_OFFSET }));
+    level.walls.push(clone);
+    selection = { kind: 'wall', index: level.walls.length - 1 };
+  } else if (selection.kind === 'wallPoint') {
     const wall = level.walls[selection.wallIndex];
     const clone = wall.map((p) => ({ x: p.x + DUPLICATE_OFFSET, y: p.y + DUPLICATE_OFFSET }));
     level.walls.push(clone);
@@ -153,6 +162,10 @@ function duplicateSelected(): void {
  * aim while keeping its vertical aim the same. */
 function flipSelected(): void {
   if (!selection) return;
+  if (selection.kind === 'wall') {
+    for (const p of level.walls[selection.index]) p.x = FIELD_W - p.x;
+    return;
+  }
   const p = selectionPoint(selection);
   if (!p) return;
   p.x = FIELD_W - p.x;
@@ -232,11 +245,43 @@ function pickAt(p: Vec2): Selection {
   if (dist(p, level.boss) < bestDist) { bestDist = dist(p, level.boss); best = { kind: 'boss' }; }
   if (dist(p, level.launch) < bestDist) { bestDist = dist(p, level.launch); best = { kind: 'launch' }; }
 
+  // No vertex was close enough - see if the click landed on a wall's line
+  // itself, so the whole wall can be grabbed and dragged as one piece
+  // (handy right after flipping/duplicating a wall, when you just want to
+  // reposition it rather than reshape it point-by-point).
+  if (!best) {
+    let bestWallDist = WALL_LINE_GRAB_R;
+    level.walls.forEach((wall, wi) => {
+      for (let i = 0; i < wall.length - 1; i++) {
+        const d = distToSegment(p, wall[i], wall[i + 1]);
+        if (d < bestWallDist) { bestWallDist = d; best = { kind: 'wall', index: wi }; }
+      }
+    });
+  }
+
   return best;
+}
+
+function distToSegment(p: Vec2, a: Vec2, b: Vec2): number {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const lenSq = abx * abx + aby * aby;
+  let t = lenSq > 0 ? ((p.x - a.x) * abx + (p.y - a.y) * aby) / lenSq : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * abx), p.y - (a.y + t * aby));
 }
 
 function moveSelection(p: Vec2): void {
   if (!selection) return;
+  if (selection.kind === 'wall') {
+    if (dragAnchor) {
+      const dx = p.x - dragAnchor.x;
+      const dy = p.y - dragAnchor.y;
+      for (const pt of level.walls[selection.index]) { pt.x += dx; pt.y += dy; }
+    }
+    dragAnchor = p;
+    return;
+  }
   if (selection.kind === 'wallPoint') {
     const pt = level.walls[selection.wallIndex][selection.pointIndex];
     pt.x = p.x; pt.y = p.y;
@@ -261,6 +306,7 @@ canvas.addEventListener('pointerdown', (e) => {
   if (mode === 'select') {
     selection = pickAt(p);
     dragging = selection !== null;
+    dragAnchor = selection && selection.kind === 'wall' ? p : null;
     return;
   }
   if (mode === 'wall') {
@@ -310,8 +356,8 @@ canvas.addEventListener('pointermove', (e) => {
   moveSelection(toField(e.clientX, e.clientY));
 });
 
-canvas.addEventListener('pointerup', () => { dragging = false; });
-canvas.addEventListener('pointerleave', () => { dragging = false; });
+canvas.addEventListener('pointerup', () => { dragging = false; dragAnchor = null; });
+canvas.addEventListener('pointerleave', () => { dragging = false; dragAnchor = null; });
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') finishWall();
@@ -382,7 +428,16 @@ function drawOverlay(): void {
     }
   }
 
-  if (selection) {
+  if (selection && selection.kind === 'wall') {
+    const wall = level.walls[selection.index];
+    if (wall) {
+      ctx.strokeStyle = '#ffe93b';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      wall.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+      ctx.stroke();
+    }
+  } else if (selection) {
     const p = selectionPoint(selection);
     if (p) {
       ctx.strokeStyle = '#ffe93b';

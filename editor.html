@@ -58,11 +58,13 @@ canvas{background:#050208;touch-action:none}
     <div id="hint">
       Click to place/add points. In Wall mode, click adds polyline points -
       press Enter or the Finish button to commit the wall (a gap between two
-      walls is a drain). In Select mode, drag existing points to move them,
-      Delete removes the selected point/element, Duplicate clones it with a
-      small offset, Flip mirrors its x position across the field's center
-      (and its aim angle, for launch pads), Rotate turns a selected launch
-      pad's aim by 15&deg;. "Save to Browser" stores your draft in
+      walls is a drain). In Select mode, drag existing points to move them;
+      click on a wall's line itself (not a vertex) to grab and drag the
+      whole wall as one piece instead of reshaping it. Delete removes the
+      selected point/element/wall, Duplicate clones it with a small offset,
+      Flip mirrors its x position across the field's center (and its aim
+      angle, for launch pads), Rotate turns a selected launch pad's aim by
+      15&deg;. "Save to Browser" stores your draft in
       localStorage (persists across reloads of this page). "Play This
       Level" saves then opens the real game with this draft loaded in place
       of the built-in level. This tool is dev-only: run it via the Vite dev
