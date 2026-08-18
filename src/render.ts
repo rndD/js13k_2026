@@ -6,11 +6,11 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { BALL_RADIUS, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
+import { AIM_CONE, AIM_TIMEOUT, BALL_RADIUS, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
 import { LEVEL } from './level';
 import type { Ball, World } from './types';
 
-const COLOR_HEX: Record<Ball['color'], string> = {
+export const COLOR_HEX: Record<Ball['color'], string> = {
   white: '#e8e8f0',
   red: '#ff3b6b',
   blue: '#38d6ff',
@@ -38,6 +38,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
   drawFlippers(ctx, world);
   drawProjectiles(ctx, world);
   drawBalls(ctx, world);
+  drawAimIndicator(ctx, world);
   drawFieldOverlay(ctx, world);
   ctx.restore();
 }
@@ -281,6 +282,56 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+/**
+ * The frozen-time aim window: dims everything else so the sweeping vector
+ * reads clearly, draws the full sweep cone as a dim guide plus the current
+ * angle as a bright arrow, and a shrinking ring around the ball for the
+ * auto-fire timeout so the player can feel the window closing.
+ */
+function drawAimIndicator(ctx: CanvasRenderingContext2D, world: World): void {
+  const aim = world.aim;
+  if (world.phase !== 'aim' || !aim) return;
+  const ball = world.balls.find((b) => b.id === aim.ballId);
+  if (!ball) return;
+
+  ctx.fillStyle = 'rgba(5,2,8,0.55)';
+  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+
+  const len = 60;
+  const drawRay = (angle: number, color: string, width: number): void => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(ball.x, ball.y);
+    ctx.lineTo(ball.x + Math.cos(angle) * len, ball.y + Math.sin(angle) * len);
+    ctx.stroke();
+  };
+
+  // dim guides showing the full reachable cone
+  drawRay(aim.centerAngle - AIM_CONE, 'rgba(232,232,240,0.35)', 2);
+  drawRay(aim.centerAngle + AIM_CONE, 'rgba(232,232,240,0.35)', 2);
+
+  // bright current aim vector
+  const angle = aim.centerAngle + (aim.sweepT * 2 - 1) * AIM_CONE;
+  drawRay(angle, '#ffe93b', 4);
+  ctx.fillStyle = '#ffe93b';
+  ctx.beginPath();
+  ctx.arc(ball.x + Math.cos(angle) * len, ball.y + Math.sin(angle) * len, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // shrinking timeout ring around the ball
+  ctx.strokeStyle = 'rgba(255,233,59,0.8)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r + 6, -Math.PI / 2, -Math.PI / 2 + (aim.timer / AIM_TIMEOUT) * Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = '#e8e8f0';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('release to fire', ball.x, ball.y - 20);
 }
 
 function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {

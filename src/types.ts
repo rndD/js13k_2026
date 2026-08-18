@@ -115,13 +115,33 @@ export interface LaunchPad {
   cooldown: number;
 }
 
-export type Phase = 'launch' | 'battle' | 'win' | 'lose';
+export type Phase = 'launch' | 'battle' | 'aim' | 'win' | 'lose';
 
 export interface LaunchState {
   x: number;
   y: number;
   charging: boolean;
   power: number; // 0..1
+}
+
+/**
+ * Active while `phase === 'aim'`: the whole simulation is frozen (boss,
+ * projectiles, other balls) except this sweeping aim indicator, so the
+ * player gets a fully readable window to pick a launch vector for the ball
+ * that just touched an active flipper. See sim.ts's updateAim/fireAimedBall.
+ */
+export interface AimState {
+  /** which ball is frozen and waiting to be relaunched */
+  ballId: number;
+  /** which flipper button re-fires the ball (release-to-fire) */
+  side: FlipperSide;
+  /** outward direction (radians) the sweep is centered on, fixed at contact time */
+  centerAngle: number;
+  /** ping-pong progress 0..1 across the sweep cone */
+  sweepT: number;
+  dir: 1 | -1;
+  /** seconds left before auto-firing at the current sweep angle */
+  timer: number;
 }
 
 export interface World {
@@ -139,6 +159,7 @@ export interface World {
   launchPads: LaunchPad[];
   projectiles: Projectile[];
   launch: LaunchState;
+  aim: AimState | null;
 }
 
 export interface ControlsState {

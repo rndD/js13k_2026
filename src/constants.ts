@@ -45,6 +45,15 @@ export const DIRECT_DAMAGE_BASE = 10;
 export const ENERGY_TARGET_GAIN = 18; // shield energy restored per hit
 export const ENERGY_TARGET_MULT_BONUS = 0.2;
 
+// Contact aim: when an ACTIVE flipper hits a ball, the whole sim freezes and
+// a sweeping aim indicator appears; releasing that same flipper button (or
+// the timeout) fires the ball along the sweep's current angle.
+export const AIM_CONE = 0.85; // radians, +/- half-angle around the contact's outward direction
+export const AIM_SWEEP_PERIOD = 1; // s, time for one half-sweep (full cycle = 2x this)
+export const AIM_TIMEOUT = 2.5; // s, auto-fires at the current sweep angle if never released
+export const AIM_BASE_SPEED = 520; // px/s at multiplier 1
+export const AIM_SPEED_PER_MULT = 45; // extra px/s per point of ball.multiplier - a "cooler" ball aims further/faster
+
 // Boss
 export const BOSS_RADIUS = 30;
 export const BOSS_MAX_HP = 1000;

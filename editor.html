@@ -64,8 +64,11 @@ canvas{background:#050208;touch-action:none}
       press Enter or the Finish button to commit the wall (a gap between two
       walls is a drain). In Select mode, clicking a wall (a vertex or its
       line) selects the whole wall first, so a wall made of many points can
-      be dragged as one piece; click again on one of that wall's own
-      vertices to drill in and reshape just that point. Delete removes the
+      be dragged as one piece; once it's selected, clicking (or click-
+      dragging) any of its vertices jumps straight to editing that single
+      point, and stays in that point-editing mode for its other vertices too
+      - click the wall's line again (not a vertex) to go back to moving the
+      whole wall. Delete removes the
       selected point/element/wall, Duplicate clones it with a small offset,
       Flip mirrors its x position across the field's center (and its aim
       angle, for launch pads), Rotate turns a selected launch pad's aim by

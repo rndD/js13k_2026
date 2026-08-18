@@ -258,23 +258,34 @@ function dist(a: Vec2, b: Vec2): number {
 }
 
 /** Find the closest draggable/deletable point under the cursor, in select
- * mode. Whole walls take priority over their individual vertices - clicking
- * anywhere on a wall (vertex or line) selects the whole thing first, so a
- * wall made of many closely-spaced points can still be grabbed and dragged
- * as a unit. Click again while that same wall is already selected to drill
- * down and grab one of its vertices for reshaping. */
+ * mode. Whole walls take priority over their individual vertices on a fresh
+ * click, so a wall made of many closely-spaced points can still be grabbed
+ * and dragged as a unit. Once a wall is selected (whole, or already drilled
+ * into one of its points), clicking any of its OTHER vertices drills/jumps
+ * straight to that point too - it stays "sticky" in point-editing mode so
+ * you can move several points of the same wall one after another without
+ * re-selecting the wall each time. Click the wall's line (not a vertex) to
+ * go back to whole-wall selection, or click empty space/another element to
+ * leave it entirely. */
 function pickAt(p: Vec2): Selection {
-  // Drill-down: a wall is already selected and the click landed on one of
-  // its own vertices - edit that point instead of re-selecting the wall.
-  if (selection && selection.kind === 'wall') {
-    const wall = level.walls[selection.index];
-    let bestPi = -1;
-    let bestPd = GRAB_R;
-    wall.forEach((pt, pi) => {
-      const d = dist(p, pt);
-      if (d < bestPd) { bestPd = d; bestPi = pi; }
-    });
-    if (bestPi >= 0) return { kind: 'wallPoint', wallIndex: selection.index, pointIndex: bestPi };
+  // Sticky drill-down: a wall is already the active selection (whole or one
+  // of its points) and the click landed on one of that same wall's
+  // vertices - edit that point instead of (re)selecting the whole wall.
+  const activeWallIndex =
+    selection?.kind === 'wall' ? selection.index :
+    selection?.kind === 'wallPoint' ? selection.wallIndex :
+    -1;
+  if (activeWallIndex >= 0) {
+    const wall = level.walls[activeWallIndex];
+    if (wall) {
+      let bestPi = -1;
+      let bestPd = GRAB_R;
+      wall.forEach((pt, pi) => {
+        const d = dist(p, pt);
+        if (d < bestPd) { bestPd = d; bestPi = pi; }
+      });
+      if (bestPi >= 0) return { kind: 'wallPoint', wallIndex: activeWallIndex, pointIndex: bestPi };
+    }
   }
 
   let best: Selection = null;

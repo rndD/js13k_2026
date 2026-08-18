@@ -57,7 +57,16 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
   canvas.addEventListener('pointerdown', (e) => {
     const { x, y } = toLogical(e.clientX, e.clientY);
     pointerZones.set(e.pointerId, zoneAt(x, y));
-    canvas.setPointerCapture(e.pointerId);
+    // Capture is just so a finger/mouse dragging off-canvas still delivers
+    // pointerup here instead of getting silently lost - it's not essential
+    // to the zone tracking itself, so a failure here (e.g. no genuine active
+    // pointer, as with some synthetic/test-dispatched events) must never
+    // skip recompute() below, or controls would silently stop updating.
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore - see comment above */
+    }
     recompute();
   });
   canvas.addEventListener('pointerup', (e) => {

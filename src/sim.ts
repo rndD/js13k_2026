@@ -3,6 +3,11 @@
 // system) drive the game headlessly by feeding scripted ControlsState
 // sequences and inspecting the resulting World.
 import {
+  AIM_BASE_SPEED,
+  AIM_CONE,
+  AIM_SPEED_PER_MULT,
+  AIM_SWEEP_PERIOD,
+  AIM_TIMEOUT,
   BOSS_HIT_COOLDOWN,
   BOSS_PROJECTILE_DAMAGE,
   BOSS_PROJECTILE_RADIUS,
@@ -24,6 +29,7 @@ import {
   LAUNCH_PAD_BOOST,
   LAUNCH_PAD_COOLDOWN,
   LAUNCH_PAD_TRIGGER_R,
+  MAX_SPEED,
   OVERLOAD_CHARGE_TIME,
   OVERLOAD_DAMAGE,
   OVERLOAD_INTERVAL,
@@ -46,7 +52,7 @@ import {
   resolveWall,
   resolveWalls,
 } from './physics';
-import type { Ball, ControlsState, World } from './types';
+import type { AimState, Ball, ControlsState, World } from './types';
 
 /** Advance the world by one fixed timestep. Mutates and returns `world`. */
 export function step(world: World, controls: ControlsState, dt: number): World {
@@ -58,6 +64,16 @@ export function step(world: World, controls: ControlsState, dt: number): World {
 
   updateFlippers(world, controls, dt);
   updateLaunch(world, controls, dt);
+
+  if (world.phase === 'aim') {
+    // Everything else (boss, projectiles, other balls, shield) is fully
+    // frozen while aiming - only the sweep indicator itself advances, on
+    // real time, so the player gets an unhurried, fully readable window to
+    // pick a launch vector instead of reacting on reflex.
+    updateAim(world, controls, dt);
+    return world;
+  }
+
   // Shield state must be resolved before projectiles are checked against it,
   // otherwise a projectile arriving this tick would see last tick's state.
   updateShield(world, controls, dt);
@@ -117,8 +133,9 @@ function updateBalls(world: World, dt: number): void {
 
   for (const ball of world.balls) {
     let drained = false;
+    let aiming = false;
 
-    for (let i = 0; i < BALL_SUBSTEPS && !drained; i++) {
+    for (let i = 0; i < BALL_SUBSTEPS && !drained && !aiming; i++) {
       integrate(ball, subDt);
 
       const wallResult = resolveWalls(ball, FIELD_W, FIELD_H);
@@ -132,8 +149,29 @@ function updateBalls(world: World, dt: number): void {
       }
 
       for (const f of world.flippers) {
-        resolveFlipper(ball, f, FLIPPER_BOOST_SPEED, FLIPPER_THICKNESS);
+        const hit = resolveFlipper(ball, f, FLIPPER_BOOST_SPEED, FLIPPER_THICKNESS);
+        // An ACTIVE flipper swing catching the ball opens the contact-aim
+        // window instead of applying its usual instant boost: freeze the
+        // ball right where it landed and let the player pick the exact
+        // launch vector (see updateAim/fireAimedBall) rather than reacting
+        // on reflex to an unpredictable bounce.
+        if (hit && f.active && !world.aim) {
+          ball.vx = 0;
+          ball.vy = 0;
+          world.aim = {
+            ballId: ball.id,
+            side: f.side,
+            centerAngle: Math.atan2(ball.y - f.pivot.y, ball.x - f.pivot.x),
+            sweepT: 0,
+            dir: 1,
+            timer: AIM_TIMEOUT,
+          };
+          world.phase = 'aim';
+          aiming = true;
+          break;
+        }
       }
+      if (aiming) break;
 
       for (const peg of world.pegs) {
         resolveBumper(ball, peg, PEG_IMPULSE); // plain physical bounce, no scoring effect
@@ -180,6 +218,45 @@ function deriveColor(hasPaint: boolean, hasAccent: boolean): Ball['color'] {
   if (hasPaint) return 'red';
   if (hasAccent) return 'blue';
   return 'white';
+}
+
+/**
+ * Drives the frozen-time aim window opened when an active flipper catches a
+ * ball (see updateBalls). The indicator ping-pongs across a fixed cone
+ * around the contact's outward direction; releasing the same flipper button
+ * that's held (or the timeout, if the player never lets go) fires the ball
+ * along whatever angle the sweep is at that instant.
+ */
+function updateAim(world: World, controls: ControlsState, dt: number): void {
+  const aim = world.aim;
+  if (!aim) return;
+
+  aim.timer -= dt;
+  aim.sweepT += (dt / AIM_SWEEP_PERIOD) * aim.dir;
+  if (aim.sweepT >= 1) {
+    aim.sweepT = 1;
+    aim.dir = -1;
+  } else if (aim.sweepT <= 0) {
+    aim.sweepT = 0;
+    aim.dir = 1;
+  }
+
+  const held = aim.side === 'left' ? controls.left : controls.right;
+  if (!held || aim.timer <= 0) {
+    fireAimedBall(world, aim);
+  }
+}
+
+function fireAimedBall(world: World, aim: AimState): void {
+  const ball = world.balls.find((b) => b.id === aim.ballId);
+  if (ball) {
+    const angle = aim.centerAngle + (aim.sweepT * 2 - 1) * AIM_CONE;
+    const speed = Math.min(MAX_SPEED, AIM_BASE_SPEED + ball.multiplier * AIM_SPEED_PER_MULT);
+    ball.vx = Math.cos(angle) * speed;
+    ball.vy = Math.sin(angle) * speed;
+  }
+  world.aim = null;
+  world.phase = 'battle';
 }
 
 function applyPaintHit(world: World, ball: Ball): void {

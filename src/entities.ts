@@ -87,5 +87,6 @@ export function createWorld(level: LevelData = LEVEL): World {
     launchPads: level.launchPads.map((p) => ({ ...p, cooldown: 0 })),
     projectiles: [],
     launch: { x: level.launch.x, y: level.launch.y, charging: false, power: 0 },
+    aim: null,
   };
 }

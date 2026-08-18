@@ -2,10 +2,10 @@
 // drives sim.step(). This is the only file that touches requestAnimationFrame
 // / the DOM canvas — everything else (sim.ts, physics.ts) is headless and
 // unit-testable on its own.
-import { CANVAS_H, FIELD_W, FIXED_DT } from './constants';
+import { BALL_RADIUS, CANVAS_H, FIELD_W, FIXED_DT, HUD_HEIGHT } from './constants';
 import { createWorld } from './entities';
 import { bindInput } from './input';
-import { render } from './render';
+import { COLOR_HEX, render } from './render';
 import { step } from './sim';
 import type { LevelData } from './level';
 
@@ -36,6 +36,42 @@ function loadLevelOverride(): LevelData | undefined {
 
 const world = createWorld(loadLevelOverride());
 
+// Short neon afterimage per ball (dis_doc.md's trail/juice suggestion),
+// tracked by ball id so a ball's own trail cleanly disappears once it drains
+// instead of leaving orphaned points. Kept here (not in World/sim.ts) since
+// it's pure render state, not simulation state - World must stay a plain,
+// serializable snapshot for tests.
+const TRAIL_LEN = 6;
+interface TrailPoint { x: number; y: number; color: string }
+const trails = new Map<number, TrailPoint[]>();
+
+function updateTrails(): void {
+  const liveIds = new Set(world.balls.map((b) => b.id));
+  for (const id of trails.keys()) if (!liveIds.has(id)) trails.delete(id);
+  for (const ball of world.balls) {
+    let pts = trails.get(ball.id);
+    if (!pts) { pts = []; trails.set(ball.id, pts); }
+    pts.push({ x: ball.x, y: ball.y, color: COLOR_HEX[ball.color] });
+    if (pts.length > TRAIL_LEN) pts.shift();
+  }
+}
+
+function drawTrails(): void {
+  ctx.save();
+  ctx.translate(0, HUD_HEIGHT);
+  for (const pts of trails.values()) {
+    pts.forEach((p, i) => {
+      ctx.globalAlpha = ((i + 1) / pts.length) * 0.5;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, BALL_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 let acc = 0;
 let last = performance.now();
 
@@ -47,12 +83,16 @@ function frame(now: number): void {
     step(world, controls, FIXED_DT);
     acc -= FIXED_DT;
   }
+  updateTrails();
 
-  // Darken instead of clear so balls/projectiles leave a short neon trail
-  // (afterimage effect from dis_doc.md), without a second FX canvas. The HUD
-  // bar redraws itself opaquely every frame, so this doesn't smear it.
-  ctx.fillStyle = 'rgba(5,2,8,0.35)';
+  // Full opaque reset every frame - no leftover "dirt" from previous frames
+  // - then an explicit, deliberately-faded trail drawn underneath the crisp
+  // current frame, instead of relying on an imperfect translucent overlay
+  // that technically never fully clears (it only asymptotically approaches
+  // the background color).
+  ctx.fillStyle = '#050208';
   ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
+  drawTrails();
   render(ctx, world);
 
   requestAnimationFrame(frame);
