@@ -57,8 +57,9 @@ export const ENERGY_TARGET_MULT_BONUS = 0.2;
 // paint multiplier: a fresh white ball gets a narrow, reliable "aimed at the
 // boss" cone (few boring wasted sideways/straight-up throws), while a
 // charged-up ball earns a much wider cone for trick shots at side bumpers.
-export const AIM_CONE_MIN = 0.12; // radians, +/- half-angle at multiplier 1
-export const AIM_CONE_MAX = 1.0; // radians, +/- half-angle at PAINT_MULTIPLIER_MAX
+export const AIM_CONE_MIN = 0.138; // radians, +/- half-angle at multiplier 1 (0.12 base, widened 15%)
+export const AIM_CONE_MAX = 1.15; // radians, +/- half-angle at PAINT_MULTIPLIER_MAX (1.0 base, widened 15%)
+export const AIM_SAFE_CLEARANCE = 6; // px, extra gap kept above the flipper's swept arc while the ball is frozen for aiming
 export const AIM_LOFT_BIAS = 0.35; // 0..1, how far to blend the boss-aim angle toward straight-up
 export const AIM_SWEEP_PERIOD = 1; // s, time for one half-sweep (full cycle = 2x this)
 export const AIM_TIMEOUT = 2.5; // s, auto-fires at the current sweep angle if never released

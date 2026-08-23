@@ -7,6 +7,7 @@ import {
   AIM_CONE_MAX,
   AIM_CONE_MIN,
   AIM_LOFT_BIAS,
+  AIM_SAFE_CLEARANCE,
   AIM_SPEED_PER_MULT,
   AIM_SWEEP_PERIOD,
   AIM_TIMEOUT,
@@ -54,7 +55,7 @@ import {
   resolveWall,
   resolveWalls,
 } from './physics';
-import type { AimState, Ball, ControlsState, World } from './types';
+import type { AimState, Ball, ControlsState, Flipper, World } from './types';
 
 /** Advance the world by one fixed timestep. Mutates and returns `world`. */
 export function step(world: World, controls: ControlsState, dt: number): World {
@@ -160,6 +161,13 @@ function updateBalls(world: World, dt: number): void {
         if (hit && f.active && !world.aim) {
           ball.vx = 0;
           ball.vy = 0;
+          // Lift the ball clear of the flipper's entire swept arc (not just
+          // its current angle) so that when the button is released and the
+          // flipper retracts toward rest, it can't sweep back up through the
+          // ball while it's launching - the ball was getting re-swatted or
+          // blocked mid-flight otherwise.
+          const topY = flipperSweptTopY(f) - ball.r - FLIPPER_THICKNESS - AIM_SAFE_CLEARANCE;
+          if (ball.y > topY) ball.y = topY;
           world.aim = {
             ballId: ball.id,
             side: f.side,
@@ -221,6 +229,17 @@ function deriveColor(hasPaint: boolean, hasAccent: boolean): Ball['color'] {
   if (hasPaint) return 'red';
   if (hasAccent) return 'blue';
   return 'white';
+}
+
+/**
+ * Highest point (smallest y) the flipper segment can reach anywhere between
+ * its rest and active angles - used to park the aiming ball safely above the
+ * whole arc rather than just clear of its current angle.
+ */
+function flipperSweptTopY(f: Flipper): number {
+  const restTipY = f.pivot.y + Math.sin(f.restAngle) * f.length;
+  const activeTipY = f.pivot.y + Math.sin(f.activeAngle) * f.length;
+  return Math.min(f.pivot.y, restTipY, activeTipY);
 }
 
 /**
