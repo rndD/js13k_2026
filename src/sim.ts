@@ -4,7 +4,9 @@
 // sequences and inspecting the resulting World.
 import {
   AIM_BASE_SPEED,
-  AIM_CONE,
+  AIM_CONE_MAX,
+  AIM_CONE_MIN,
+  AIM_LOFT_BIAS,
   AIM_SPEED_PER_MULT,
   AIM_SWEEP_PERIOD,
   AIM_TIMEOUT,
@@ -161,7 +163,8 @@ function updateBalls(world: World, dt: number): void {
           world.aim = {
             ballId: ball.id,
             side: f.side,
-            centerAngle: Math.atan2(ball.y - f.pivot.y, ball.x - f.pivot.x),
+            centerAngle: aimCenterAngle(ball.x, ball.y, world.boss.x, world.boss.y),
+            cone: aimConeForMultiplier(ball.multiplier),
             sweepT: 0,
             dir: 1,
             timer: AIM_TIMEOUT,
@@ -221,6 +224,31 @@ function deriveColor(hasPaint: boolean, hasAccent: boolean): Ball['color'] {
 }
 
 /**
+ * The aim sweep is centered on the boss (not the raw flipper-contact angle,
+ * which varied wildly with exactly where/when the ball touched the swinging
+ * flipper and was the main source of "why did that go sideways?" confusion),
+ * then blended partway toward straight-up. That blend is a cheap stand-in
+ * for full projectile-motion targeting: it roughly compensates for gravity
+ * pulling the shot down over its flight without needing to solve for launch
+ * angle analytically - good enough for a readable, aimable shot.
+ */
+function aimCenterAngle(ballX: number, ballY: number, targetX: number, targetY: number): number {
+  const toTarget = Math.atan2(targetY - ballY, targetX - ballX);
+  const straightUp = -Math.PI / 2;
+  return toTarget + (straightUp - toTarget) * AIM_LOFT_BIAS;
+}
+
+/**
+ * A fresh white ball gets a narrow, reliable "aimed at the boss" cone (few
+ * wasted sideways/straight-up throws); a charged-up ball earns a much wider
+ * cone so a built-up shot can go trick-shot for bumpers off to the side.
+ */
+function aimConeForMultiplier(multiplier: number): number {
+  const t = Math.min(1, Math.max(0, (multiplier - 1) / (PAINT_MULTIPLIER_MAX - 1)));
+  return AIM_CONE_MIN + (AIM_CONE_MAX - AIM_CONE_MIN) * t;
+}
+
+/**
  * Drives the frozen-time aim window opened when an active flipper catches a
  * ball (see updateBalls). The indicator ping-pongs across a fixed cone
  * around the contact's outward direction; releasing the same flipper button
@@ -250,7 +278,7 @@ function updateAim(world: World, controls: ControlsState, dt: number): void {
 function fireAimedBall(world: World, aim: AimState): void {
   const ball = world.balls.find((b) => b.id === aim.ballId);
   if (ball) {
-    const angle = aim.centerAngle + (aim.sweepT * 2 - 1) * AIM_CONE;
+    const angle = aim.centerAngle + (aim.sweepT * 2 - 1) * aim.cone;
     const speed = Math.min(MAX_SPEED, AIM_BASE_SPEED + ball.multiplier * AIM_SPEED_PER_MULT);
     ball.vx = Math.cos(angle) * speed;
     ball.vy = Math.sin(angle) * speed;

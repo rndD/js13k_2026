@@ -135,8 +135,12 @@ export interface AimState {
   ballId: number;
   /** which flipper button re-fires the ball (release-to-fire) */
   side: FlipperSide;
-  /** outward direction (radians) the sweep is centered on, fixed at contact time */
+  /** direction (radians) the sweep is centered on - toward the boss, biased
+   * partway toward straight-up; fixed for the duration of this aim window */
   centerAngle: number;
+  /** +/- half-angle of the sweep around centerAngle, fixed at contact time
+   * (scales with the ball's multiplier - see AIM_CONE_MIN/MAX) */
+  cone: number;
   /** ping-pong progress 0..1 across the sweep cone */
   sweepT: number;
   dir: 1 | -1;

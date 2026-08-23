@@ -48,11 +48,22 @@ export const ENERGY_TARGET_MULT_BONUS = 0.2;
 // Contact aim: when an ACTIVE flipper hits a ball, the whole sim freezes and
 // a sweeping aim indicator appears; releasing that same flipper button (or
 // the timeout) fires the ball along the sweep's current angle.
-export const AIM_CONE = 0.85; // radians, +/- half-angle around the contact's outward direction
+//
+// The cone is centered on the boss (not the raw flipper-contact normal, which
+// felt random/unpredictable - see dis_doc.md's core complaint about
+// unpredictability), biased partway toward straight-up to roughly compensate
+// for gravity pulling the shot down during flight, without needing full
+// projectile-motion math. The cone's HALF-ANGLE also scales with the ball's
+// paint multiplier: a fresh white ball gets a narrow, reliable "aimed at the
+// boss" cone (few boring wasted sideways/straight-up throws), while a
+// charged-up ball earns a much wider cone for trick shots at side bumpers.
+export const AIM_CONE_MIN = 0.12; // radians, +/- half-angle at multiplier 1
+export const AIM_CONE_MAX = 1.0; // radians, +/- half-angle at PAINT_MULTIPLIER_MAX
+export const AIM_LOFT_BIAS = 0.35; // 0..1, how far to blend the boss-aim angle toward straight-up
 export const AIM_SWEEP_PERIOD = 1; // s, time for one half-sweep (full cycle = 2x this)
 export const AIM_TIMEOUT = 2.5; // s, auto-fires at the current sweep angle if never released
-export const AIM_BASE_SPEED = 520; // px/s at multiplier 1
-export const AIM_SPEED_PER_MULT = 45; // extra px/s per point of ball.multiplier - a "cooler" ball aims further/faster
+export const AIM_BASE_SPEED = 660; // px/s at multiplier 1 - tuned so a center-aimed shot clears the boss's height
+export const AIM_SPEED_PER_MULT = 35; // extra px/s per point of ball.multiplier - a "cooler" ball aims further/faster
 
 // Boss
 export const BOSS_RADIUS = 30;

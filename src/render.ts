@@ -6,7 +6,7 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { AIM_CONE, AIM_TIMEOUT, BALL_RADIUS, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
+import { AIM_TIMEOUT, BALL_RADIUS, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
 import { LEVEL } from './level';
 import type { Ball, World } from './types';
 
@@ -310,11 +310,11 @@ function drawAimIndicator(ctx: CanvasRenderingContext2D, world: World): void {
   };
 
   // dim guides showing the full reachable cone
-  drawRay(aim.centerAngle - AIM_CONE, 'rgba(232,232,240,0.35)', 2);
-  drawRay(aim.centerAngle + AIM_CONE, 'rgba(232,232,240,0.35)', 2);
+  drawRay(aim.centerAngle - aim.cone, 'rgba(232,232,240,0.35)', 2);
+  drawRay(aim.centerAngle + aim.cone, 'rgba(232,232,240,0.35)', 2);
 
   // bright current aim vector
-  const angle = aim.centerAngle + (aim.sweepT * 2 - 1) * AIM_CONE;
+  const angle = aim.centerAngle + (aim.sweepT * 2 - 1) * aim.cone;
   drawRay(angle, '#ffe93b', 4);
   ctx.fillStyle = '#ffe93b';
   ctx.beginPath();
