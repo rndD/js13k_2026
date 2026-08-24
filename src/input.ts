@@ -7,6 +7,7 @@
 // sim.ts only ever sees the plain ControlsState shape, which is what makes
 // it possible to drive the simulation from scripted tests instead.
 import { CANVAS_H, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
+import { unlockAudio } from './sound';
 import type { ControlsState } from './types';
 
 type Zone = 'left' | 'right' | 'shield' | 'launch' | null;
@@ -55,6 +56,7 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
   }
 
   canvas.addEventListener('pointerdown', (e) => {
+    unlockAudio(); // first real user gesture - browsers require this before any Web Audio playback
     const { x, y } = toLogical(e.clientX, e.clientY);
     pointerZones.set(e.pointerId, zoneAt(x, y));
     // Capture is just so a finger/mouse dragging off-canvas still delivers
@@ -79,6 +81,7 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
   });
 
   window.addEventListener('keydown', (e) => {
+    unlockAudio(); // harmless no-op once already resumed, see pointerdown above
     if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = true;
     else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = true;
     else if (e.key === ' ') keys.shield = true;
