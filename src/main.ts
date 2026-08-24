@@ -9,7 +9,6 @@ import { COLOR_HEX, render } from './render';
 import { step } from './sim';
 import { playSfx } from './sound';
 import type { LevelData } from './level';
-import type { FlipperSide, Phase, World } from './types';
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 canvas.width = FIELD_W;
@@ -77,68 +76,18 @@ function drawTrails(): void {
 let acc = 0;
 let last = performance.now();
 
-// sim.ts is deliberately headless/pure and emits no discrete events, so
-// sound triggers are detected here by diffing a small snapshot of World
-// against the previous tick - same pattern as the trail system above.
-interface SfxSnapshot {
-  phase: Phase;
-  bossHp: number;
-  shieldHp: number;
-  baseHp: number;
-  shieldEnergy: number;
-  flipperActive: Map<FlipperSide, boolean>;
-  ballCharge: Map<number, number>;
-  ballIds: Set<number>;
-}
-
-function snapshotForSfx(w: World): SfxSnapshot {
-  return {
-    phase: w.phase,
-    bossHp: w.boss.hp,
-    shieldHp: w.shield.hp,
-    baseHp: w.base.hp,
-    shieldEnergy: w.shield.energy,
-    flipperActive: new Map(w.flippers.map((f) => [f.side, f.active])),
-    ballCharge: new Map(w.balls.map((b) => [b.id, b.charge])),
-    ballIds: new Set(w.balls.map((b) => b.id)),
-  };
-}
-
-function checkSfxEvents(prev: SfxSnapshot, w: World): void {
-  for (const f of w.flippers) {
-    if (f.active && !prev.flipperActive.get(f.side)) playSfx('flipperClick');
-  }
-
-  let chargedUp = false;
-  for (const b of w.balls) {
-    if (b.charge > (prev.ballCharge.get(b.id) ?? 0)) chargedUp = true;
-  }
-  if (w.boss.hp < prev.bossHp) playSfx(chargedUp ? 'paintHit' : 'bossHitThud');
-
-  if (w.shield.energy > prev.shieldEnergy) playSfx('energyChime');
-  if (w.shield.hp < prev.shieldHp) playSfx('shieldBlock');
-  if (w.base.hp < prev.baseHp) playSfx('baseHit');
-
-  if (prev.phase !== 'win' && prev.phase !== 'lose') {
-    if (w.phase === 'win') playSfx('win');
-    else if (w.phase === 'lose') playSfx('lose');
-    else if ((prev.phase === 'launch' || prev.phase === 'aim') && w.phase === 'battle') playSfx('launchWhoosh');
-    else if (w.phase === 'battle') {
-      for (const id of prev.ballIds) if (!w.ballIds.has(id)) { playSfx('ballDrain'); break; }
-    }
-  }
-}
-
-let sfxPrev = snapshotForSfx(world);
-
 function frame(now: number): void {
   acc += Math.min(0.25, (now - last) / 1000); // clamp to avoid spiral of death on tab switch
   last = now;
 
   while (acc >= FIXED_DT) {
     step(world, controls, FIXED_DT);
-    checkSfxEvents(sfxPrev, world);
-    sfxPrev = snapshotForSfx(world);
+    // sim.ts pushes sound-event tags onto world.sfx at the exact point each
+    // event actually happens (see types.ts's SfxEvent) instead of us trying
+    // to infer them by diffing stats before/after - diffing missed events
+    // with no lasting stat change (e.g. an energy bumper hit while the
+    // shield is already fully charged).
+    for (const name of world.sfx) playSfx(name);
     acc -= FIXED_DT;
   }
   updateTrails();

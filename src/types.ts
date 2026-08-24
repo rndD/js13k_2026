@@ -124,6 +124,30 @@ export interface LaunchPad {
 
 export type Phase = 'launch' | 'battle' | 'aim' | 'win' | 'lose';
 
+/**
+ * Discrete sound-trigger tags. sim.ts stays headless (no Audio/DOM calls of
+ * its own) but pushes these plain string tags onto World.sfx at the exact
+ * point-of-cause (a bumper actually being hit, a wall actually being
+ * bounced off, etc) - main.ts drains/clears the array once per step() and
+ * maps each tag to a playSfx() call. This is deliberately NOT diffed from
+ * before/after stat snapshots: some hits (e.g. an energy bumper hit while
+ * shield.energy is already maxed) cause no lasting stat change at all, so
+ * diffing silently misses them - pushing at the source can't miss anything.
+ */
+export type SfxEvent =
+  | 'flipperClick'
+  | 'paintHit'
+  | 'energyChime'
+  | 'bossHitThud'
+  | 'shieldBlock'
+  | 'baseHit'
+  | 'ballDrain'
+  | 'launchWhoosh'
+  | 'padBoost'
+  | 'wallTick'
+  | 'win'
+  | 'lose';
+
 export interface LaunchState {
   x: number;
   y: number;
@@ -171,6 +195,8 @@ export interface World {
   projectiles: Projectile[];
   launch: LaunchState;
   aim: AimState | null;
+  /** transient per-step sound-event queue, see SfxEvent - drained by main.ts, cleared by sim.ts at the start of each step() */
+  sfx: SfxEvent[];
 }
 
 export interface ControlsState {

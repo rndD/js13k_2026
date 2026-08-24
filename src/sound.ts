@@ -7,10 +7,11 @@
 // dis_doc.md's "Звук" scope (a few short procedural effects, no music/audio
 // files). Each is just the flat parameter array zzfx() expects.
 import { zzfx, zzfxX } from './zzfx';
+import type { SfxEvent } from './types';
 
 type SfxParams = number[];
 
-const SFX: Record<string, SfxParams> = {
+const SFX: Record<SfxEvent, SfxParams> = {
   // Flipper: ZzFX "Blip" preset - short percussive click.
   flipperClick: [0.8, , 17, 0.02, 0.03, 0.03, , 3.7, -47, 1, -413, 0.02, , , 13, 0.1, , 0.9, 0.02, , -694],
   // Paint bumper hit (charges + damages the boss): ZzFX "Pickup" preset.
@@ -29,15 +30,17 @@ const SFX: Record<string, SfxParams> = {
   ballDrain: [0.5, , 421, , 0.03, 0.09, 5, 1.27, , -63, , , , 0.9, , , , 0.95, 0.02, , -1500],
   // Ball launch / aim-fire release: ZzFX "Shoot" preset, volume normalized down from 1.8.
   launchWhoosh: [1.3, , 374, 0.01, , 0.09, 1, , -20, 34, , , , , 49, 0.4, 0.3, 0.72, 0.05, , -964],
+  // Launch pad boost (yellow triangles): ZzFX "Jump" preset (bright, ascending, un-flipped - fits an upward boost).
+  padBoost: [1.4, , 498, 0.01, 0.03, 0.07, , 3.6, , 156, , , , 0.7, , , 0.05, 0.76, 0.03, , -1458],
+  // Plain non-scoring bounce off a wall/peg: ZzFX "Blip" preset, a second distinct roll from flipperClick.
+  wallTick: [0.5, , 128, 0.01, 0.03, 0.009, 1, 1.9, 3, 36, -391, 0.07, , , , , , 0.53, , 0.03, -1382],
   // Boss defeated (win): ZzFX "Powerup" preset.
   win: [, , 610, 0.07, 0.16, 0.23, 1, 1.5, 5, , , , , , , 0.1, , 0.55, 0.12],
   // Base destroyed (lose): ZzFX "Explosion" preset.
   lose: [1.6, , 33, 0.08, 0.12, 0.56, 1, 0.6, , , , , , 0.9, , 0.3, 0.06, 0.31, 0.11, , -2208],
 };
 
-export type SfxName = keyof typeof SFX;
-
-export function playSfx(name: SfxName): void {
+export function playSfx(name: SfxEvent): void {
   zzfx(...SFX[name]);
 }
 

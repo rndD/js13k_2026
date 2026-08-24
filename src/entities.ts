@@ -92,5 +92,6 @@ export function createWorld(level: LevelData = LEVEL): World {
     projectiles: [],
     launch: { x: level.launch.x, y: level.launch.y, charging: false, power: 0 },
     aim: null,
+    sfx: [],
   };
 }

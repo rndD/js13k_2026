@@ -67,6 +67,11 @@ export function step(world: World, controls: ControlsState, dt: number): World {
     return world;
   }
 
+  // Cleared at the start of every step (not the end) so main.ts - which
+  // reads world.sfx right after each step() call - always sees exactly this
+  // tick's events, never a stale leftover or a double-read.
+  world.sfx = [];
+
   world.time += dt;
 
   updateFlippers(world, controls, dt);
@@ -96,7 +101,9 @@ export function step(world: World, controls: ControlsState, dt: number): World {
 
 function updateFlippers(world: World, controls: ControlsState, dt: number): void {
   for (const f of world.flippers) {
+    const wasActive = f.active;
     f.active = f.side === 'left' ? controls.left : controls.right;
+    if (f.active && !wasActive) world.sfx.push('flipperClick');
     const target = f.active ? f.activeAngle : f.restAngle;
     const maxStep = FLIPPER_ANGULAR_SPEED * dt;
     const diff = target - f.angle;
@@ -124,6 +131,7 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
     world.launch.charging = false;
     world.launch.power = 0;
     world.phase = 'battle';
+    world.sfx.push('launchWhoosh');
   }
 }
 
@@ -141,6 +149,7 @@ function updateBalls(world: World, dt: number): void {
   for (const ball of world.balls) {
     let drained = false;
     let aiming = false;
+    let bounced = false; // plain non-scoring wall/peg contact this tick, see wallTick push below
 
     for (let i = 0; i < BALL_SUBSTEPS && !drained && !aiming; i++) {
       integrate(ball, subDt);
@@ -148,11 +157,13 @@ function updateBalls(world: World, dt: number): void {
       const wallResult = resolveWalls(ball, FIELD_W, FIELD_H);
       if (wallResult === 'drained') {
         drained = true;
+        world.sfx.push('ballDrain');
         break;
       }
+      if (wallResult === 'bounced') bounced = true;
 
       for (const wall of world.walls) {
-        resolveWall(ball, wall, WALL_THICKNESS);
+        if (resolveWall(ball, wall, WALL_THICKNESS)) bounced = true;
       }
 
       for (const f of world.flippers) {
@@ -189,12 +200,13 @@ function updateBalls(world: World, dt: number): void {
       if (aiming) break;
 
       for (const peg of world.pegs) {
-        resolveBumper(ball, peg, PEG_IMPULSE); // plain physical bounce, no scoring effect
+        if (resolveBumper(ball, peg, PEG_IMPULSE)) bounced = true; // plain physical bounce, no scoring effect
       }
 
       for (const pad of world.launchPads) {
         if (pad.cooldown <= 0 && resolveLaunchPad(ball, pad, LAUNCH_PAD_TRIGGER_R, LAUNCH_PAD_BOOST)) {
           pad.cooldown = LAUNCH_PAD_COOLDOWN;
+          world.sfx.push('padBoost');
         }
       }
 
@@ -214,14 +226,20 @@ function updateBalls(world: World, dt: number): void {
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         ball.damage = dmg;
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
+        world.sfx.push('bossHitThud');
       }
 
       clampSpeed(ball);
     }
 
+    // One tick sound max per ball for plain wall/peg contact, even if it
+    // touched several segments across substeps this tick - a rapid clatter
+    // of multiple clicks for one visible bounce would sound like a glitch.
+    if (bounced && !drained && !aiming) world.sfx.push('wallTick');
+
     if (drained) continue; // ball (and its accumulated build) is lost
 
-    if (!aiming && checkStuck(world, ball, dt)) continue; // watchdog gave up on this ball
+    if (!aiming && checkStuck(world, ball, dt)) { world.sfx.push('ballDrain'); continue; } // watchdog gave up on this ball
 
     ball.color = deriveColor(ball.charge > 0, ball.accent);
     remaining.push(ball);
@@ -346,6 +364,7 @@ function fireAimedBall(world: World, aim: AimState): void {
     const speed = Math.min(MAX_SPEED, AIM_BASE_SPEED + ball.multiplier * AIM_SPEED_PER_MULT);
     ball.vx = Math.cos(angle) * speed;
     ball.vy = Math.sin(angle) * speed;
+    world.sfx.push('launchWhoosh');
   }
   world.aim = null;
   world.phase = 'battle';
@@ -358,12 +377,17 @@ function applyPaintHit(world: World, ball: Ball): void {
   // travelling as a separate projectile (see dis_doc.md "пейнт-снаряд").
   const dmg = Math.round(PAINT_DAMAGE_BASE * ball.multiplier);
   world.boss.hp = Math.max(0, world.boss.hp - dmg);
+  world.sfx.push('paintHit');
 }
 
 function applyEnergyHit(world: World, ball: Ball): void {
   ball.accent = true;
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS);
+  // Pushed unconditionally on contact (not diffed off the energy value)
+  // because Math.min below silently no-ops once shield.energy is already
+  // maxed - a diff-based check would then wrongly stay silent on a real hit.
   world.shield.energy = Math.min(world.shield.maxEnergy, world.shield.energy + ENERGY_TARGET_GAIN);
+  world.sfx.push('energyChime');
 }
 
 function updateCooldowns(world: World, dt: number): void {
@@ -430,8 +454,10 @@ function updateProjectiles(world: World, dt: number): void {
       const blocked = world.shield.active && world.shield.energy > 0;
       if (blocked) {
         world.shield.hp = Math.max(0, world.shield.hp - p.damage);
+        world.sfx.push('shieldBlock');
       } else {
         world.base.hp = Math.max(0, world.base.hp - p.damage);
+        world.sfx.push('baseHit');
       }
       continue; // resolved, remove projectile
     }
@@ -451,8 +477,10 @@ function updateShield(world: World, controls: ControlsState, dt: number): void {
 function checkOutcome(world: World): void {
   if (world.boss.hp <= 0) {
     world.phase = 'win';
+    world.sfx.push('win');
   } else if (world.base.hp <= 0) {
     world.phase = 'lose';
+    world.sfx.push('lose');
   }
 }
 
