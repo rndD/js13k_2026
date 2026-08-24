@@ -52,6 +52,10 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y): 
     color: 'white',
     accent: false,
     bossCooldown: 0,
+    anchorX: x,
+    anchorY: y,
+    stuckTimer: 0,
+    rescueCount: 0,
   };
 }
 

@@ -26,6 +26,13 @@ export interface Ball {
   accent: boolean;
   /** seconds remaining before this ball can deal direct damage to the boss again */
   bossCooldown: number;
+  /** position the last time "am I actually making progress" was checked (anti-stuck) */
+  anchorX: number;
+  anchorY: number;
+  /** seconds since the ball last moved STUCK_PROGRESS_RADIUS away from its anchor */
+  stuckTimer: number;
+  /** how many times this ball has already been nudged free of a stuck spot */
+  rescueCount: number;
 }
 
 export type FlipperSide = 'left' | 'right';

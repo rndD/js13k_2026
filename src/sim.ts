@@ -41,6 +41,10 @@ import {
   PAINT_MULTIPLIER_STEP,
   PEG_IMPULSE,
   SHIELD_DRAIN_RATE,
+  STUCK_MAX_RESCUES,
+  STUCK_PROGRESS_RADIUS,
+  STUCK_RESCUE_SPEED,
+  STUCK_TIMEOUT,
   WALL_THICKNESS,
 } from './constants';
 import { createBall } from './entities';
@@ -217,11 +221,52 @@ function updateBalls(world: World, dt: number): void {
 
     if (drained) continue; // ball (and its accumulated build) is lost
 
+    if (!aiming && checkStuck(world, ball, dt)) continue; // watchdog gave up on this ball
+
     ball.color = deriveColor(ball.charge > 0, ball.accent);
     remaining.push(ball);
   }
 
   world.balls = remaining;
+}
+
+/**
+ * Anti-stuck watchdog: tracks how far the ball has actually traveled from a
+ * periodically-reset anchor point. A ball trapped bouncing in a tight pocket
+ * (net displacement ~0 even while still moving) or wedged dead-still against
+ * a corner will sit here making no progress; after STUCK_TIMEOUT seconds of
+ * that, it gets a firm nudge toward the boss instead of the round hanging.
+ * If nudging repeatedly fails to free the same ball, give up and drain it -
+ * this guarantees the watchdog can never itself loop forever.
+ * Returns true if the ball was drained (caller should drop it).
+ */
+function checkStuck(world: World, ball: Ball, dt: number): boolean {
+  const dx = ball.x - ball.anchorX;
+  const dy = ball.y - ball.anchorY;
+  if (dx * dx + dy * dy >= STUCK_PROGRESS_RADIUS * STUCK_PROGRESS_RADIUS) {
+    ball.anchorX = ball.x;
+    ball.anchorY = ball.y;
+    ball.stuckTimer = 0;
+    return false;
+  }
+
+  ball.stuckTimer += dt;
+  if (ball.stuckTimer < STUCK_TIMEOUT) return false;
+
+  if (ball.rescueCount >= STUCK_MAX_RESCUES) return true; // repeatedly un-rescuable, cut losses
+
+  const toBoss = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);
+  // Alternate the kick off dead-center each attempt so a perfectly
+  // symmetric trap can't just re-stick the ball the same way twice.
+  const jitter = (ball.rescueCount % 2 === 0 ? 1 : -1) * (0.3 + ball.rescueCount * 0.15);
+  const angle = toBoss + jitter;
+  ball.vx = Math.cos(angle) * STUCK_RESCUE_SPEED;
+  ball.vy = Math.sin(angle) * STUCK_RESCUE_SPEED;
+  ball.rescueCount += 1;
+  ball.anchorX = ball.x;
+  ball.anchorY = ball.y;
+  ball.stuckTimer = 0;
+  return false;
 }
 
 function deriveColor(hasPaint: boolean, hasAccent: boolean): Ball['color'] {

@@ -89,6 +89,19 @@ export const SHIELD_WIDTH = FIELD_W * 0.5;
 // Base
 export const BASE_MAX_HP = 100;
 
+// Anti-stuck watchdog: pinball physics can pathologically trap a ball
+// bouncing forever in a tight pocket (net displacement ~0 even though it's
+// still moving) or wedge it dead-still against a corner. We track how far
+// each ball has actually traveled from a periodically-reset "anchor" point;
+// if it hasn't gone anywhere in STUCK_TIMEOUT seconds, give it a firm nudge
+// toward the boss instead of letting the round hang. If that keeps
+// happening to the same ball, give up and drain it (guarantees the round
+// always terminates instead of ever soft-locking).
+export const STUCK_PROGRESS_RADIUS = 28; // px, must move at least this far from the anchor to count as "progress"
+export const STUCK_TIMEOUT = 2; // s with no progress before a rescue nudge fires
+export const STUCK_RESCUE_SPEED = 380; // px/s imparted by a rescue nudge
+export const STUCK_MAX_RESCUES = 3; // rescues tolerated per ball before giving up and draining it
+
 // Launch / plunger
 export const LAUNCH_CHARGE_TIME = 0.5; // s to reach full power from empty
 export const LAUNCH_MIN_SPEED = 260;
