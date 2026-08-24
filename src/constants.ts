@@ -108,3 +108,18 @@ export const LAUNCH_MIN_SPEED = 260;
 export const LAUNCH_MAX_SPEED = 560;
 
 export const FIXED_DT = 1 / 60;
+
+// Visual-only feedback (fx.ts): hit-flash, screen shake, floating damage
+// numbers. Purely cosmetic/render-side state, not simulation state - see
+// fx.ts's header comment for why it lives outside World, same reasoning as
+// main.ts's ball-trail Map.
+export const FX_FLASH_DURATION = 0.18; // s a hit-flash overlay stays visible before fading
+export const FX_FLOATER_LIFE = 0.7; // s a floating damage number stays visible before fading
+export const FX_FLOATER_RISE = 26; // px a floating damage number drifts upward over its life
+export const FX_SHAKE_DECAY = 90; // px/s, how fast screen shake magnitude falls off
+export const FX_SHAKE_BOSS = 3; // px, direct/paint hit on the boss
+export const FX_SHAKE_SHIELD = 4; // px, shield blocking a projectile
+export const FX_SHAKE_BASE = 6; // px, base taking a hit (bigger - more alarming than a blocked shot)
+export const FX_SHAKE_BIG = 10; // px, an overload projectile getting through (shield or base)
+export const FX_SHAKE_WIN = 8; // px, boss defeated
+export const FX_SHAKE_LOSE = 12; // px, base destroyed - the biggest jolt in the game

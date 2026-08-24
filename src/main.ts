@@ -4,6 +4,7 @@
 // unit-testable on its own.
 import { BALL_RADIUS, CANVAS_H, FIELD_W, FIXED_DT, HUD_HEIGHT } from './constants';
 import { createWorld } from './entities';
+import { createFxState, drawFx, shakeOffset, updateFx } from './fx';
 import { bindInput } from './input';
 import { COLOR_HEX, render } from './render';
 import { step } from './sim';
@@ -73,6 +74,8 @@ function drawTrails(): void {
   ctx.restore();
 }
 
+const fx = createFxState();
+
 let acc = 0;
 let last = performance.now();
 
@@ -88,6 +91,10 @@ function frame(now: number): void {
     // with no lasting stat change (e.g. an energy bumper hit while the
     // shield is already fully charged).
     for (const name of world.sfx) playSfx(name);
+    // Same point-of-cause push pattern as sfx, but carrying position/damage
+    // payload for hit-flash/screen-shake/floating-damage-number feedback -
+    // see fx.ts.
+    updateFx(fx, world, FIXED_DT);
     acc -= FIXED_DT;
   }
   updateTrails();
@@ -99,8 +106,17 @@ function frame(now: number): void {
   // the background color).
   ctx.fillStyle = '#050208';
   ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
+
+  // Screen shake only offsets the actual drawing below, not the opaque
+  // clear above - so a shaking frame reveals the same flat background at
+  // its edges instead of visible seams/gaps.
+  const shake = shakeOffset(fx);
+  ctx.save();
+  ctx.translate(shake.x, shake.y);
   drawTrails();
   render(ctx, world);
+  drawFx(ctx, fx, world);
+  ctx.restore();
 
   requestAnimationFrame(frame);
 }

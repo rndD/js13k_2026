@@ -148,6 +148,24 @@ export type SfxEvent =
   | 'win'
   | 'lose';
 
+/**
+ * Discrete visual-feedback tags, pushed by sim.ts alongside SfxEvent at the
+ * same points-of-cause (a boss/shield/base actually taking a hit, or the
+ * round ending) - see fx.ts, which owns the actual hit-flash/screen-shake/
+ * floating-damage-number render state (kept outside World, same reasoning
+ * as main.ts's ball-trail Map: it's ephemeral render state, not simulation
+ * state that needs to be deterministic/serializable for tests).
+ */
+export interface FxEvent {
+  kind: 'boss' | 'shield' | 'base' | 'win' | 'lose';
+  x: number;
+  y: number;
+  /** damage dealt, drawn as a floating number - omitted for win/lose */
+  amount?: number;
+  /** true for an overload hit getting through - a bigger jolt than a normal hit */
+  big?: boolean;
+}
+
 export interface LaunchState {
   x: number;
   y: number;
@@ -197,6 +215,8 @@ export interface World {
   aim: AimState | null;
   /** transient per-step sound-event queue, see SfxEvent - drained by main.ts, cleared by sim.ts at the start of each step() */
   sfx: SfxEvent[];
+  /** transient per-step visual-feedback queue, see FxEvent - drained by fx.ts, cleared by sim.ts at the start of each step() */
+  fx: FxEvent[];
 }
 
 export interface ControlsState {

@@ -71,6 +71,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   // reads world.sfx right after each step() call - always sees exactly this
   // tick's events, never a stale leftover or a double-read.
   world.sfx = [];
+  world.fx = [];
 
   world.time += dt;
 
@@ -227,6 +228,7 @@ function updateBalls(world: World, dt: number): void {
         ball.damage = dmg;
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
         world.sfx.push('bossHitThud');
+        world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
       }
 
       clampSpeed(ball);
@@ -378,6 +380,7 @@ function applyPaintHit(world: World, ball: Ball): void {
   const dmg = Math.round(PAINT_DAMAGE_BASE * ball.multiplier);
   world.boss.hp = Math.max(0, world.boss.hp - dmg);
   world.sfx.push('paintHit');
+  world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
 }
 
 function applyEnergyHit(world: World, ball: Ball): void {
@@ -455,9 +458,11 @@ function updateProjectiles(world: World, dt: number): void {
       if (blocked) {
         world.shield.hp = Math.max(0, world.shield.hp - p.damage);
         world.sfx.push('shieldBlock');
+        world.fx.push({ kind: 'shield', x: p.x, y: p.y, amount: p.damage, big: p.big });
       } else {
         world.base.hp = Math.max(0, world.base.hp - p.damage);
         world.sfx.push('baseHit');
+        world.fx.push({ kind: 'base', x: p.x, y: p.y, amount: p.damage, big: p.big });
       }
       continue; // resolved, remove projectile
     }
@@ -478,9 +483,11 @@ function checkOutcome(world: World): void {
   if (world.boss.hp <= 0) {
     world.phase = 'win';
     world.sfx.push('win');
+    world.fx.push({ kind: 'win', x: world.boss.x, y: world.boss.y });
   } else if (world.base.hp <= 0) {
     world.phase = 'lose';
     world.sfx.push('lose');
+    world.fx.push({ kind: 'lose', x: FIELD_W / 2, y: LEVEL.base.y });
   }
 }
 
