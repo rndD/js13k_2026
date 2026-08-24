@@ -6,7 +6,8 @@ import { BALL_RADIUS, CANVAS_H, FIELD_W, FIXED_DT, HUD_HEIGHT } from './constant
 import { createWorld } from './entities';
 import { createFxState, drawFx, shakeOffset, updateFx } from './fx';
 import { bindInput } from './input';
-import { COLOR_HEX, render } from './render';
+import { BG } from './palette';
+import { ballColor, render } from './render';
 import { step } from './sim';
 import { playSfx } from './sound';
 import type { LevelData } from './level';
@@ -53,7 +54,7 @@ function updateTrails(): void {
   for (const ball of world.balls) {
     let pts = trails.get(ball.id);
     if (!pts) { pts = []; trails.set(ball.id, pts); }
-    pts.push({ x: ball.x, y: ball.y, color: COLOR_HEX[ball.color] });
+    pts.push({ x: ball.x, y: ball.y, color: ballColor(ball.color, world.time) });
     if (pts.length > TRAIL_LEN) pts.shift();
   }
 }
@@ -104,7 +105,7 @@ function frame(now: number): void {
   // current frame, instead of relying on an imperfect translucent overlay
   // that technically never fully clears (it only asymptotically approaches
   // the background color).
-  ctx.fillStyle = '#050208';
+  ctx.fillStyle = BG;
   ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
 
   // Screen shake only offsets the actual drawing below, not the opaque

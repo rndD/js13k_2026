@@ -19,6 +19,7 @@ import {
   HUD_HEIGHT,
 } from './constants';
 import { LEVEL } from './level';
+import { CYAN, ORANGE, RED, WHITE, YELLOW } from './palette';
 import type { FxEvent, World } from './types';
 
 interface Floater {
@@ -40,11 +41,11 @@ export function createFxState(): FxState {
 }
 
 const FLOATER_COLOR: Record<FxEvent['kind'], string> = {
-  boss: '#ff3b6b',
-  shield: '#38d6ff',
-  base: '#ff8a3b',
-  win: '#ffe93b',
-  lose: '#ff3b6b',
+  boss: RED,
+  shield: CYAN,
+  base: ORANGE,
+  win: YELLOW,
+  lose: RED,
 };
 
 const SHAKE_FOR: Record<FxEvent['kind'], number> = {
@@ -101,7 +102,7 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
   const bossFlash = fx.flashes.get('boss');
   if (bossFlash) {
     ctx.globalAlpha = bossFlash / FX_FLASH_DURATION;
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = WHITE;
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.arc(world.boss.x, world.boss.y, world.boss.r + 4, 0, Math.PI * 2);
@@ -111,7 +112,7 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
   const shieldFlash = fx.flashes.get('shield');
   if (shieldFlash) {
     ctx.globalAlpha = shieldFlash / FX_FLASH_DURATION;
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = WHITE;
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(0, LEVEL.shield.y);
@@ -122,7 +123,7 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
   const baseFlash = fx.flashes.get('base');
   if (baseFlash) {
     ctx.globalAlpha = baseFlash / FX_FLASH_DURATION;
-    ctx.fillStyle = '#ff8a3b';
+    ctx.fillStyle = ORANGE;
     ctx.fillRect(0, LEVEL.base.y - 4, FIELD_W, 8);
   }
 
