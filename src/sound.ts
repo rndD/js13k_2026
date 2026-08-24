@@ -36,8 +36,10 @@ const SFX: Record<SfxEvent, SfxParams> = {
   wallTick: [0.5, , 128, 0.01, 0.03, 0.009, 1, 1.9, 3, 36, -391, 0.07, , , , , , 0.53, , 0.03, -1382],
   // Boss defeated (win): ZzFX "Powerup" preset.
   win: [, , 610, 0.07, 0.16, 0.23, 1, 1.5, 5, , , , , , , 0.1, , 0.55, 0.12],
-  // Base destroyed (lose): ZzFX "Explosion" preset.
-  lose: [1.6, , 33, 0.08, 0.12, 0.56, 1, 0.6, , , , , , 0.9, , 0.3, 0.06, 0.31, 0.11, , -2208],
+  // Base destroyed (lose): ZzFX "Explosion" preset, shortened + quieted
+  // (was 1.6 volume / 0.76s tail - way too much for what should be a clean
+  // "round over" beat, not a war-movie explosion).
+  lose: [0.9, , 33, 0.08, 0.1, 0.25, 1, 0.6, , , , , , 0.9, , 0.3, 0.06, 0.31, 0.11, , -2208],
 };
 
 export function playSfx(name: SfxEvent): void {

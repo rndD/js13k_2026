@@ -122,4 +122,4 @@ export const FX_SHAKE_SHIELD = 4; // px, shield blocking a projectile
 export const FX_SHAKE_BASE = 6; // px, base taking a hit (bigger - more alarming than a blocked shot)
 export const FX_SHAKE_BIG = 10; // px, an overload projectile getting through (shield or base)
 export const FX_SHAKE_WIN = 8; // px, boss defeated
-export const FX_SHAKE_LOSE = 12; // px, base destroyed - the biggest jolt in the game
+export const FX_SHAKE_LOSE = 5; // px, base destroyed - noticeable but not disorienting (was 12, way too much for a single beat)
