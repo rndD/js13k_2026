@@ -16,9 +16,9 @@ const SFX: Record<SfxEvent, SfxParams> = {
   flipperClick: [0.8, , 17, 0.02, 0.03, 0.03, , 3.7, -47, 1, -413, 0.02, , , 13, 0.1, , 0.9, 0.02, , -694],
   // Paint bumper hit (charges + damages the boss): ZzFX "Pickup" preset.
   paintHit: [1.4, , 682, 0.01, 0.04, 0.28, 1, 3, , , 211, 0.1, , , , , , 0.58, 0.03, , 452],
-  // Energy target hit: ZzFX "Note" preset (square wave), frequency raised
-  // from the generator's default low C1 to a brighter mid pitch.
-  energyChime: [1.5, 0, 440, 0.05, 0.33, 0.19, 5, 1.59, , , , , , , , , 0.19, 0.8, 0.03],
+  // Energy target hit: ZzFX "Powerup" preset (sine, with a pitch jump at
+  // 0.08s) - brighter/shimmery, distinct from the old flat "Note" chime.
+  energyChime: [0.8, , 673, , 0.21, 0.23, , 2.9, , , 400, 0.08, 0.11, , , , , 0.72, 0.21, , 774],
   // Direct pass-through boss damage (no paint charge involved): ZzFX "Hit" preset.
   bossHitThud: [1.4, , 112, 0.01, 0.06, 0.19, 4, 3.2, , , , , , 1.1, 22, , 0.14, 0.58, , , 1099],
   // Shield absorbing a projectile: another ZzFX "Hit" roll, volume normalized down from the generator's 4.6.

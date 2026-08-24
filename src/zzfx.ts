@@ -13,7 +13,7 @@
 // procedural effects (via zzfx()) instead of music or audio files.
 // @ts-nocheck
 export let // ZzFXMicro - Zuper Zmall Zound Zynth - v1.3.2 by Frank Force
-zzfxV=.3,               // volume
+zzfxV=.15,              // volume (halved from ZzFX's .3 default per game-wide loudness pass)
 zzfxX=new AudioContext, // audio context
 zzfx=                   // play sound
 (p=1,k=.05,b=220,e=0,r=0,t=.1,q=0,D=1,u=0,y=0,v=0,z=0,l=0,E=0,A=0,F=0,c=0,w=1,m=0,B=0
