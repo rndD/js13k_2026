@@ -63,15 +63,17 @@ import type { AimState, Ball, ControlsState, Flipper, World } from './types';
 
 /** Advance the world by one fixed timestep. Mutates and returns `world`. */
 export function step(world: World, controls: ControlsState, dt: number): World {
+  // Cleared before the win/lose early-return (not just after it) - otherwise
+  // once the round ends, world.sfx/world.fx keep holding the single 'lose'/
+  // 'win' event from the tick the game ended, and since main.ts calls step()
+  // every tick regardless of phase, that stale event got replayed/redrawn
+  // (sound + flash + shake) on every single frame forever instead of once.
+  world.sfx = [];
+  world.fx = [];
+
   if (world.phase === 'win' || world.phase === 'lose') {
     return world;
   }
-
-  // Cleared at the start of every step (not the end) so main.ts - which
-  // reads world.sfx right after each step() call - always sees exactly this
-  // tick's events, never a stale leftover or a double-read.
-  world.sfx = [];
-  world.fx = [];
 
   world.time += dt;
 
