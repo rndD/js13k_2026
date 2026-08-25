@@ -83,9 +83,16 @@ const crt = createCrtState(ctx);
 
 // Toggle button (see index.html) - kept as a plain DOM element rather than
 // a canvas hit-zone so it never competes with input.ts's flipper/shield/
-// launch touch zones. "Easy to turn off" per the user's ask.
+// launch touch zones. "Easy to turn off" per the user's ask. The rounded-
+// corner "curved tube" look (index.html's .crt CSS class) is toggled here
+// too, alongside the canvas-drawn scanlines/vignette/highlight in crt.ts.
+function applyCrtClass(): void {
+  canvas.classList.toggle('crt', crt.on);
+}
+applyCrtClass();
 document.getElementById('crtBtn')?.addEventListener('click', () => {
   crt.on = !crt.on;
+  applyCrtClass();
 });
 
 let acc = 0;

@@ -126,11 +126,16 @@ export const FX_SHAKE_LOSE = 5; // px, base destroyed - noticeable but not disor
 
 // Background "paint wash" layer (bgfx.ts): every hit/flipper-swing splats a
 // soft blob of its own color onto a persistent offscreen canvas that's never
-// hard-cleared, only faded a little every rendered frame - so recent impacts
-// visibly bleed into the background and slowly dissolve instead of vanishing
-// the instant their flash ends. Purely cosmetic, same non-World state
-// pattern as fx.ts/main.ts's trail.
-export const BGFX_FADE_PER_SEC = 2; // how fast old splats dissolve (exponential-ish via destination-out)
+// hard-cleared. Each rendered frame it's (1) blurred a little into a scratch
+// canvas so old paint visibly spreads/bleeds wider over time instead of
+// sitting frozen in place, then (2) faded a touch via destination-out so it
+// dissolves to nothing rather than accumulating forever. Splats themselves
+// are painted with 'lighter' (additive) compositing, not the default alpha
+// blend, so overlapping colors brighten/shift hue instead of just covering
+// each other - a cheap stand-in for an oil-slick/gasoline-film color mix.
+// Purely cosmetic, same non-World state pattern as fx.ts/main.ts's trail.
+export const BGFX_FADE_PER_SEC = 0.6; // how fast old splats dissolve (was 2 - too quick to read as a lingering wash)
+export const BGFX_SPREAD_PX = 0.8; // blur radius applied every rendered frame - compounds into a slow, organic spread
 export const BGFX_HIT_ALPHA = 0.4; // peak alpha of a boss/shield/base/bumper/pad splat
 export const BGFX_HIT_RADIUS = 30; // px radius of a boss/shield/base/bumper/pad splat
 export const BGFX_FLIPPER_ALPHA = 0.16; // dimmer since it re-splats every tick a flipper is held active
@@ -138,7 +143,12 @@ export const BGFX_FLIPPER_RADIUS = 20; // px radius of a flipper-tip splat
 
 // CRT/TV overlay (crt.ts): cheap scanlines + vignette + a faint flicker,
 // toggleable on-screen (dis_doc.md scope note: no texture assets, so this is
-// all drawn with canvas primitives/gradients, not an image).
+// all drawn with canvas primitives/gradients, not an image). The "curved
+// tube" look is mostly free: index.html rounds the canvas element's own
+// corners via CSS (toggled alongside crt.on) instead of any per-pixel warp -
+// a soft off-center highlight gradient here sells the rest of the glass-
+// curvature illusion for near-zero extra bytes.
 export const CRT_SCANLINE_ALPHA = 0.14;
 export const CRT_VIGNETTE_ALPHA = 0.45;
 export const CRT_FLICKER_AMOUNT = 0.025; // +/- alpha wobble on the scanline layer
+export const CRT_HIGHLIGHT_ALPHA = 0.05; // faint glass-reflection highlight, upper-left
