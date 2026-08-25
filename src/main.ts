@@ -4,8 +4,8 @@
 // unit-testable on its own.
 import { BALL_RADIUS, CANVAS_H, FIELD_W, FIXED_DT, HUD_HEIGHT } from './constants';
 import { createWorld } from './entities';
-import { createBgFx, drawBgFx, fadeBgFx, spawnBgFx } from './bgfx';
-import { createCrtState, drawCrt } from './crt';
+import { createBgFx, drawBgFx, spawnBgFx, updateBgFx } from './bgfx';
+import { createCrtState, drawCrtFrame } from './crt';
 import { createFxState, drawFx, shakeOffset, updateFx } from './fx';
 import { bindInput } from './input';
 import { BG } from './palette';
@@ -26,7 +26,7 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 
-const ctx = canvas.getContext('2d')!;
+const visibleCtx = canvas.getContext('2d')!;
 const controls = bindInput(canvas);
 
 // Dev workflow only: the level editor's "Play" button saves its draft to
@@ -79,20 +79,20 @@ function drawTrails(): void {
 
 const fx = createFxState();
 const bgFx = createBgFx();
-const crt = createCrtState(ctx);
+const crt = createCrtState(visibleCtx);
+// Every draw call below this point targets the CRT module's offscreen
+// scene canvas, not the visible canvas directly - drawCrtFrame() re-draws
+// the finished scene onto the visible canvas (warped, if crt.on) as the
+// very last step each frame. See crt.ts's header comment.
+const ctx = crt.sceneCtx;
 
 // Toggle button (see index.html) - kept as a plain DOM element rather than
 // a canvas hit-zone so it never competes with input.ts's flipper/shield/
-// launch touch zones. "Easy to turn off" per the user's ask. The rounded-
-// corner "curved tube" look (index.html's .crt CSS class) is toggled here
-// too, alongside the canvas-drawn scanlines/vignette/highlight in crt.ts.
-function applyCrtClass(): void {
-  canvas.classList.toggle('crt', crt.on);
-}
-applyCrtClass();
+// launch touch zones. "Easy to turn off" per the user's ask: when off,
+// drawCrtFrame() does a single plain drawImage passthrough - zero extra
+// cost beyond having rendered the scene once, same as before this feature.
 document.getElementById('crtBtn')?.addEventListener('click', () => {
   crt.on = !crt.on;
-  applyCrtClass();
 });
 
 let acc = 0;
@@ -122,10 +122,10 @@ function frame(now: number): void {
     acc -= FIXED_DT;
   }
   updateTrails();
-  // Dissolve the wash at a constant real-world rate, independent of how many
-  // fixed steps ran this frame (unlike spawnBgFx above, this wants smooth
-  // wall-clock time, not sim time).
-  fadeBgFx(bgFx, frameDt);
+  // Age/drift/fade every splat at a constant real-world rate, independent
+  // of how many fixed steps ran this frame (unlike spawnBgFx above, which
+  // wants sim time so no contact is missed on a slow/catch-up frame).
+  updateBgFx(bgFx, frameDt);
 
   // Full opaque reset every frame - no leftover "dirt" from previous frames
   // - then an explicit, deliberately-faded trail drawn underneath the crisp
@@ -134,7 +134,6 @@ function frame(now: number): void {
   // the background color).
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
-  drawBgFx(ctx, bgFx);
 
   // Screen shake only offsets the actual drawing below, not the opaque
   // clear above - so a shaking frame reveals the same flat background at
@@ -142,14 +141,16 @@ function frame(now: number): void {
   const shake = shakeOffset(fx);
   ctx.save();
   ctx.translate(shake.x, shake.y);
+  drawBgFx(ctx, bgFx);
   drawTrails();
   render(ctx, world);
   drawFx(ctx, fx, world);
   ctx.restore();
 
-  // CRT overlay is drawn last and untransformed (no shake) so it always
-  // reads as glass in front of the tube, not part of the shaking field.
-  drawCrt(ctx, crt, world.time);
+  // Re-draws the finished scene onto the VISIBLE canvas as the very last
+  // step - warped into a bulging convex tube face if crt.on, otherwise a
+  // plain 1:1 blit - plus the scanline/vignette/highlight overlay.
+  drawCrtFrame(visibleCtx, crt, world.time);
 
   requestAnimationFrame(frame);
 }

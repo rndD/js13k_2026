@@ -124,22 +124,25 @@ export const FX_SHAKE_BIG = 10; // px, an overload projectile getting through (s
 export const FX_SHAKE_WIN = 8; // px, boss defeated
 export const FX_SHAKE_LOSE = 5; // px, base destroyed - noticeable but not disorienting (was 12, way too much for a single beat)
 
-// Background "paint wash" layer (bgfx.ts): every hit/flipper-swing splats a
-// soft blob of its own color onto a persistent offscreen canvas that's never
-// hard-cleared. Each rendered frame it's (1) blurred a little into a scratch
-// canvas so old paint visibly spreads/bleeds wider over time instead of
-// sitting frozen in place, then (2) faded a touch via destination-out so it
-// dissolves to nothing rather than accumulating forever. Splats themselves
-// are painted with 'lighter' (additive) compositing, not the default alpha
-// blend, so overlapping colors brighten/shift hue instead of just covering
-// each other - a cheap stand-in for an oil-slick/gasoline-film color mix.
-// Purely cosmetic, same non-World state pattern as fx.ts/main.ts's trail.
-export const BGFX_FADE_PER_SEC = 0.6; // how fast old splats dissolve (was 2 - too quick to read as a lingering wash)
-export const BGFX_SPREAD_PX = 0.8; // blur radius applied every rendered frame - compounds into a slow, organic spread
-export const BGFX_HIT_ALPHA = 0.4; // peak alpha of a boss/shield/base/bumper/pad splat
-export const BGFX_HIT_RADIUS = 30; // px radius of a boss/shield/base/bumper/pad splat
-export const BGFX_FLIPPER_ALPHA = 0.16; // dimmer since it re-splats every tick a flipper is held active
-export const BGFX_FLIPPER_RADIUS = 20; // px radius of a flipper-tip splat
+// Background "paint wash" particle system (bgfx.ts): a splat spawns at
+// EVERY contact a ball has with anything (peg/wall/bumper/flipper - detected
+// generically via a sudden ball velocity-direction change, not per-object
+// special-casing) plus every boss/shield/base/win/lose fx event. Each splat
+// is its own independent particle that sways sideways on a sine wave, drifts
+// slowly up or down (direction randomized per splat), grows a little, and
+// fades out over its lifetime - rather than being painted onto a fixed spot
+// on a persistent bitmap, which can erode/blur in place but can't actually
+// slide sideways. Purely cosmetic, same non-World state pattern as
+// fx.ts/main.ts's trail.
+export const BGFX_HIT_ALPHA = 0.4; // peak alpha of a splat
+export const BGFX_HIT_RADIUS = 26; // px starting radius of a splat
+export const BGFX_LIFE = 3.2; // s a splat lives before fully fading (randomized +/-30% per splat)
+export const BGFX_GROWTH_PER_SEC = 0.35; // fraction of its radius a splat grows per second it's alive
+export const BGFX_DRIFT_SPEED = 14; // px/s vertical drift speed (randomized direction + magnitude per splat)
+export const BGFX_SWAY_AMP = 10; // px, how far a splat sways side to side
+export const BGFX_SWAY_FREQ = 1.6; // rad/s, sway speed (randomized per splat)
+export const BGFX_MIN_SPEED = 60; // px/s - ignore velocity changes below this (near-stationary jitter, not a real bounce)
+export const BGFX_CONTACT_ANGLE = 0.6; // radians - velocity direction must swing by at least this much in one tick to count as a bounce (gravity alone only ever curves a path smoothly)
 
 // CRT/TV overlay (crt.ts): cheap scanlines + vignette + a faint flicker,
 // toggleable on-screen (dis_doc.md scope note: no texture assets, so this is
@@ -152,3 +155,12 @@ export const CRT_SCANLINE_ALPHA = 0.14;
 export const CRT_VIGNETTE_ALPHA = 0.45;
 export const CRT_FLICKER_AMOUNT = 0.025; // +/- alpha wobble on the scanline layer
 export const CRT_HIGHLIGHT_ALPHA = 0.05; // faint glass-reflection highlight, upper-left
+// Real geometric "bulging glass" warp (not just a CSS corner-round): the
+// whole rendered scene is drawn to an offscreen canvas, then re-drawn onto
+// the visible canvas in thin strips whose scale bulges outward toward the
+// center and tapers back to 1x at the edges (cosine falloff) - once for
+// rows (horizontal bulge) and once for columns (vertical bulge). Cheap
+// (a couple dozen drawImage calls, no per-pixel math) but reads as a
+// genuinely convex, slightly-distorted old tube face.
+export const CRT_BULGE_AMOUNT = 0.05; // max extra scale at dead-center (5%), tapering to 0 at the edges
+export const CRT_BULGE_STRIPS = 24; // number of strips per axis - higher is smoother but costs more drawImage calls
