@@ -1,16 +1,17 @@
-// "Paint wash" particle system. Per the user's follow-up: splats should
-// appear on contact with ANYTHING (not just bumpers/pads/flipper-tip), in
-// varied colors, then drift off on their own randomly (sideways sway +
-// slow up-or-down float) and fade - not sit painted on a fixed spot.
+// "Paint wash" particle system. Per the user's follow-ups: splats should
+// appear on contact with ANYTHING (not just bumpers/pads/flipper-tip), then
+// drift off on their own randomly (sideways sway + slow up-or-down float)
+// and fade - not sit painted on a fixed spot - and different kinds of
+// contact should leave slightly different colors instead of every splat
+// looking the same.
 //
-// Contact is detected generically as a sudden ball velocity-DIRECTION
-// change: gravity alone only ever curves a ball's path smoothly, so any
-// sharp swing in velocity angle in a single tick means it just bounced off
-// something - a peg, wall, bumper, or flipper - without sim.ts needing to
-// name every kind of collision. The splat's color is the ball's own current
-// rendered color (see render.ts's ballColor - already varies per ball tier
-// and cycles for a fully-charged rainbow ball), so different balls/contacts
-// naturally paint different colors.
+// Contact is tagged at the exact point-of-cause in sim.ts's updateBalls
+// (World.contacts, see types.ts's ContactEvent) - the same pattern already
+// used for sfx/fx - rather than guessed afterward, so every kind of thing
+// the ball can touch (wall/peg, flipper, paint bumper, energy bumper,
+// launch pad) is covered exactly once and gets its own color below,
+// matching the color that element already uses elsewhere in the game
+// (paint=RED, energy=CYAN, pads=YELLOW, flippers=VIOLET while active).
 //
 // Each splat is a standalone particle (not painted onto a persistent
 // bitmap): a bitmap can only ever erode/blur in place, it can't actually
@@ -19,22 +20,28 @@
 // splat and draw each one at its own live-computed position every frame.
 // Overlapping splats are drawn with additive ('lighter') compositing so
 // their colors mix/brighten together instead of one flatly covering
-// another - the cheap trick behind an oil-film/gasoline-sheen look.
+// another - the cheap trick behind an oil-film/gasoline-sheen look. Near
+// the end of a splat's life, a shimmering rainbow-cycled "thin film"
+// sheen fades in on top of it (see BGFX_FILM_* / drawBgFx below) - a cheap
+// stand-in for the way a real thin oil film splits light into shifting
+// iridescent bands as it gets thinner, instead of it just uniformly
+// shrinking away as one flat color.
 import {
-  BGFX_CONTACT_ANGLE,
   BGFX_DRIFT_SPEED,
+  BGFX_FILM_ALPHA,
+  BGFX_FILM_BANDS,
+  BGFX_FILM_SPEED,
+  BGFX_FILM_START,
   BGFX_GROWTH_PER_SEC,
   BGFX_HIT_ALPHA,
   BGFX_HIT_RADIUS,
   BGFX_LIFE,
-  BGFX_MIN_SPEED,
   BGFX_SWAY_AMP,
   BGFX_SWAY_FREQ,
   HUD_HEIGHT,
 } from './constants';
-import { ballColor } from './render';
-import { CYAN, ORANGE, RED, YELLOW, withAlpha } from './palette';
-import type { World } from './types';
+import { CYAN, ORANGE, RED, STRUCTURE, VIOLET, YELLOW, rainbowColor, withAlpha } from './palette';
+import type { ContactEvent, World } from './types';
 
 interface Splat {
   baseX: number;
@@ -52,9 +59,6 @@ interface Splat {
 
 export interface BgFxState {
   splats: Splat[];
-  // Previous tick's velocity per ball id, so a sudden direction change (a
-  // bounce off anything) can be detected without sim.ts naming the cause.
-  lastVel: Map<number, { vx: number; vy: number }>;
 }
 
 const HIT_COLOR: Record<'boss' | 'shield' | 'base' | 'win' | 'lose', string> = {
@@ -65,8 +69,20 @@ const HIT_COLOR: Record<'boss' | 'shield' | 'base' | 'win' | 'lose', string> = {
   lose: RED,
 };
 
+/** One color per ContactEvent.kind, matching how that element is colored
+ * everywhere else in the game (paint bumper=RED, energy bumper=CYAN,
+ * launch pad=YELLOW, active flipper glow=VIOLET) - plain wall/peg structure
+ * gets the neutral pale-grey STRUCTURE tone used for that geometry. */
+const CONTACT_COLOR: Record<ContactEvent['kind'], string> = {
+  structure: STRUCTURE,
+  flipper: VIOLET,
+  paint: RED,
+  energy: CYAN,
+  pad: YELLOW,
+};
+
 export function createBgFx(): BgFxState {
-  return { splats: [], lastVel: new Map() };
+  return { splats: [] };
 }
 
 function spawnSplat(state: BgFxState, x: number, y: number, color: string, radius: number, alpha: number): void {
@@ -86,31 +102,15 @@ function spawnSplat(state: BgFxState, x: number, y: number, color: string, radiu
   });
 }
 
-/** Called once per fixed sim step - reads this tick's world.fx events (big
- * game-state moments) plus every ball's velocity for a generic "just
- * bounced off something" edge, and spawns a splat for each. */
+/** Called once per fixed sim step - drains this tick's world.fx events (big
+ * game-state moments) and world.contacts events (any ball touching
+ * anything), spawning one splat per event, colored per its kind. */
 export function spawnBgFx(state: BgFxState, world: World): void {
-  const liveIds = new Set(world.balls.map((b) => b.id));
-  for (const id of state.lastVel.keys()) if (!liveIds.has(id)) state.lastVel.delete(id);
-
   for (const ev of world.fx) {
     spawnSplat(state, ev.x, ev.y, HIT_COLOR[ev.kind], BGFX_HIT_RADIUS * (ev.big ? 1.6 : 1), BGFX_HIT_ALPHA);
   }
-
-  for (const b of world.balls) {
-    const prev = state.lastVel.get(b.id);
-    if (prev) {
-      const speed = Math.hypot(b.vx, b.vy);
-      const prevSpeed = Math.hypot(prev.vx, prev.vy);
-      if (speed > BGFX_MIN_SPEED && prevSpeed > BGFX_MIN_SPEED) {
-        const dot = (prev.vx * b.vx + prev.vy * b.vy) / (prevSpeed * speed);
-        const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
-        if (angle > BGFX_CONTACT_ANGLE) {
-          spawnSplat(state, b.x, b.y, ballColor(b.color, world.time), BGFX_HIT_RADIUS, BGFX_HIT_ALPHA);
-        }
-      }
-    }
-    state.lastVel.set(b.id, { vx: b.vx, vy: b.vy });
+  for (const c of world.contacts) {
+    spawnSplat(state, c.x, c.y, CONTACT_COLOR[c.kind], BGFX_HIT_RADIUS, BGFX_HIT_ALPHA);
   }
 }
 
@@ -144,6 +144,26 @@ export function drawBgFx(ctx: CanvasRenderingContext2D, state: BgFxState): void 
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
+
+    // Thin-film iridescence: as the splat thins out near the end of its
+    // life, a shimmering ring of rainbow-cycled color bands fades in on top
+    // - a cheap stand-in for real oil-on-water iridescence (light splitting
+    // into shifting spectral bands as the film gets thinner), instead of
+    // the splat just uniformly shrinking away as one flat color.
+    const filmT = Math.max(0, (t - BGFX_FILM_START) / (1 - BGFX_FILM_START));
+    if (filmT > 0) {
+      const filmR = r * 1.25;
+      const filmAlpha = alpha * filmT * BGFX_FILM_ALPHA;
+      const fg = ctx.createRadialGradient(x, y, 0, x, y, filmR);
+      for (let i = 0; i <= BGFX_FILM_BANDS; i++) {
+        const band = rainbowColor(s.swayPhase + s.age * BGFX_FILM_SPEED + i * 0.9);
+        fg.addColorStop(i / BGFX_FILM_BANDS, withAlpha(band, i === BGFX_FILM_BANDS ? 0 : filmAlpha));
+      }
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.arc(x, y, filmR, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   ctx.restore();
 }

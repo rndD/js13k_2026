@@ -166,6 +166,22 @@ export interface FxEvent {
   big?: boolean;
 }
 
+/**
+ * Point-of-cause tag for "the ball physically touched something", pushed
+ * by sim.ts's updateBalls at each specific collision-resolution site (not
+ * inferred by diffing velocity afterward) - see bgfx.ts, which spawns a
+ * paint-wash splat colored by `kind` so different things the ball hits
+ * leave visibly different-colored splats instead of every contact looking
+ * identical. `kind` deliberately mirrors how the rest of the game already
+ * groups these (see SfxEvent's single 'wallTick' covering both walls and
+ * pegs, and BUMPER_COLOR keying off bumper.kind).
+ */
+export interface ContactEvent {
+  kind: 'structure' | 'flipper' | 'paint' | 'energy' | 'pad';
+  x: number;
+  y: number;
+}
+
 export interface LaunchState {
   x: number;
   y: number;
@@ -217,6 +233,8 @@ export interface World {
   sfx: SfxEvent[];
   /** transient per-step visual-feedback queue, see FxEvent - drained by fx.ts, cleared by sim.ts at the start of each step() */
   fx: FxEvent[];
+  /** transient per-step ball-contact queue, see ContactEvent - drained by bgfx.ts, cleared by sim.ts at the start of each step() */
+  contacts: ContactEvent[];
 }
 
 export interface ControlsState {

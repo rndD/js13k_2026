@@ -94,5 +94,6 @@ export function createWorld(level: LevelData = LEVEL): World {
     aim: null,
     sfx: [],
     fx: [],
+    contacts: [],
   };
 }

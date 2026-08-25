@@ -136,13 +136,20 @@ export const FX_SHAKE_LOSE = 5; // px, base destroyed - noticeable but not disor
 // fx.ts/main.ts's trail.
 export const BGFX_HIT_ALPHA = 0.4; // peak alpha of a splat
 export const BGFX_HIT_RADIUS = 26; // px starting radius of a splat
-export const BGFX_LIFE = 3.2; // s a splat lives before fully fading (randomized +/-30% per splat)
+export const BGFX_LIFE = 4.5; // s a splat lives before fully fading (randomized +/-30% per splat)
 export const BGFX_GROWTH_PER_SEC = 0.35; // fraction of its radius a splat grows per second it's alive
 export const BGFX_DRIFT_SPEED = 14; // px/s vertical drift speed (randomized direction + magnitude per splat)
 export const BGFX_SWAY_AMP = 10; // px, how far a splat sways side to side
 export const BGFX_SWAY_FREQ = 1.6; // rad/s, sway speed (randomized per splat)
-export const BGFX_MIN_SPEED = 60; // px/s - ignore velocity changes below this (near-stationary jitter, not a real bounce)
-export const BGFX_CONTACT_ANGLE = 0.6; // radians - velocity direction must swing by at least this much in one tick to count as a bounce (gravity alone only ever curves a path smoothly)
+// As a splat thins out near the end of its life, a shimmering iridescent
+// sheen fades in on top of it (rainbow-cycled color bands, like a real thin
+// oil film catching light at different angles) instead of it just uniformly
+// fading to nothing - this is what actually reads as "gasoline film" rather
+// than "paint blob shrinking".
+export const BGFX_FILM_START = 0.4; // fraction of life (0..1) at which the sheen starts appearing
+export const BGFX_FILM_ALPHA = 0.5; // sheen peak alpha, relative to the splat's own peak alpha
+export const BGFX_FILM_SPEED = 0.5; // rad/s-ish - how fast the sheen's bands cycle through the spectrum as it decays
+export const BGFX_FILM_BANDS = 4; // number of color bands sampled across the sheen's radius
 
 // CRT/TV overlay (crt.ts): cheap scanlines + vignette + a faint flicker,
 // toggleable on-screen (dis_doc.md scope note: no texture assets, so this is

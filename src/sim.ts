@@ -70,6 +70,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   // (sound + flash + shake) on every single frame forever instead of once.
   world.sfx = [];
   world.fx = [];
+  world.contacts = [];
 
   if (world.phase === 'win' || world.phase === 'lose') {
     return world;
@@ -163,14 +164,21 @@ function updateBalls(world: World, dt: number): void {
         world.sfx.push('ballDrain');
         break;
       }
-      if (wallResult === 'bounced') bounced = true;
+      if (wallResult === 'bounced') {
+        bounced = true;
+        world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
+      }
 
       for (const wall of world.walls) {
-        if (resolveWall(ball, wall, WALL_THICKNESS)) bounced = true;
+        if (resolveWall(ball, wall, WALL_THICKNESS)) {
+          bounced = true;
+          world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
+        }
       }
 
       for (const f of world.flippers) {
         const hit = resolveFlipper(ball, f, FLIPPER_BOOST_SPEED, FLIPPER_THICKNESS);
+        if (hit) world.contacts.push({ kind: 'flipper', x: ball.x, y: ball.y });
         // An ACTIVE flipper swing catching the ball opens the contact-aim
         // window instead of applying its usual instant boost: freeze the
         // ball right where it landed and let the player pick the exact
@@ -203,13 +211,17 @@ function updateBalls(world: World, dt: number): void {
       if (aiming) break;
 
       for (const peg of world.pegs) {
-        if (resolveBumper(ball, peg, PEG_IMPULSE)) bounced = true; // plain physical bounce, no scoring effect
+        if (resolveBumper(ball, peg, PEG_IMPULSE)) {
+          bounced = true; // plain physical bounce, no scoring effect
+          world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
+        }
       }
 
       for (const pad of world.launchPads) {
         if (pad.cooldown <= 0 && resolveLaunchPad(ball, pad, LAUNCH_PAD_TRIGGER_R, LAUNCH_PAD_BOOST)) {
           pad.cooldown = LAUNCH_PAD_COOLDOWN;
           world.sfx.push('padBoost');
+          world.contacts.push({ kind: 'pad', x: ball.x, y: ball.y });
         }
       }
 
@@ -218,6 +230,7 @@ function updateBalls(world: World, dt: number): void {
           if (bumper.kind === 'paint') applyPaintHit(world, ball);
           else applyEnergyHit(world, ball);
           bumper.cooldown = BUMPER_COOLDOWN;
+          world.contacts.push({ kind: bumper.kind, x: ball.x, y: ball.y });
         }
       }
 
