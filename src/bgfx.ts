@@ -20,12 +20,7 @@
 // splat and draw each one at its own live-computed position every frame.
 // Overlapping splats are drawn with additive ('lighter') compositing so
 // their colors mix/brighten together instead of one flatly covering
-// another - the cheap trick behind an oil-film/gasoline-sheen look. Near
-// the end of a splat's life, a shimmering rainbow-cycled "thin film"
-// sheen fades in on top of it (see BGFX_FILM_* / drawBgFx below) - a cheap
-// stand-in for the way a real thin oil film splits light into shifting
-// iridescent bands as it gets thinner, instead of it just uniformly
-// shrinking away as one flat color.
+// another - the cheap trick behind an oil-film/gasoline-sheen look.
 //
 // A ball currently sitting on top of a splat also carves a soft BG-colored
 // "hole" through it (see BGFX_CUT_* / drawBgFx's final loop) - as if the
@@ -38,11 +33,6 @@ import {
   BGFX_CUT_ALPHA,
   BGFX_CUT_RADIUS_MULT,
   BGFX_DRIFT_SPEED,
-  BGFX_FILM_ALPHA,
-  BGFX_FILM_BANDS,
-  BGFX_FILM_RING_OUTER,
-  BGFX_FILM_SPEED,
-  BGFX_FILM_START,
   BGFX_GROWTH_PER_SEC,
   BGFX_HIT_ALPHA,
   BGFX_HIT_RADIUS,
@@ -51,7 +41,7 @@ import {
   BGFX_SWAY_FREQ,
   HUD_HEIGHT,
 } from './constants';
-import { BG, CYAN, ORANGE, RED, STRUCTURE, VIOLET, YELLOW, rainbowColor, withAlpha } from './palette';
+import { BG, CYAN, ORANGE, RED, STRUCTURE, VIOLET, YELLOW, withAlpha } from './palette';
 import type { ContactEvent, World } from './types';
 
 interface Splat {
@@ -157,39 +147,6 @@ export function drawBgFx(ctx: CanvasRenderingContext2D, state: BgFxState, world:
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
-
-    // Thin-film iridescence: as the splat thins out near the end of its
-    // life, a shimmering RING of rainbow-cycled color bands blooms around
-    // its rim - a cheap stand-in for real oil-on-water iridescence (light
-    // splitting into shifting spectral bands right where the film is
-    // thinnest, at its edge), instead of the splat just uniformly shrinking
-    // away as one flat color. Shaped as an actual ring (zero alpha at both
-    // the inner and outer radius, peaking in between via a sine envelope)
-    // rather than a solid disc, so the bands read as a distinct halo around
-    // the rim instead of being diluted/hidden underneath the solid base
-    // fill's own color at the splat's center. Driven by s.peakAlpha (its
-    // own ramp-in + a quick end-of-life taper), NOT by the base blob's
-    // `alpha` above - that already decays to ~0 by the time filmT ramps up,
-    // so multiplying the two together (an earlier version's bug) crushed
-    // the sheen to near-invisibility right when it should be brightest.
-    const filmT = Math.max(0, (t - BGFX_FILM_START) / (1 - BGFX_FILM_START));
-    if (filmT > 0) {
-      const ringInner = r * 0.7;
-      const ringOuter = r * BGFX_FILM_RING_OUTER;
-      const filmTaper = t > 0.92 ? Math.max(0, (1 - t) / 0.08) : 1; // quick fade in the final 8% of life, avoids a pop when the splat is removed
-      const filmAlpha = s.peakAlpha * BGFX_FILM_ALPHA * filmT * filmTaper;
-      const fg = ctx.createRadialGradient(x, y, ringInner, x, y, ringOuter);
-      for (let i = 0; i <= BGFX_FILM_BANDS; i++) {
-        const pos = i / BGFX_FILM_BANDS;
-        const ringShape = Math.sin(pos * Math.PI); // 0 at both edges of the ring, peaks in the middle
-        const band = rainbowColor(s.swayPhase + s.age * BGFX_FILM_SPEED + i * 0.9);
-        fg.addColorStop(pos, withAlpha(band, filmAlpha * ringShape));
-      }
-      ctx.fillStyle = fg;
-      ctx.beginPath();
-      ctx.arc(x, y, ringOuter, 0, Math.PI * 2);
-      ctx.fill();
-    }
   }
 
   // Cut a soft hole through whatever's been painted so far wherever a ball

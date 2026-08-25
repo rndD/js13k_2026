@@ -141,20 +141,6 @@ export const BGFX_GROWTH_PER_SEC = 0.1; // fraction of its radius a splat grows 
 export const BGFX_DRIFT_SPEED = 14; // px/s vertical drift speed (randomized direction + magnitude per splat)
 export const BGFX_SWAY_AMP = 10; // px, how far a splat sways side to side
 export const BGFX_SWAY_FREQ = 1.6; // rad/s, sway speed (randomized per splat)
-// As a splat thins out near the end of its life, a shimmering iridescent
-// sheen fades in on top of it (rainbow-cycled color bands, like a real thin
-// oil film catching light at different angles) instead of it just uniformly
-// fading to nothing - this is what actually reads as "gasoline film" rather
-// than "paint blob shrinking". Its alpha is driven ONLY by filmT (how far
-// into its "thin film" phase it is) and its OWN end-of-life taper, not by
-// the base splat's already-decaying alpha - multiplying by that too (as an
-// earlier version did) crushed the sheen to near-invisibility right when it
-// should be at its brightest.
-export const BGFX_FILM_START = 0.3; // fraction of life (0..1) at which the sheen starts appearing
-export const BGFX_FILM_ALPHA = 1.1; // sheen peak alpha, relative to the splat's own peak alpha (ring-shaped, so its true peak is lower than this raw multiplier) - toned down from 1.6, read as too strong/harsh
-export const BGFX_FILM_SPEED = 0.5; // rad/s-ish - how fast the sheen's bands cycle through the spectrum as it decays
-export const BGFX_FILM_BANDS = 5; // number of color bands sampled across the sheen's ring
-export const BGFX_FILM_RING_OUTER = 1.3; // sheen's outer radius as a multiple of the splat's own radius (was 1.5 - shrunk along with the general size-down pass)
 // A ball currently overlapping a splat carves a soft hole through it via
 // destination-out compositing, as if physically parting/cutting the film as
 // it flies through - rather than just passing over a static painted layer.
