@@ -40,7 +40,15 @@ function lerpHex(a: string, b: string, t: number): string {
   const r = Math.round(((ah >> 16) & 255) + ((((bh >> 16) & 255) - ((ah >> 16) & 255)) * t));
   const g = Math.round(((ah >> 8) & 255) + ((((bh >> 8) & 255) - ((ah >> 8) & 255)) * t));
   const bl = Math.round((ah & 255) + (((bh & 255) - (ah & 255)) * t));
-  return `rgb(${r},${g},${bl})`;
+  // Real hex (not rgb(...)), so withAlpha() below - which only understands
+  // '#rrggbb' - can be applied to a rainbowColor() result. This bit us once
+  // already: bgfx.ts's iridescent film bands passed rainbowColor() straight
+  // into withAlpha(), which silently parsed the old "rgb(r,g,b)" string as
+  // garbage hex (NaN -> 0), rendering every band as invisible black instead
+  // of throwing - a hard-to-spot bug since nothing errored, the sheen just
+  // never appeared.
+  const toHex2 = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${toHex2(r)}${toHex2(g)}${toHex2(bl)}`;
 }
 
 /** Same hex color with an alpha channel, so we don't need a separate rgba()

@@ -146,22 +146,35 @@ export function drawBgFx(ctx: CanvasRenderingContext2D, state: BgFxState): void 
     ctx.fill();
 
     // Thin-film iridescence: as the splat thins out near the end of its
-    // life, a shimmering ring of rainbow-cycled color bands fades in on top
-    // - a cheap stand-in for real oil-on-water iridescence (light splitting
-    // into shifting spectral bands as the film gets thinner), instead of
-    // the splat just uniformly shrinking away as one flat color.
+    // life, a shimmering RING of rainbow-cycled color bands blooms around
+    // its rim - a cheap stand-in for real oil-on-water iridescence (light
+    // splitting into shifting spectral bands right where the film is
+    // thinnest, at its edge), instead of the splat just uniformly shrinking
+    // away as one flat color. Shaped as an actual ring (zero alpha at both
+    // the inner and outer radius, peaking in between via a sine envelope)
+    // rather than a solid disc, so the bands read as a distinct halo around
+    // the rim instead of being diluted/hidden underneath the solid base
+    // fill's own color at the splat's center. Driven by s.peakAlpha (its
+    // own ramp-in + a quick end-of-life taper), NOT by the base blob's
+    // `alpha` above - that already decays to ~0 by the time filmT ramps up,
+    // so multiplying the two together (an earlier version's bug) crushed
+    // the sheen to near-invisibility right when it should be brightest.
     const filmT = Math.max(0, (t - BGFX_FILM_START) / (1 - BGFX_FILM_START));
     if (filmT > 0) {
-      const filmR = r * 1.25;
-      const filmAlpha = alpha * filmT * BGFX_FILM_ALPHA;
-      const fg = ctx.createRadialGradient(x, y, 0, x, y, filmR);
+      const ringInner = r * 0.7;
+      const ringOuter = r * 1.5;
+      const filmTaper = t > 0.92 ? Math.max(0, (1 - t) / 0.08) : 1; // quick fade in the final 8% of life, avoids a pop when the splat is removed
+      const filmAlpha = s.peakAlpha * BGFX_FILM_ALPHA * filmT * filmTaper;
+      const fg = ctx.createRadialGradient(x, y, ringInner, x, y, ringOuter);
       for (let i = 0; i <= BGFX_FILM_BANDS; i++) {
+        const pos = i / BGFX_FILM_BANDS;
+        const ringShape = Math.sin(pos * Math.PI); // 0 at both edges of the ring, peaks in the middle
         const band = rainbowColor(s.swayPhase + s.age * BGFX_FILM_SPEED + i * 0.9);
-        fg.addColorStop(i / BGFX_FILM_BANDS, withAlpha(band, i === BGFX_FILM_BANDS ? 0 : filmAlpha));
+        fg.addColorStop(pos, withAlpha(band, filmAlpha * ringShape));
       }
       ctx.fillStyle = fg;
       ctx.beginPath();
-      ctx.arc(x, y, filmR, 0, Math.PI * 2);
+      ctx.arc(x, y, ringOuter, 0, Math.PI * 2);
       ctx.fill();
     }
   }
