@@ -26,7 +26,7 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 
-const visibleCtx = canvas.getContext('2d')!;
+const ctx = canvas.getContext('2d')!;
 const controls = bindInput(canvas);
 
 // Dev workflow only: the level editor's "Play" button saves its draft to
@@ -79,18 +79,11 @@ function drawTrails(): void {
 
 const fx = createFxState();
 const bgFx = createBgFx();
-const crt = createCrtState(visibleCtx);
-// Every draw call below this point targets the CRT module's offscreen
-// scene canvas, not the visible canvas directly - drawCrtFrame() re-draws
-// the finished scene onto the visible canvas (warped, if crt.on) as the
-// very last step each frame. See crt.ts's header comment.
-const ctx = crt.sceneCtx;
+const crt = createCrtState(ctx);
 
 // Toggle button (see index.html) - kept as a plain DOM element rather than
 // a canvas hit-zone so it never competes with input.ts's flipper/shield/
-// launch touch zones. "Easy to turn off" per the user's ask: when off,
-// drawCrtFrame() does a single plain drawImage passthrough - zero extra
-// cost beyond having rendered the scene once, same as before this feature.
+// launch touch zones. "Easy to turn off" per the user's ask.
 document.getElementById('crtBtn')?.addEventListener('click', () => {
   crt.on = !crt.on;
 });
@@ -147,10 +140,9 @@ function frame(now: number): void {
   drawFx(ctx, fx, world);
   ctx.restore();
 
-  // Re-draws the finished scene onto the VISIBLE canvas as the very last
-  // step - warped into a bulging convex tube face if crt.on, otherwise a
-  // plain 1:1 blit - plus the scanline/vignette/highlight overlay.
-  drawCrtFrame(visibleCtx, crt, world.time);
+  // CRT overlay is drawn last and untransformed (no shake) so it always
+  // reads as glass in front of the tube, not part of the shaking field.
+  drawCrtFrame(ctx, crt, world.time);
 
   requestAnimationFrame(frame);
 }
