@@ -25,7 +25,7 @@ export function ballColor(color: Ball['color'], time: number): string {
   return color === 'rainbow' ? rainbowColor(time) : COLOR_HEX[color];
 }
 
-const BUMPER_COLOR: Record<'paint' | 'energy', string> = {
+export const BUMPER_COLOR: Record<'paint' | 'energy', string> = {
   paint: RED,
   energy: CYAN,
 };

@@ -123,3 +123,22 @@ export const FX_SHAKE_BASE = 6; // px, base taking a hit (bigger - more alarming
 export const FX_SHAKE_BIG = 10; // px, an overload projectile getting through (shield or base)
 export const FX_SHAKE_WIN = 8; // px, boss defeated
 export const FX_SHAKE_LOSE = 5; // px, base destroyed - noticeable but not disorienting (was 12, way too much for a single beat)
+
+// Background "paint wash" layer (bgfx.ts): every hit/flipper-swing splats a
+// soft blob of its own color onto a persistent offscreen canvas that's never
+// hard-cleared, only faded a little every rendered frame - so recent impacts
+// visibly bleed into the background and slowly dissolve instead of vanishing
+// the instant their flash ends. Purely cosmetic, same non-World state
+// pattern as fx.ts/main.ts's trail.
+export const BGFX_FADE_PER_SEC = 2; // how fast old splats dissolve (exponential-ish via destination-out)
+export const BGFX_HIT_ALPHA = 0.4; // peak alpha of a boss/shield/base/bumper/pad splat
+export const BGFX_HIT_RADIUS = 30; // px radius of a boss/shield/base/bumper/pad splat
+export const BGFX_FLIPPER_ALPHA = 0.16; // dimmer since it re-splats every tick a flipper is held active
+export const BGFX_FLIPPER_RADIUS = 20; // px radius of a flipper-tip splat
+
+// CRT/TV overlay (crt.ts): cheap scanlines + vignette + a faint flicker,
+// toggleable on-screen (dis_doc.md scope note: no texture assets, so this is
+// all drawn with canvas primitives/gradients, not an image).
+export const CRT_SCANLINE_ALPHA = 0.14;
+export const CRT_VIGNETTE_ALPHA = 0.45;
+export const CRT_FLICKER_AMOUNT = 0.025; // +/- alpha wobble on the scanline layer

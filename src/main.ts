@@ -4,6 +4,8 @@
 // unit-testable on its own.
 import { BALL_RADIUS, CANVAS_H, FIELD_W, FIXED_DT, HUD_HEIGHT } from './constants';
 import { createWorld } from './entities';
+import { createBgFx, drawBgFx, fadeBgFx, spawnBgFx } from './bgfx';
+import { createCrtState, drawCrt } from './crt';
 import { createFxState, drawFx, shakeOffset, updateFx } from './fx';
 import { bindInput } from './input';
 import { BG } from './palette';
@@ -76,12 +78,22 @@ function drawTrails(): void {
 }
 
 const fx = createFxState();
+const bgFx = createBgFx();
+const crt = createCrtState(ctx);
+
+// Toggle button (see index.html) - kept as a plain DOM element rather than
+// a canvas hit-zone so it never competes with input.ts's flipper/shield/
+// launch touch zones. "Easy to turn off" per the user's ask.
+document.getElementById('crtBtn')?.addEventListener('click', () => {
+  crt.on = !crt.on;
+});
 
 let acc = 0;
 let last = performance.now();
 
 function frame(now: number): void {
-  acc += Math.min(0.25, (now - last) / 1000); // clamp to avoid spiral of death on tab switch
+  const frameDt = Math.min(0.25, (now - last) / 1000); // clamp to avoid spiral of death on tab switch
+  acc += frameDt;
   last = now;
 
   while (acc >= FIXED_DT) {
@@ -96,9 +108,17 @@ function frame(now: number): void {
     // payload for hit-flash/screen-shake/floating-damage-number feedback -
     // see fx.ts.
     updateFx(fx, world, FIXED_DT);
+    // Splats onto the persistent background wash - spawned per fixed step
+    // (not per rendered frame) for the same reason sfx is drained here: a
+    // dropped/slow frame that runs multiple fixed steps must not miss hits.
+    spawnBgFx(bgFx, world);
     acc -= FIXED_DT;
   }
   updateTrails();
+  // Dissolve the wash at a constant real-world rate, independent of how many
+  // fixed steps ran this frame (unlike spawnBgFx above, this wants smooth
+  // wall-clock time, not sim time).
+  fadeBgFx(bgFx, frameDt);
 
   // Full opaque reset every frame - no leftover "dirt" from previous frames
   // - then an explicit, deliberately-faded trail drawn underneath the crisp
@@ -107,6 +127,7 @@ function frame(now: number): void {
   // the background color).
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
+  drawBgFx(ctx, bgFx);
 
   // Screen shake only offsets the actual drawing below, not the opaque
   // clear above - so a shaking frame reveals the same flat background at
@@ -118,6 +139,10 @@ function frame(now: number): void {
   render(ctx, world);
   drawFx(ctx, fx, world);
   ctx.restore();
+
+  // CRT overlay is drawn last and untransformed (no shake) so it always
+  // reads as glass in front of the tube, not part of the shaking field.
+  drawCrt(ctx, crt, world.time);
 
   requestAnimationFrame(frame);
 }
