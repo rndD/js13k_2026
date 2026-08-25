@@ -19,7 +19,7 @@ import {
   HUD_HEIGHT,
 } from './constants';
 import { LEVEL } from './level';
-import { CYAN, ORANGE, RED, WHITE, YELLOW } from './palette';
+import { CYAN, ORANGE, RED, WHITE, YELLOW, withGlow } from './palette';
 import type { FxEvent, World } from './types';
 
 interface Floater {
@@ -133,8 +133,10 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
   for (const f of fx.floaters) {
     const t = f.age / FX_FLOATER_LIFE;
     ctx.globalAlpha = 1 - t;
-    ctx.fillStyle = f.color;
-    ctx.fillText(f.text, f.x, f.y - t * FX_FLOATER_RISE);
+    withGlow(ctx, f.color, 6, () => {
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y - t * FX_FLOATER_RISE);
+    });
   }
   ctx.globalAlpha = 1;
 

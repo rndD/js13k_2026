@@ -12,8 +12,8 @@ export const WHITE = '#e8e8f0'; // bright neutral - fresh ball, boss face, plung
 export const CYAN = '#38d6ff'; // energy bumper / shield
 export const MAGENTA = '#ff3bd6'; // overload/"big" projectiles
 export const YELLOW = '#ffe93b'; // launch pads (speed), aim indicator, overload telegraph
-export const LIME = '#9dff3b'; // bumper impact pulse rings
-export const VIOLET = '#b23bff'; // launch-pad impact pulse rings, rainbow-tier accent
+export const LIME = '#9dff3b'; // build-power / multiplier readout
+export const VIOLET = '#b23bff'; // rainbow-tier spectrum accent, active-flipper glow
 export const RED = '#ff3b6b'; // paint bumper / boss hp / damage
 export const ORANGE = '#ff8a3b'; // base hp / normal projectiles / base-hit flash
 

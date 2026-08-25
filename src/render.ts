@@ -8,7 +8,7 @@
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, BALL_RADIUS, BUMPER_COOLDOWN, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN } from './constants';
 import { LEVEL } from './level';
-import { CYAN, HUD_BG, LIME, MAGENTA, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
+import { BG, CYAN, HUD_BG, LIME, MAGENTA, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
 export const COLOR_HEX: Record<Ball['color'], string> = {
@@ -288,17 +288,20 @@ function drawBumper(ctx: CanvasRenderingContext2D, b: { x: number; y: number; r:
 }
 
 function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = WHITE;
   ctx.lineWidth = 8;
   ctx.lineCap = 'round';
   for (const f of world.flippers) {
     // f.angle is already mirrored for the right side by createFlippers().
     const tipX = f.pivot.x + Math.cos(f.angle) * f.length;
     const tipY = f.pivot.y + Math.sin(f.angle) * f.length;
-    ctx.beginPath();
-    ctx.moveTo(f.pivot.x, f.pivot.y);
-    ctx.lineTo(tipX, tipY);
-    ctx.stroke();
+    const color = f.active ? VIOLET : WHITE;
+    withGlow(ctx, color, f.active ? 10 : 0, () => {
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(f.pivot.x, f.pivot.y);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+    });
   }
 }
 
@@ -341,7 +344,7 @@ function drawAimIndicator(ctx: CanvasRenderingContext2D, world: World): void {
   const ball = world.balls.find((b) => b.id === aim.ballId);
   if (!ball) return;
 
-  ctx.fillStyle = withAlpha('#050208', 0.55);
+  ctx.fillStyle = withAlpha(BG, 0.55);
   ctx.fillRect(0, 0, FIELD_W, FIELD_H);
 
   const len = 60;
