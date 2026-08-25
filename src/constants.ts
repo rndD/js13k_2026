@@ -137,7 +137,7 @@ export const FX_SHAKE_LOSE = 5; // px, base destroyed - noticeable but not disor
 export const BGFX_HIT_ALPHA = 0.4; // peak alpha of a splat
 export const BGFX_HIT_RADIUS = 26; // px starting radius of a splat
 export const BGFX_LIFE = 7; // s a splat lives before fully fading (randomized +/-30% per splat)
-export const BGFX_GROWTH_PER_SEC = 0.35; // fraction of its radius a splat grows per second it's alive
+export const BGFX_GROWTH_PER_SEC = 0.1; // fraction of its radius a splat grows per second it's alive - kept small since BGFX_LIFE is long (up to ~9s with randomization); at 0.35 a splat nearly quadrupled in size by the end, reading as a giant blob rather than a stain
 export const BGFX_DRIFT_SPEED = 14; // px/s vertical drift speed (randomized direction + magnitude per splat)
 export const BGFX_SWAY_AMP = 10; // px, how far a splat sways side to side
 export const BGFX_SWAY_FREQ = 1.6; // rad/s, sway speed (randomized per splat)
@@ -151,9 +151,15 @@ export const BGFX_SWAY_FREQ = 1.6; // rad/s, sway speed (randomized per splat)
 // earlier version did) crushed the sheen to near-invisibility right when it
 // should be at its brightest.
 export const BGFX_FILM_START = 0.3; // fraction of life (0..1) at which the sheen starts appearing
-export const BGFX_FILM_ALPHA = 1.6; // sheen peak alpha, relative to the splat's own peak alpha (ring-shaped, so its true peak is lower than this raw multiplier)
+export const BGFX_FILM_ALPHA = 1.1; // sheen peak alpha, relative to the splat's own peak alpha (ring-shaped, so its true peak is lower than this raw multiplier) - toned down from 1.6, read as too strong/harsh
 export const BGFX_FILM_SPEED = 0.5; // rad/s-ish - how fast the sheen's bands cycle through the spectrum as it decays
 export const BGFX_FILM_BANDS = 5; // number of color bands sampled across the sheen's ring
+export const BGFX_FILM_RING_OUTER = 1.3; // sheen's outer radius as a multiple of the splat's own radius (was 1.5 - shrunk along with the general size-down pass)
+// A ball currently overlapping a splat carves a soft hole through it via
+// destination-out compositing, as if physically parting/cutting the film as
+// it flies through - rather than just passing over a static painted layer.
+export const BGFX_CUT_RADIUS_MULT = 2.4; // the carved hole's radius, as a multiple of the ball's own radius
+export const BGFX_CUT_ALPHA = 0.85; // how fully the hole erases at its center (1 = fully transparent)
 
 
 // CRT/TV overlay (crt.ts): cheap scanlines + vignette + a faint flicker,

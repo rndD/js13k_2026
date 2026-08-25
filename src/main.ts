@@ -134,7 +134,7 @@ function frame(now: number): void {
   const shake = shakeOffset(fx);
   ctx.save();
   ctx.translate(shake.x, shake.y);
-  drawBgFx(ctx, bgFx);
+  drawBgFx(ctx, bgFx, world);
   drawTrails();
   render(ctx, world);
   drawFx(ctx, fx, world);

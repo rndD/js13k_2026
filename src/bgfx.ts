@@ -26,10 +26,21 @@
 // stand-in for the way a real thin oil film splits light into shifting
 // iridescent bands as it gets thinner, instead of it just uniformly
 // shrinking away as one flat color.
+//
+// A ball currently sitting on top of a splat also carves a soft BG-colored
+// "hole" through it (see BGFX_CUT_* / drawBgFx's final loop) - as if the
+// ball is physically parting/cutting the film as it flies through, rather
+// than just passing over a static painted layer. This is recomputed fresh
+// every frame from the ball's live position (no persistent per-splat
+// state), so the gap closes right back up the instant the ball moves on -
+// a live "wake" through the film, not a permanent scar.
 import {
+  BGFX_CUT_ALPHA,
+  BGFX_CUT_RADIUS_MULT,
   BGFX_DRIFT_SPEED,
   BGFX_FILM_ALPHA,
   BGFX_FILM_BANDS,
+  BGFX_FILM_RING_OUTER,
   BGFX_FILM_SPEED,
   BGFX_FILM_START,
   BGFX_GROWTH_PER_SEC,
@@ -40,7 +51,7 @@ import {
   BGFX_SWAY_FREQ,
   HUD_HEIGHT,
 } from './constants';
-import { CYAN, ORANGE, RED, STRUCTURE, VIOLET, YELLOW, rainbowColor, withAlpha } from './palette';
+import { BG, CYAN, ORANGE, RED, STRUCTURE, VIOLET, YELLOW, rainbowColor, withAlpha } from './palette';
 import type { ContactEvent, World } from './types';
 
 interface Splat {
@@ -124,10 +135,12 @@ export function updateBgFx(state: BgFxState, dt: number): void {
 
 /** Draws every live splat at its own current drifted/grown/faded position -
  * additive blending so overlapping colors mix into a bright sheen instead
- * of one covering another. Call inside the same shake-translated block as
- * the rest of the playfield so the wash shakes along with a hit, like the
- * trail/render/fx layers. */
-export function drawBgFx(ctx: CanvasRenderingContext2D, state: BgFxState): void {
+ * of one covering another - then carves a soft hole under each live ball,
+ * as if it's physically parting/cutting the film as it flies through
+ * rather than just passing over a static painted layer. Call inside the
+ * same shake-translated block as the rest of the playfield so the wash
+ * shakes along with a hit, like the trail/render/fx layers. */
+export function drawBgFx(ctx: CanvasRenderingContext2D, state: BgFxState, world: World): void {
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
   ctx.globalCompositeOperation = 'lighter';
@@ -162,7 +175,7 @@ export function drawBgFx(ctx: CanvasRenderingContext2D, state: BgFxState): void 
     const filmT = Math.max(0, (t - BGFX_FILM_START) / (1 - BGFX_FILM_START));
     if (filmT > 0) {
       const ringInner = r * 0.7;
-      const ringOuter = r * 1.5;
+      const ringOuter = r * BGFX_FILM_RING_OUTER;
       const filmTaper = t > 0.92 ? Math.max(0, (1 - t) / 0.08) : 1; // quick fade in the final 8% of life, avoids a pop when the splat is removed
       const filmAlpha = s.peakAlpha * BGFX_FILM_ALPHA * filmT * filmTaper;
       const fg = ctx.createRadialGradient(x, y, ringInner, x, y, ringOuter);
@@ -177,6 +190,28 @@ export function drawBgFx(ctx: CanvasRenderingContext2D, state: BgFxState): void 
       ctx.arc(x, y, ringOuter, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+
+  // Cut a soft hole through whatever's been painted so far wherever a ball
+  // currently sits - repaints the plain field BG color there via normal
+  // ('source-over') blending, rather than 'destination-out' (which punches
+  // real alpha transparency, revealing whatever's behind the <canvas>
+  // element in the DOM instead of this game's own BG tone - invisible/wrong
+  // on a near-black page background). Drawn once per ball, after all
+  // splats, rather than per-splat - this reads as the ball parting the film
+  // as it moves through it (the gap closes back up the instant the ball
+  // moves on, since splats are fully redrawn from scratch every frame - a
+  // live "wake", not a permanent scar).
+  ctx.globalCompositeOperation = 'source-over';
+  for (const b of world.balls) {
+    const cutR = b.r * BGFX_CUT_RADIUS_MULT;
+    const cg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, cutR);
+    cg.addColorStop(0, withAlpha(BG, BGFX_CUT_ALPHA));
+    cg.addColorStop(1, withAlpha(BG, 0));
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, cutR, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }
