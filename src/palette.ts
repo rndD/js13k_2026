@@ -50,3 +50,25 @@ export function withAlpha(hex: string, a: number): string {
   const h = parseInt(hex.slice(1), 16);
   return `rgba(${(h >> 16) & 255},${(h >> 8) & 255},${h & 255},${a})`;
 }
+
+/**
+ * Runs `draw` with a soft colored light-bleed behind it (canvas shadow, not
+ * a real glow shader - cheap and js13k-standard). This is the one thing a
+ * flat saturated fill can't give us on a near-black field: real neon reads
+ * as *emitting* light, not just being a bright color. Deliberately a
+ * save/restore-scoped wrapper (not a bare ctx.shadowBlur= toggle) so a
+ * caller can never forget to reset it and accidentally bleed glow onto
+ * unrelated later draws.
+ *
+ * Reserved for "charged/energized" things only (balls, bumpers, shield,
+ * boss, launch pads, pulses) - structural geometry (walls/pegs/flippers)
+ * and HUD text stay flat, per dis_doc.md's "effects must never come before
+ * readability" rule.
+ */
+export function withGlow(ctx: CanvasRenderingContext2D, color: string, blur: number, draw: () => void): void {
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = blur;
+  draw();
+  ctx.restore();
+}

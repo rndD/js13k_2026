@@ -8,7 +8,7 @@
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, BALL_RADIUS, BUMPER_COOLDOWN, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN } from './constants';
 import { LEVEL } from './level';
-import { CYAN, HUD_BG, LIME, MAGENTA, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha } from './palette';
+import { CYAN, HUD_BG, LIME, MAGENTA, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
 export const COLOR_HEX: Record<Ball['color'], string> = {
@@ -37,13 +37,14 @@ const BUMPER_COLOR: Record<'paint' | 'energy', string> = {
 function drawImpactPulse(ctx: CanvasRenderingContext2D, x: number, y: number, baseR: number, cooldown: number, maxCooldown: number, color: string): void {
   if (cooldown <= 0) return;
   const t = 1 - cooldown / maxCooldown; // 0 = just hit, 1 = faded out
-  ctx.globalAlpha = 1 - t;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(x, y, baseR + t * 16, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.globalAlpha = 1;
+  withGlow(ctx, color, 8 * (1 - t), () => {
+    ctx.globalAlpha = 1 - t;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x, y, baseR + t * 16, 0, Math.PI * 2);
+    ctx.stroke();
+  });
 }
 
 export function render(ctx: CanvasRenderingContext2D, world: World): void {
@@ -60,7 +61,10 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
   drawBoss(ctx, world);
   for (const b of world.bumpers) {
     drawBumper(ctx, b, BUMPER_COLOR[b.kind]);
-    drawImpactPulse(ctx, b.x, b.y, b.r, b.cooldown, BUMPER_COOLDOWN, LIME);
+    // pulses in the SAME hue as the bumper that fired it, per dis_doc.md's
+    // paint-burst rule ("color of the element that caused them") - not a
+    // generic accent color unrelated to what was actually hit.
+    drawImpactPulse(ctx, b.x, b.y, b.r, b.cooldown, BUMPER_COOLDOWN, BUMPER_COLOR[b.kind]);
   }
   drawFlippers(ctx, world);
   drawProjectiles(ctx, world);
@@ -141,12 +145,14 @@ function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
  * on-field feedback (the actual shield/base status lives in the HUD bar). */
 function drawShieldIndicator(ctx: CanvasRenderingContext2D, world: World): void {
   if (!world.shield.active) return;
-  ctx.strokeStyle = withAlpha(CYAN, 0.85);
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(0, LEVEL.shield.y);
-  ctx.lineTo(FIELD_W, LEVEL.shield.y);
-  ctx.stroke();
+  withGlow(ctx, CYAN, 12, () => {
+    ctx.strokeStyle = withAlpha(CYAN, 0.85);
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, LEVEL.shield.y);
+    ctx.lineTo(FIELD_W, LEVEL.shield.y);
+    ctx.stroke();
+  });
 }
 
 function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
@@ -162,21 +168,23 @@ function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
 /** Directional boost pads, drawn as small triangles pointing along their angle. */
 function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
   const size = 12;
-  ctx.fillStyle = YELLOW;
   for (const pad of world.launchPads) {
-    ctx.save();
-    ctx.translate(pad.x, pad.y);
-    ctx.rotate(pad.angle);
-    ctx.globalAlpha = pad.cooldown > 0 ? 0.4 : 1;
-    ctx.beginPath();
-    ctx.moveTo(size, 0);
-    ctx.lineTo(-size * 0.6, size * 0.6);
-    ctx.lineTo(-size * 0.6, -size * 0.6);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-    ctx.globalAlpha = 1;
-    drawImpactPulse(ctx, pad.x, pad.y, size * 0.7, pad.cooldown, LAUNCH_PAD_COOLDOWN, VIOLET);
+    withGlow(ctx, YELLOW, 10, () => {
+      ctx.fillStyle = YELLOW;
+      ctx.save();
+      ctx.translate(pad.x, pad.y);
+      ctx.rotate(pad.angle);
+      ctx.globalAlpha = pad.cooldown > 0 ? 0.4 : 1;
+      ctx.beginPath();
+      ctx.moveTo(size, 0);
+      ctx.lineTo(-size * 0.6, size * 0.6);
+      ctx.lineTo(-size * 0.6, -size * 0.6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    });
+    // pad pulses YELLOW too - its own fill color, same rule as bumpers above.
+    drawImpactPulse(ctx, pad.x, pad.y, size * 0.7, pad.cooldown, LAUNCH_PAD_COOLDOWN, YELLOW);
   }
 }
 
@@ -217,12 +225,15 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
 function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const { boss } = world;
   const r = boss.r;
+  const ringColor = boss.overloadCharging ? YELLOW : RED;
 
-  ctx.strokeStyle = boss.overloadCharging ? YELLOW : RED;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
-  ctx.stroke();
+  withGlow(ctx, ringColor, 10, () => {
+    ctx.strokeStyle = ringColor;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+  });
 
   if (boss.overloadCharging) {
     ctx.strokeStyle = withAlpha(YELLOW, 0.6);
@@ -267,11 +278,13 @@ function drawAngryFace(ctx: CanvasRenderingContext2D, cx: number, cy: number, r:
 }
 
 function drawBumper(ctx: CanvasRenderingContext2D, b: { x: number; y: number; r: number; cooldown: number }, color: string): void {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = b.cooldown > 0 ? 2 : 4;
-  ctx.beginPath();
-  ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-  ctx.stroke();
+  withGlow(ctx, color, b.cooldown > 0 ? 4 : 9, () => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = b.cooldown > 0 ? 2 : 4;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.stroke();
+  });
 }
 
 function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
@@ -306,10 +319,13 @@ function drawProjectiles(ctx: CanvasRenderingContext2D, world: World): void {
 
 function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
   for (const ball of world.balls) {
-    ctx.fillStyle = ballColor(ball.color, world.time);
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-    ctx.fill();
+    const color = ballColor(ball.color, world.time);
+    withGlow(ctx, color, 10, () => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
   }
 }
 
@@ -369,6 +385,10 @@ function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.textAlign = 'left';
   const ball = world.balls[0];
   if (ball) {
+    // LIME (previously unused) reads as a distinct "power" readout, separate
+    // from the plain white HUD/status text - dis_doc.md's color-progression
+    // table treats build strength as its own visual channel.
+    ctx.fillStyle = LIME;
     ctx.fillText(`x${ball.multiplier.toFixed(1)}`, ball.x + 10, ball.y - 10);
   }
   if (world.phase === 'launch') {
