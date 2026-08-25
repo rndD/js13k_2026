@@ -162,5 +162,5 @@ export const CRT_HIGHLIGHT_ALPHA = 0.05; // faint glass-reflection highlight, up
 // rows (horizontal bulge) and once for columns (vertical bulge). Cheap
 // (a couple dozen drawImage calls, no per-pixel math) but reads as a
 // genuinely convex, slightly-distorted old tube face.
-export const CRT_BULGE_AMOUNT = 0.05; // max extra scale at dead-center (5%), tapering to 0 at the edges
+export const CRT_BULGE_AMOUNT = 0.04; // max extra scale at dead-center (4%), tapering to 0 at the edges
 export const CRT_BULGE_STRIPS = 24; // number of strips per axis - higher is smoother but costs more drawImage calls

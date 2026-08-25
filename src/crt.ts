@@ -28,6 +28,7 @@ import {
   CRT_SCANLINE_ALPHA,
   CRT_VIGNETTE_ALPHA,
   FIELD_W,
+  HUD_HEIGHT,
 } from './constants';
 import { BG, WHITE, withAlpha } from './palette';
 
@@ -99,26 +100,39 @@ export function createCrtState(ctx: CanvasRenderingContext2D): CrtState {
 
 /** Bulges `src` onto `dst` one axis at a time: strips scale up toward the
  * center (cosine falloff) and back to 1x at the edges, so the whole image
- * balloons outward in the middle instead of shifting as a flat rectangle. */
+ * balloons outward in the middle instead of shifting as a flat rectangle.
+ * The HUD strip is left untouched (copied straight across) in both passes
+ * - it's a fixed status readout, not part of the "tube glass", and warping
+ * it (previously stretched by the same pixel amount as the much-taller
+ * playfield, i.e. a much bigger fraction of its own height) read as a
+ * jarring, overly-convex bend right at the top per user feedback. */
 function warpRows(src: CanvasImageSource, dst: CanvasRenderingContext2D, w: number, h: number): void {
-  const stripH = h / CRT_BULGE_STRIPS;
+  dst.drawImage(src, 0, 0, w, HUD_HEIGHT, 0, 0, w, HUD_HEIGHT);
+  const innerH = h - HUD_HEIGHT;
+  const stripH = innerH / CRT_BULGE_STRIPS;
   for (let i = 0; i < CRT_BULGE_STRIPS; i++) {
-    const ny = ((i + 0.5) / CRT_BULGE_STRIPS) * 2 - 1; // -1..1, 0 at vertical center
+    const ny = ((i + 0.5) / CRT_BULGE_STRIPS) * 2 - 1; // -1..1 over the playfield only
     const scale = 1 + CRT_BULGE_AMOUNT * Math.cos((ny * Math.PI) / 2);
-    const srcY = i * stripH;
+    const srcY = HUD_HEIGHT + i * stripH;
     const destW = w * scale;
     dst.drawImage(src, 0, srcY, w, stripH, (w - destW) / 2, srcY, destW, stripH);
   }
 }
 
 function warpCols(src: CanvasImageSource, dst: CanvasRenderingContext2D, w: number, h: number): void {
+  dst.drawImage(src, 0, 0, w, HUD_HEIGHT, 0, 0, w, HUD_HEIGHT);
+  const innerH = h - HUD_HEIGHT;
   const stripW = w / CRT_BULGE_STRIPS;
+  // Anchored at the playfield's own TOP edge (not centered) so that edge
+  // stays perfectly still right under the HUD - a subtler curve up top -
+  // while the extra height from scale>1 all grows downward, making the
+  // bulge read clearly near the bottom instead of vanishing there.
   for (let i = 0; i < CRT_BULGE_STRIPS; i++) {
     const nx = ((i + 0.5) / CRT_BULGE_STRIPS) * 2 - 1; // -1..1, 0 at horizontal center
     const scale = 1 + CRT_BULGE_AMOUNT * Math.cos((nx * Math.PI) / 2);
     const srcX = i * stripW;
-    const destH = h * scale;
-    dst.drawImage(src, srcX, 0, stripW, h, srcX, (h - destH) / 2, stripW, destH);
+    const destH = innerH * scale;
+    dst.drawImage(src, srcX, HUD_HEIGHT, stripW, innerH, srcX, HUD_HEIGHT, stripW, destH);
   }
 }
 
