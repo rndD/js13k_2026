@@ -324,10 +324,27 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
   for (const ball of world.balls) {
     const color = ballColor(ball.color, world.time);
     withGlow(ctx, color, 10, () => {
-      ctx.fillStyle = color;
+      // Offset highlight + dark rim turns the flat disc into a cheap sphere.
+      const gradient = ctx.createRadialGradient(ball.x - ball.r * 0.35, ball.y - ball.r * 0.35, 1, ball.x, ball.y, ball.r);
+      gradient.addColorStop(0, WHITE);
+      gradient.addColorStop(0.35, color);
+      gradient.addColorStop(1, BG);
+      ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
       ctx.fill();
+
+      // A rotating off-centre crescent is the surface cue that makes the
+      // sphere visibly spin while the existing trail communicates flight.
+      ctx.save();
+      ctx.translate(ball.x, ball.y);
+      ctx.rotate(world.time * 8 + ball.id);
+      ctx.strokeStyle = withAlpha(WHITE, 0.7);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(ball.r * 0.15, 0, ball.r * 0.55, -1.1, 1.1);
+      ctx.stroke();
+      ctx.restore();
     });
   }
 }
