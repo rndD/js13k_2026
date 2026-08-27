@@ -24,9 +24,10 @@ function zoneAt(x: number, y: number): Zone {
 }
 
 export function bindInput(canvas: HTMLCanvasElement): ControlsState {
-  const controls: ControlsState = { left: false, right: false, launch: false };
+  const controls: ControlsState = { left: false, right: false, launch: false, choice: null };
   const pointerZones = new Map<number, Zone>();
-  const keys = { left: false, right: false, launch: false };
+  const pointerChoices = new Map<number, number>();
+  const keys = { left: false, right: false, launch: false, choice: null as number | null };
 
   canvas.style.touchAction = 'none';
 
@@ -42,6 +43,7 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
     controls.left = left;
     controls.right = right;
     controls.launch = launch;
+    controls.choice = keys.choice ?? pointerChoices.values().next().value ?? null;
   }
 
   function toLogical(clientX: number, clientY: number): { x: number; y: number } {
@@ -56,6 +58,7 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
     unlockAudio(); // first real user gesture - browsers require this before any Web Audio playback
     const { x, y } = toLogical(e.clientX, e.clientY);
     pointerZones.set(e.pointerId, zoneAt(x, y));
+    if (y >= 0) pointerChoices.set(e.pointerId, Math.max(0, Math.min(2, Math.floor(x / (FIELD_W / 3)))));
     // Capture is just so a finger/mouse dragging off-canvas still delivers
     // pointerup here instead of getting silently lost - it's not essential
     // to the zone tracking itself, so a failure here (e.g. no genuine active
@@ -70,10 +73,12 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
   });
   canvas.addEventListener('pointerup', (e) => {
     pointerZones.delete(e.pointerId);
+    pointerChoices.delete(e.pointerId);
     recompute();
   });
   canvas.addEventListener('pointercancel', (e) => {
     pointerZones.delete(e.pointerId);
+    pointerChoices.delete(e.pointerId);
     recompute();
   });
 
@@ -82,6 +87,7 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
     if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = true;
     else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = true;
     else if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.launch = true;
+    else if (e.key === '1' || e.key === '2' || e.key === '3') keys.choice = Number(e.key) - 1;
     else return;
     recompute();
   });
@@ -89,6 +95,7 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
     if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = false;
     else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = false;
     else if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.launch = false;
+    else if (e.key === '1' || e.key === '2' || e.key === '3') keys.choice = null;
     else return;
     recompute();
   });

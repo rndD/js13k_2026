@@ -18,6 +18,7 @@ import {
   ARMOR_HIT_COOLDOWN,
   ARMOR_ORBIT_RADIUS,
   ARMOR_ROTATION_SPEED,
+  ARMOR_SHATTER_DAMAGE,
   ARMOR_THICKNESS,
   BOSS_HIT_COOLDOWN,
   BOSS_MOVE_SPEED,
@@ -61,6 +62,7 @@ import {
   STUCK_TIMEOUT,
   WALL_THICKNESS,
 } from './constants';
+import { ABILITIES } from './abilities';
 import { createBall } from './entities';
 import {
   clampSpeed,
@@ -89,6 +91,11 @@ export function step(world: World, controls: ControlsState, dt: number): World {
     return world;
   }
 
+  if (world.phase === 'pick') {
+    updatePick(world, controls);
+    return world;
+  }
+
   world.time += dt;
 
   updateFlippers(world, controls, dt);
@@ -106,10 +113,74 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   updateBoss(world, dt);
   updateBalls(world, dt);
   updateCooldowns(world, dt);
+  queueUpgradeMilestones(world);
   checkOutcome(world);
   checkAllBallsLost(world);
+  if (world.pendingUpgrades > 0 && !isFinished(world)) beginPick(world);
 
   return world;
+}
+
+function isFinished(world: World): boolean {
+  return world.phase === 'win' || world.phase === 'lose';
+}
+
+function queueUpgradeMilestones(world: World): void {
+  while (world.points >= world.nextUpgradeAt) {
+    world.pendingUpgrades += 1;
+    const nextGap = world.previousUpgradeGap + world.upgradeGap;
+    world.previousUpgradeGap = world.upgradeGap;
+    world.upgradeGap = nextGap;
+    world.nextUpgradeAt += nextGap;
+  }
+}
+
+function beginPick(world: World, resumePhase = world.phase): void {
+  const offers = ABILITIES
+    .filter((ability) => world.upgrades[ability.id] < ability.maxStacks)
+    .slice(0, 3)
+    .map((ability) => ability.id);
+  if (!offers.length) {
+    world.pendingUpgrades = 0;
+    return;
+  }
+  world.pendingUpgrades -= 1;
+  world.pick = {
+    offers,
+    resumePhase: resumePhase as 'launch' | 'battle' | 'aim',
+    armed: false,
+    selected: null,
+  };
+  world.phase = 'pick';
+  world.sfx.push('upgradeOpen');
+}
+
+function updatePick(world: World, controls: ControlsState): void {
+  const pick = world.pick;
+  if (!pick) return;
+  const anyHeld = controls.left || controls.right || controls.launch || controls.choice !== null;
+  if (!pick.armed) {
+    if (!anyHeld) pick.armed = true;
+    return;
+  }
+  const index = controls.choice ?? (controls.left ? 0 : controls.launch ? 1 : controls.right ? 2 : -1);
+  if (pick.selected === null) {
+    if (pick.offers[index]) pick.selected = index;
+    return;
+  }
+  if (anyHeld) return;
+  const id = pick.offers[pick.selected];
+  if (!id) return;
+
+  world.upgrades[id] += 1;
+  world.upgradeCount += 1;
+  if (id === 'extraCore') world.coreBalls += 1;
+  world.sfx.push('upgradePick');
+
+  const resumePhase = pick.resumePhase;
+  world.pick = null;
+  world.phase = resumePhase;
+  if (world.pendingUpgrades > 0) beginPick(world, resumePhase);
 }
 
 function updateFlippers(world: World, controls: ControlsState, dt: number): void {
@@ -285,6 +356,18 @@ function updateBalls(world: World, dt: number): void {
           addPoints(world, damage + (armor.hp === 0 ? POINTS_ARMOR_BREAK : 0));
           world.sfx.push(armor.hp === 0 ? 'armorBreak' : 'armorHit');
           world.fx.push({ kind: 'armor', x: hit.x, y: hit.y, amount: damage });
+          if (armor.hp === 0 && world.upgrades.armorShatter > 0) {
+            const splash = ARMOR_SHATTER_DAMAGE * world.upgrades.armorShatter;
+            for (const other of world.boss.armor) {
+              if (other === armor || other.hp <= 0) continue;
+              const dealt = Math.min(other.hp, splash);
+              other.hp -= dealt;
+              addPoints(world, dealt + (other.hp === 0 ? POINTS_ARMOR_BREAK : 0));
+              const ox = world.boss.x + Math.cos(other.angle) * ARMOR_ORBIT_RADIUS;
+              const oy = world.boss.y + Math.sin(other.angle) * ARMOR_ORBIT_RADIUS;
+              world.fx.push({ kind: 'armor', x: ox, y: oy, amount: dealt });
+            }
+          }
           expired = spendEchoStability(ball);
         }
         break;
@@ -371,12 +454,13 @@ function explodeBall(world: World, ball: Ball): void {
 }
 
 function convertHostile(world: World, ball: Ball): void {
+  const recruiter = world.upgrades.recruiter;
   ball.role = 'echo';
   ball.stability = ECHO_STABILITY;
   ball.lifetime = ECHO_LIFETIME;
   ball.damage = 0;
-  ball.multiplier = 1;
-  ball.charge = 0;
+  ball.multiplier = 1 + recruiter * 0.5;
+  ball.charge = recruiter;
   ball.color = 'white';
   ball.accent = false;
   ball.roleFlash = ROLE_FLASH_DURATION;

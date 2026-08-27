@@ -8,6 +8,7 @@ export interface Vec2 {
 }
 
 export type BallRole = 'core' | 'hostile' | 'echo';
+export type AbilityId = 'extraCore' | 'recruiter' | 'armorShatter';
 
 export interface Ball {
   id: number;
@@ -114,7 +115,14 @@ export interface LaunchPad {
   cooldown: number;
 }
 
-export type Phase = 'launch' | 'battle' | 'aim' | 'win' | 'lose';
+export type Phase = 'launch' | 'battle' | 'aim' | 'pick' | 'win' | 'lose';
+
+export interface PickState {
+  offers: AbilityId[];
+  resumePhase: Exclude<Phase, 'pick' | 'win' | 'lose'>;
+  armed: boolean;
+  selected: number | null;
+}
 
 /**
  * Discrete sound-trigger tags. sim.ts stays headless (no Audio/DOM calls of
@@ -132,6 +140,8 @@ export type SfxEvent =
   | 'hostileSpawn'
   | 'echoCapture'
   | 'ballExplode'
+  | 'upgradeOpen'
+  | 'upgradePick'
   | 'armorHit'
   | 'armorBreak'
   | 'ballDrain'
@@ -211,6 +221,13 @@ export interface World {
   /** total core balls left, including one currently in play */
   coreBalls: number;
   points: number;
+  upgrades: Record<AbilityId, number>;
+  previousUpgradeGap: number;
+  upgradeGap: number;
+  nextUpgradeAt: number;
+  pendingUpgrades: number;
+  upgradeCount: number;
+  pick: PickState | null;
   hostileHintTimer: number;
   hasShownHostileHint: boolean;
   balls: Ball[];
@@ -234,10 +251,12 @@ export interface ControlsState {
   left: boolean;
   right: boolean;
   launch: boolean;
+  choice: number | null;
 }
 
 export const NO_CONTROLS: ControlsState = {
   left: false,
   right: false,
   launch: false,
+  choice: null,
 };

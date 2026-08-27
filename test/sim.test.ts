@@ -150,6 +150,63 @@ describe('energy target', () => {
   });
 });
 
+describe('upgrade milestones', () => {
+  it('pauses at 100 points, grants a free choice, and resumes the frozen fight', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.points = 90;
+    const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
+    const ball = createBall(1, target.x + target.r + 3, target.y);
+    ball.vx = -10;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.phase).toBe('pick');
+    expect(world.points).toBe(110);
+    expect(world.nextUpgradeAt).toBe(250);
+    expect(world.pick?.offers).toEqual(['extraCore', 'recruiter', 'armorShatter']);
+    const frozen = world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }));
+
+    step(world, NO_CONTROLS, FIXED_DT); // release/arm the choice screen
+    expect(world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }))).toEqual(frozen);
+    step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT);
+    expect(world.phase).toBe('pick'); // applies on release, so gameplay input cannot leak through
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.phase).toBe('battle');
+    expect(world.pick).toBeNull();
+    expect(world.points).toBe(110);
+    expect(world.coreBalls).toBe(4);
+    expect(world.upgrades.extraCore).toBe(1);
+  });
+
+  it('queues every crossed Fibonacci milestone even if points later fall', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.points = 510;
+    world.balls = [createBall(1, 30, 300)];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.phase).toBe('pick');
+    expect(world.pendingUpgrades).toBe(2);
+    expect(world.nextUpgradeAt).toBe(900);
+    world.points = 0; // queued choices are earned permanently
+
+    for (let i = 0; i < 3; i++) {
+      step(world, NO_CONTROLS, FIXED_DT);
+      step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT);
+      step(world, NO_CONTROLS, FIXED_DT);
+    }
+
+    expect(world.phase).toBe('battle');
+    expect(world.pendingUpgrades).toBe(0);
+    expect(world.upgradeCount).toBe(3);
+    expect(world.upgrades.extraCore).toBe(3);
+  });
+});
+
 describe('combat model', () => {
   it('does not expose the removed projectile, shield, base, or overload systems', () => {
     const world = createWorld();
@@ -341,6 +398,18 @@ describe('ball roles', () => {
     expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
   });
 
+  it('makes captured echoes stronger with Recruiter ranks', () => {
+    const world = ballOnFlipper('hostile');
+    world.upgrades.recruiter = 2;
+
+    step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
+
+    const echo = world.balls.find((ball) => ball.id === 1)!;
+    expect(echo.role).toBe('echo');
+    expect(echo.charge).toBe(2);
+    expect(echo.multiplier).toBe(2);
+  });
+
   it('does not convert a hostile on passive flipper contact', () => {
     const world = ballOnFlipper('hostile');
     world.balls.push(createBall(2, 30, 300));
@@ -527,5 +596,24 @@ describe('moving armored boss', () => {
 
     expect(armor.hp).toBe(0);
     expect(world.boss.hp).toBe(bossHp);
+  });
+
+  it('damages the remaining plates when Armor Shatter breaks one', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.armorShatter = 1;
+    const armor = world.boss.armor[0];
+    armor.hp = 1;
+    const otherHp = world.boss.armor.slice(1).map((plate) => plate.hp);
+    world.balls = [createBall(
+      1,
+      world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS,
+      world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS,
+    )];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(armor.hp).toBe(0);
+    expect(world.boss.armor.slice(1).map((plate) => plate.hp)).toEqual(otherHp.map((hp) => hp - 30));
   });
 });

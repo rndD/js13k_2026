@@ -7,6 +7,7 @@
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, BALL_RADIUS, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, ROLE_FLASH_DURATION } from './constants';
+import { abilityById, type AbilityRarity } from './abilities';
 import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
@@ -68,6 +69,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
   drawFieldOverlay(ctx, world);
+  drawPickCards(ctx, world);
   ctx.restore();
 }
 
@@ -94,7 +96,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
 
   ctx.fillStyle = LIME;
-  ctx.fillText(`POINTS ${world.points}`, pad, 40);
+  ctx.fillText(`POINTS ${world.points} / ${world.nextUpgradeAt}`, pad, 40);
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
   ctx.fillText(`BALLS ${world.coreBalls}`, FIELD_W - pad, 40);
@@ -104,6 +106,59 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.moveTo(0, HUD_HEIGHT - 0.5);
   ctx.lineTo(FIELD_W, HUD_HEIGHT - 0.5);
   ctx.stroke();
+}
+
+const RARITY_COLOR: Record<AbilityRarity, string> = {
+  common: WHITE,
+  uncommon: CYAN,
+  rare: VIOLET,
+};
+
+function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
+  if (world.phase !== 'pick' || !world.pick) return;
+  ctx.fillStyle = withAlpha(BG, 0.82);
+  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = YELLOW;
+  ctx.font = 'bold 17px monospace';
+  ctx.fillText('CHOOSE UPGRADE', FIELD_W / 2, 145);
+  ctx.fillStyle = STRUCTURE;
+  ctx.font = '9px monospace';
+  ctx.fillText(world.pick.armed ? 'TAP A CARD  /  KEYS 1 2 3' : 'RELEASE CONTROLS', FIELD_W / 2, 164);
+
+  const gap = 7;
+  const margin = 8;
+  const cardW = (FIELD_W - margin * 2 - gap * 2) / 3;
+  const cardH = 190;
+  const y = 185;
+  world.pick.offers.forEach((id, index) => {
+    const ability = abilityById(id);
+    const color = RARITY_COLOR[ability.rarity];
+    const x = margin + index * (cardW + gap);
+    const selected = world.pick!.selected === index;
+    withGlow(ctx, color, 5, () => {
+      ctx.fillStyle = selected ? withAlpha(color, 0.2) : withAlpha(HUD_BG, 0.96);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = selected ? 4 : 2;
+      ctx.fillRect(x, y, cardW, cardH);
+      ctx.strokeRect(x, y, cardW, cardH);
+    });
+    ctx.fillStyle = color;
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(ability.title, x + cardW / 2, y + 27);
+    ctx.font = '8px monospace';
+    ctx.fillText(ability.rarity.toUpperCase(), x + cardW / 2, y + 47);
+    ctx.fillStyle = WHITE;
+    ctx.font = '9px monospace';
+    ctx.fillText(ability.description[0], x + cardW / 2, y + 86);
+    ctx.fillText(ability.description[1], x + cardW / 2, y + 101);
+    ctx.fillStyle = STRUCTURE;
+    ctx.fillText(`RANK ${world.upgrades[id] + 1}/${ability.maxStacks}`, x + cardW / 2, y + 145);
+    ctx.fillStyle = color;
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(String(index + 1), x + cardW / 2, y + 174);
+  });
 }
 
 function drawFieldBorder(ctx: CanvasRenderingContext2D): void {

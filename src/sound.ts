@@ -24,6 +24,8 @@ const SFX: Record<SfxEvent, SfxParams> = {
   hostileSpawn: [0.8, , 180, 0.02, 0.08, 0.16, 2, 1.4, -3, -35, , , , 0.7],
   echoCapture: [1.1, , 720, 0.01, 0.08, 0.18, , 2.2, , 90, , , , , , , , 0.7],
   ballExplode: [0.75, , 110, 0.01, 0.06, 0.18, 4, 1.7, , -55, , , , 0.8, , 0.15, 0.03, 0.5],
+  upgradeOpen: [0.6, , 420, 0.02, 0.1, 0.2, , 1.6, , 120, , , , , , , , 0.65],
+  upgradePick: [0.9, , 760, 0.01, 0.08, 0.22, , 2.2, , 180, , 0.06, , , , , , 0.7],
   armorHit: [0.8, , 150, 0.01, 0.03, 0.12, 4, 2.5, , -20],
   armorBreak: [1.1, , 90, 0.01, 0.08, 0.24, 4, 1.8, , -40, , , , 0.8],
   // Ball lost to a drain: ZzFX "Jump" preset with deltaSlide negated (was
