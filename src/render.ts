@@ -152,8 +152,7 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.fillText(ability.rarity.toUpperCase(), x + cardW / 2, y + 30);
     ctx.fillStyle = WHITE;
     ctx.font = '9px monospace';
-    ctx.fillText(description[0], x + cardW / 2, y + 74);
-    ctx.fillText(description[1], x + cardW / 2, y + 89);
+    description.forEach((line, i) => ctx.fillText(line, x + cardW / 2, y + 68 + i * 15));
     ctx.fillStyle = STRUCTURE;
     ctx.fillText(`RANK ${world.upgrades[id] + 1}/${ability.maxStacks}`, x + cardW / 2, y + 145);
     ctx.fillStyle = color;

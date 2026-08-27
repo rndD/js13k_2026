@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ARMOR_ORBIT_RADIUS, AUTO_LAUNCH_DELAY, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createWorld } from '../src/entities';
+import { abilityById } from '../src/abilities';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
 import type { AbilityId } from '../src/types';
@@ -269,6 +270,14 @@ describe('upgrade milestones', () => {
 });
 
 describe('wild upgrades', () => {
+  it('explains every sacrifice consequence on the card', () => {
+    expect(abilityById('sacrifice').description).toEqual([
+      'Halve boss HP',
+      'Destroy all balls',
+      'Gain 2 more picks',
+    ]);
+  });
+
   it('adds 2, 3, 4, then 5 stock balls across Extra Ball ranks', () => {
     const world = createWorld();
     world.phase = 'battle';

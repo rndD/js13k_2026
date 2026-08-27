@@ -4,7 +4,7 @@ export type AbilityRarity = 'common' | 'uncommon' | 'rare';
 
 export interface AbilityDefinition {
   id: AbilityId;
-  description: [string, string];
+  description: string[];
   rarity: AbilityRarity;
   maxStacks: number;
 }
@@ -23,7 +23,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Split All
   { id: 'splitAll', description: ['Clone every one', 'of your live balls'], rarity: 'rare', maxStacks: 2 },
   // Sacrifice
-  { id: 'sacrifice', description: ['Halve boss life', 'gain 2 choices'], rarity: 'rare', maxStacks: 1 },
+  { id: 'sacrifice', description: ['Halve boss HP', 'Destroy all balls', 'Gain 2 more picks'], rarity: 'rare', maxStacks: 1 },
   // Boss Magnet
   { id: 'bossMagnet', description: ['Your balls curve', 'toward the boss'], rarity: 'rare', maxStacks: 3 },
   // Ball Regen
@@ -36,7 +36,7 @@ export function abilityById(id: AbilityId): AbilityDefinition {
   return ABILITIES.find((ability) => ability.id === id)!;
 }
 
-export function abilityDescription(ability: AbilityDefinition, rank: number): [string, string] {
+export function abilityDescription(ability: AbilityDefinition, rank: number): string[] {
   if (ability.id === 'extraCore') return [`Add ${rank + 2} balls`, 'to your stock'];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];
