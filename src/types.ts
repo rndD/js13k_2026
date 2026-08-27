@@ -39,6 +39,8 @@ export interface Ball {
   rescueCount: number;
   /** useful hits remaining for an echo; zero for core/hostile balls */
   stability: number;
+  /** seconds before a non-core ball bursts; zero means the core never times out */
+  lifetime: number;
   roleFlash: number;
 }
 
@@ -129,7 +131,7 @@ export type SfxEvent =
   | 'bossHitThud'
   | 'hostileSpawn'
   | 'echoCapture'
-  | 'echoExpire'
+  | 'ballExplode'
   | 'armorHit'
   | 'armorBreak'
   | 'ballDrain'
@@ -148,7 +150,7 @@ export type SfxEvent =
  * state that needs to be deterministic/serializable for tests).
  */
 export interface FxEvent {
-  kind: 'boss' | 'armor' | 'echo' | 'win' | 'lose';
+  kind: 'boss' | 'armor' | 'hostileBurst' | 'echoBurst' | 'win' | 'lose';
   x: number;
   y: number;
   /** damage dealt, drawn as a floating number - omitted for win/lose */

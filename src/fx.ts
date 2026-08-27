@@ -5,6 +5,7 @@
 // deliberately NOT part of World: it's ephemeral/non-deterministic-looking
 // render dressing, not simulation state a test would ever need to assert on.
 import {
+  FX_BURST_DURATION,
   FX_FLASH_DURATION,
   FX_FLOATER_LIFE,
   FX_FLOATER_RISE,
@@ -14,7 +15,7 @@ import {
   FX_SHAKE_WIN,
   HUD_HEIGHT,
 } from './constants';
-import { CYAN, RED, WHITE, YELLOW, withGlow } from './palette';
+import { CYAN, ORANGE, RED, WHITE, YELLOW, withGlow } from './palette';
 import type { FxEvent, World } from './types';
 
 interface Floater {
@@ -25,27 +26,30 @@ interface Floater {
   age: number;
 }
 
-interface Pop {
+interface Burst {
   x: number;
   y: number;
+  color: string;
   age: number;
+  shards: { angle: number; speed: number; size: number }[];
 }
 
 export interface FxState {
   shake: number; // current screen-shake magnitude in px, decays toward 0
   floaters: Floater[];
-  pops: Pop[];
+  bursts: Burst[];
   flashes: Map<FxEvent['kind'], number>; // remaining seconds per flash, keyed by hit location
 }
 
 export function createFxState(): FxState {
-  return { shake: 0, floaters: [], pops: [], flashes: new Map() };
+  return { shake: 0, floaters: [], bursts: [], flashes: new Map() };
 }
 
 const FLOATER_COLOR: Record<FxEvent['kind'], string> = {
   boss: RED,
   armor: CYAN,
-  echo: CYAN,
+  hostileBurst: ORANGE,
+  echoBurst: CYAN,
   win: YELLOW,
   lose: RED,
 };
@@ -53,7 +57,8 @@ const FLOATER_COLOR: Record<FxEvent['kind'], string> = {
 const SHAKE_FOR: Record<FxEvent['kind'], number> = {
   boss: FX_SHAKE_BOSS,
   armor: FX_SHAKE_BOSS,
-  echo: 1,
+  hostileBurst: 2,
+  echoBurst: 2,
   win: FX_SHAKE_WIN,
   lose: FX_SHAKE_LOSE,
 };
@@ -63,7 +68,20 @@ const SHAKE_FOR: Record<FxEvent['kind'], number> = {
 export function updateFx(fx: FxState, world: World, dt: number): void {
   for (const ev of world.fx) {
     fx.shake = Math.max(fx.shake, SHAKE_FOR[ev.kind]);
-    if (ev.kind === 'echo') fx.pops.push({ x: ev.x, y: ev.y, age: 0 });
+    if (ev.kind === 'hostileBurst' || ev.kind === 'echoBurst') {
+      const color = ev.kind === 'hostileBurst' ? ORANGE : CYAN;
+      fx.bursts.push({
+        x: ev.x,
+        y: ev.y,
+        color,
+        age: 0,
+        shards: Array.from({ length: 10 }, (_, i) => ({
+          angle: i / 10 * Math.PI * 2 + Math.random() * 0.35,
+          speed: 28 + Math.random() * 45,
+          size: 1.5 + Math.random() * 2.5,
+        })),
+      });
+    }
     else if (ev.kind !== 'win' && ev.kind !== 'lose') fx.flashes.set(ev.kind, FX_FLASH_DURATION);
     if (ev.amount !== undefined) {
       fx.floaters.push({ x: ev.x, y: ev.y, text: String(ev.amount), color: FLOATER_COLOR[ev.kind], age: 0 });
@@ -82,9 +100,9 @@ export function updateFx(fx: FxState, world: World, dt: number): void {
     f.age += dt;
     return f.age < FX_FLOATER_LIFE;
   });
-  fx.pops = fx.pops.filter((pop) => {
-    pop.age += dt;
-    return pop.age < FX_FLASH_DURATION;
+  fx.bursts = fx.bursts.filter((burst) => {
+    burst.age += dt;
+    return burst.age < FX_BURST_DURATION;
   });
 }
 
@@ -114,14 +132,23 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
     ctx.stroke();
   }
 
-  for (const pop of fx.pops) {
-    const t = pop.age / FX_FLASH_DURATION;
+  for (const burst of fx.bursts) {
+    const t = burst.age / FX_BURST_DURATION;
     ctx.globalAlpha = 1 - t;
-    ctx.strokeStyle = CYAN;
+    ctx.strokeStyle = burst.color;
     ctx.lineWidth = 3 * (1 - t);
     ctx.beginPath();
-    ctx.arc(pop.x, pop.y, 5 + t * 18, 0, Math.PI * 2);
+    ctx.arc(burst.x, burst.y, 5 + t * 25, 0, Math.PI * 2);
     ctx.stroke();
+    withGlow(ctx, burst.color, 8, () => {
+      ctx.fillStyle = burst.color;
+      for (const shard of burst.shards) {
+        const distance = shard.speed * burst.age;
+        const x = burst.x + Math.cos(shard.angle) * distance;
+        const y = burst.y + Math.sin(shard.angle) * distance + 22 * burst.age * burst.age;
+        ctx.fillRect(x - shard.size / 2, y - shard.size / 2, shard.size, shard.size);
+      }
+    });
   }
 
   ctx.globalAlpha = 1;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARMOR_ORBIT_RADIUS, BOSS_MOVE_X, BOSS_MOVE_Y, FIXED_DT, MAX_SPEED } from '../src/constants';
+import { ARMOR_ORBIT_RADIUS, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createWorld } from '../src/entities';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
@@ -289,6 +289,24 @@ function ballOnFlipper(role: 'core' | 'hostile' | 'echo') {
 }
 
 describe('ball roles', () => {
+  it('removes non-core balls when their lifetime runs out but never times out cores', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const core = createBall(1, 100, 300);
+    const hostile = createBall(2, 180, 300, 'hostile');
+    const echo = createBall(3, 260, 300, 'echo');
+    hostile.lifetime = FIXED_DT / 2;
+    echo.lifetime = FIXED_DT / 2;
+    echo.stability = 5;
+    world.balls = [core, hostile, echo];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls).toEqual([core]);
+    expect(world.sfx.filter((event) => event === 'ballExplode')).toHaveLength(2);
+    expect(world.fx.map((event) => event.kind)).toEqual(['hostileBurst', 'echoBurst']);
+  });
+
   it('lets only the core ball open precision aim', () => {
     const coreWorld = ballOnFlipper('core');
     step(coreWorld, { ...NO_CONTROLS, left: true }, FIXED_DT);
@@ -310,6 +328,7 @@ describe('ball roles', () => {
     const converted = world.balls.find((ball) => ball.id === 1)!;
     expect(converted.role).toBe('echo');
     expect(converted.stability).toBe(5);
+    expect(converted.lifetime).toBe(ECHO_LIFETIME);
     expect(world.points).toBeGreaterThan(0);
     expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(0);
 
@@ -389,7 +408,7 @@ describe('ball roles', () => {
 
     expect(world.points).toBeGreaterThan(pointsBefore);
     expect(world.balls).toHaveLength(0);
-    expect(world.sfx).toContain('echoExpire');
+    expect(world.sfx).toContain('ballExplode');
   });
 
   it('does not spend echo stability on structure or flipper contact', () => {

@@ -10,6 +10,8 @@ import {
   FLIPPER_ACTIVE_ANGLE,
   FLIPPER_LENGTH,
   FLIPPER_REST_ANGLE,
+  ECHO_LIFETIME,
+  HOSTILE_LIFETIME,
   HOSTILE_SPAWN_INTERVAL,
   STARTING_CORE_BALLS,
 } from './constants';
@@ -58,6 +60,7 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
     stuckTimer: 0,
     rescueCount: 0,
     stability: 0,
+    lifetime: role === 'hostile' ? HOSTILE_LIFETIME : role === 'echo' ? ECHO_LIFETIME : 0,
     roleFlash: 0,
   };
 }

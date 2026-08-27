@@ -27,6 +27,7 @@ import {
   BUMPER_IMPULSE,
   DIRECT_DAMAGE_BASE,
   ECHO_STABILITY,
+  ECHO_LIFETIME,
   ENERGY_TARGET_MULT_BONUS,
   FIELD_H,
   FIELD_W,
@@ -162,6 +163,13 @@ function updateBalls(world: World, dt: number): void {
 
   for (const ball of world.balls) {
     ball.roleFlash = Math.max(0, ball.roleFlash - dt);
+    if (ball.role !== 'core') {
+      ball.lifetime = Math.max(0, ball.lifetime - dt);
+      if (ball.lifetime === 0) {
+        explodeBall(world, ball);
+        continue;
+      }
+    }
     let drained = false;
     let aiming = false;
     let expired = false;
@@ -304,8 +312,7 @@ function updateBalls(world: World, dt: number): void {
 
     if (drained) continue; // ball (and its accumulated build) is lost
     if (expired) {
-      world.sfx.push('echoExpire');
-      world.fx.push({ kind: 'echo', x: ball.x, y: ball.y });
+      explodeBall(world, ball);
       continue;
     }
 
@@ -358,9 +365,15 @@ function spendEchoStability(ball: Ball): boolean {
   return ball.stability === 0;
 }
 
+function explodeBall(world: World, ball: Ball): void {
+  world.sfx.push('ballExplode');
+  world.fx.push({ kind: ball.role === 'hostile' ? 'hostileBurst' : 'echoBurst', x: ball.x, y: ball.y });
+}
+
 function convertHostile(world: World, ball: Ball): void {
   ball.role = 'echo';
   ball.stability = ECHO_STABILITY;
+  ball.lifetime = ECHO_LIFETIME;
   ball.damage = 0;
   ball.multiplier = 1;
   ball.charge = 0;

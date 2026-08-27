@@ -82,7 +82,9 @@ export const BOSS_MOVE_Y = 12;
 export const BOSS_MOVE_SPEED = 0.55;
 export const HOSTILE_SPAWN_INTERVAL = 15;
 export const HOSTILE_BALL_SPEED = 190;
+export const HOSTILE_LIFETIME = 12;
 export const ECHO_STABILITY = 5;
+export const ECHO_LIFETIME = 20;
 export const ROLE_FLASH_DURATION = 0.25;
 export const HOSTILE_HINT_DURATION = 2;
 export const ARMOR_COUNT = 3;
@@ -122,6 +124,7 @@ export const FIXED_DT = 1 / 60;
 // fx.ts's header comment for why it lives outside World, same reasoning as
 // main.ts's ball-trail Map.
 export const FX_FLASH_DURATION = 0.18; // s a hit-flash overlay stays visible before fading
+export const FX_BURST_DURATION = 0.55; // s a non-core ball explosion remains visible
 export const FX_FLOATER_LIFE = 0.7; // s a floating damage number stays visible before fading
 export const FX_FLOATER_RISE = 26; // px a floating damage number drifts upward over its life
 export const FX_SHAKE_DECAY = 90; // px/s, how fast screen shake magnitude falls off

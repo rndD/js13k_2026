@@ -62,10 +62,11 @@ export interface BgFxState {
   splats: Splat[];
 }
 
-const HIT_COLOR: Record<'boss' | 'armor' | 'echo' | 'win' | 'lose', string> = {
+const HIT_COLOR: Record<'boss' | 'armor' | 'hostileBurst' | 'echoBurst' | 'win' | 'lose', string> = {
   boss: RED,
   armor: CYAN,
-  echo: CYAN,
+  hostileBurst: RED,
+  echoBurst: CYAN,
   win: YELLOW,
   lose: RED,
 };
@@ -109,7 +110,15 @@ function spawnSplat(state: BgFxState, x: number, y: number, color: string, radiu
  * anything), spawning one splat per event, colored per its kind. */
 export function spawnBgFx(state: BgFxState, world: World): void {
   for (const ev of world.fx) {
-    spawnSplat(state, ev.x, ev.y, HIT_COLOR[ev.kind], BGFX_HIT_RADIUS, BGFX_HIT_ALPHA);
+    const burst = ev.kind === 'hostileBurst' || ev.kind === 'echoBurst';
+    spawnSplat(
+      state,
+      ev.x,
+      ev.y,
+      HIT_COLOR[ev.kind],
+      BGFX_HIT_RADIUS * (burst ? 1.6 : 1),
+      BGFX_HIT_ALPHA * (burst ? 1.5 : 1),
+    );
   }
   for (const c of world.contacts) {
     spawnSplat(state, c.x, c.y, CONTACT_COLOR[c.kind], BGFX_HIT_RADIUS, BGFX_HIT_ALPHA);
