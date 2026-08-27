@@ -277,6 +277,36 @@ describe('ball roles', () => {
     expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
   });
 
+  it('does not convert a hostile on passive flipper contact', () => {
+    const world = ballOnFlipper('hostile');
+    world.balls.push(createBall(2, 30, 300));
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls.find((ball) => ball.id === 1)?.role).toBe('hostile');
+    expect(world.aim).toBeNull();
+  });
+
+  it('does not let hostile balls earn target rewards or damage the boss', () => {
+    const targetWorld = createWorld();
+    targetWorld.phase = 'battle';
+    const target = targetWorld.bumpers.find((bumper) => bumper.kind === 'paint')!;
+    const hostile = createBall(1, target.x + target.r + 3, target.y, 'hostile');
+    hostile.vx = -10;
+    targetWorld.balls = [hostile, createBall(2, 30, 300)];
+    step(targetWorld, NO_CONTROLS, FIXED_DT);
+    expect(targetWorld.balls[0].charge).toBe(0);
+    expect(targetWorld.points).toBe(0);
+
+    const bossWorld = createWorld();
+    bossWorld.phase = 'battle';
+    for (const armor of bossWorld.boss.armor) armor.hp = 0;
+    bossWorld.balls = [createBall(1, bossWorld.boss.x, bossWorld.boss.y, 'hostile'), createBall(2, 30, 300)];
+    const hp = bossWorld.boss.hp;
+    step(bossWorld, NO_CONTROLS, FIXED_DT);
+    expect(bossWorld.boss.hp).toBe(hp);
+  });
+
   it('gives echoes half build growth and spends stability only after a useful hit', () => {
     const coreWorld = createWorld();
     coreWorld.phase = 'battle';

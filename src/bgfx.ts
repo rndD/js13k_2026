@@ -62,9 +62,10 @@ export interface BgFxState {
   splats: Splat[];
 }
 
-const HIT_COLOR: Record<'boss' | 'armor' | 'win' | 'lose', string> = {
+const HIT_COLOR: Record<'boss' | 'armor' | 'echo' | 'win' | 'lose', string> = {
   boss: RED,
   armor: CYAN,
+  echo: CYAN,
   win: YELLOW,
   lose: RED,
 };

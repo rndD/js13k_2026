@@ -149,7 +149,7 @@ export type SfxEvent =
  * state that needs to be deterministic/serializable for tests).
  */
 export interface FxEvent {
-  kind: 'boss' | 'armor' | 'win' | 'lose';
+  kind: 'boss' | 'armor' | 'echo' | 'win' | 'lose';
   x: number;
   y: number;
   /** damage dealt, drawn as a floating number - omitted for win/lose */

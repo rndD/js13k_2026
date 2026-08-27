@@ -300,7 +300,11 @@ function updateBalls(world: World, dt: number): void {
     if (bounced && !drained && !aiming && !expired) world.sfx.push('wallTick');
 
     if (drained) continue; // ball (and its accumulated build) is lost
-    if (expired) { world.sfx.push('echoExpire'); continue; }
+    if (expired) {
+      world.sfx.push('echoExpire');
+      world.fx.push({ kind: 'echo', x: ball.x, y: ball.y });
+      continue;
+    }
 
     if (!aiming && checkStuck(world, ball, dt)) {
       consumeDrainedBall(world, ball);

@@ -25,19 +25,27 @@ interface Floater {
   age: number;
 }
 
+interface Pop {
+  x: number;
+  y: number;
+  age: number;
+}
+
 export interface FxState {
   shake: number; // current screen-shake magnitude in px, decays toward 0
   floaters: Floater[];
+  pops: Pop[];
   flashes: Map<FxEvent['kind'], number>; // remaining seconds per flash, keyed by hit location
 }
 
 export function createFxState(): FxState {
-  return { shake: 0, floaters: [], flashes: new Map() };
+  return { shake: 0, floaters: [], pops: [], flashes: new Map() };
 }
 
 const FLOATER_COLOR: Record<FxEvent['kind'], string> = {
   boss: RED,
   armor: CYAN,
+  echo: CYAN,
   win: YELLOW,
   lose: RED,
 };
@@ -45,6 +53,7 @@ const FLOATER_COLOR: Record<FxEvent['kind'], string> = {
 const SHAKE_FOR: Record<FxEvent['kind'], number> = {
   boss: FX_SHAKE_BOSS,
   armor: FX_SHAKE_BOSS,
+  echo: 1,
   win: FX_SHAKE_WIN,
   lose: FX_SHAKE_LOSE,
 };
@@ -54,7 +63,8 @@ const SHAKE_FOR: Record<FxEvent['kind'], number> = {
 export function updateFx(fx: FxState, world: World, dt: number): void {
   for (const ev of world.fx) {
     fx.shake = Math.max(fx.shake, SHAKE_FOR[ev.kind]);
-    if (ev.kind !== 'win' && ev.kind !== 'lose') fx.flashes.set(ev.kind, FX_FLASH_DURATION);
+    if (ev.kind === 'echo') fx.pops.push({ x: ev.x, y: ev.y, age: 0 });
+    else if (ev.kind !== 'win' && ev.kind !== 'lose') fx.flashes.set(ev.kind, FX_FLASH_DURATION);
     if (ev.amount !== undefined) {
       fx.floaters.push({ x: ev.x, y: ev.y, text: String(ev.amount), color: FLOATER_COLOR[ev.kind], age: 0 });
     }
@@ -71,6 +81,10 @@ export function updateFx(fx: FxState, world: World, dt: number): void {
   fx.floaters = fx.floaters.filter((f) => {
     f.age += dt;
     return f.age < FX_FLOATER_LIFE;
+  });
+  fx.pops = fx.pops.filter((pop) => {
+    pop.age += dt;
+    return pop.age < FX_FLASH_DURATION;
   });
 }
 
@@ -97,6 +111,16 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.arc(world.boss.x, world.boss.y, world.boss.r + 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  for (const pop of fx.pops) {
+    const t = pop.age / FX_FLASH_DURATION;
+    ctx.globalAlpha = 1 - t;
+    ctx.strokeStyle = CYAN;
+    ctx.lineWidth = 3 * (1 - t);
+    ctx.beginPath();
+    ctx.arc(pop.x, pop.y, 5 + t * 18, 0, Math.PI * 2);
     ctx.stroke();
   }
 
