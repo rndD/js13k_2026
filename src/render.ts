@@ -7,7 +7,7 @@
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIME, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
-import { abilityById, type AbilityRarity } from './abilities';
+import { abilityById, abilityDescription, type AbilityRarity } from './abilities';
 import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
@@ -136,6 +136,7 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
   const y = 185;
   world.pick.offers.forEach((id, index) => {
     const ability = abilityById(id);
+    const description = abilityDescription(ability, world.upgrades[id]);
     const color = RARITY_COLOR[ability.rarity];
     const x = margin + index * (cardW + gap);
     const selected = world.pick!.selected === index;
@@ -146,15 +147,13 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
       ctx.fillRect(x, y, cardW, cardH);
       ctx.strokeRect(x, y, cardW, cardH);
     });
-    ctx.fillStyle = color;
-    ctx.font = 'bold 10px monospace';
-    ctx.fillText(ability.title, x + cardW / 2, y + 27);
     ctx.font = '8px monospace';
-    ctx.fillText(ability.rarity.toUpperCase(), x + cardW / 2, y + 47);
+    ctx.fillStyle = color;
+    ctx.fillText(ability.rarity.toUpperCase(), x + cardW / 2, y + 30);
     ctx.fillStyle = WHITE;
     ctx.font = '9px monospace';
-    ctx.fillText(ability.description[0], x + cardW / 2, y + 86);
-    ctx.fillText(ability.description[1], x + cardW / 2, y + 101);
+    ctx.fillText(description[0], x + cardW / 2, y + 74);
+    ctx.fillText(description[1], x + cardW / 2, y + 89);
     ctx.fillStyle = STRUCTURE;
     ctx.fillText(`RANK ${world.upgrades[id] + 1}/${ability.maxStacks}`, x + cardW / 2, y + 145);
     ctx.fillStyle = color;
