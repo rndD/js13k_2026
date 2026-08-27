@@ -42,6 +42,8 @@ export interface Ball {
   stability: number;
   /** seconds before a non-core ball bursts; zero means the core never times out */
   lifetime: number;
+  /** simulation ticks remaining before this ball may emit another wall/peg sound */
+  wallSoundTicks: number;
   roleFlash: number;
 }
 

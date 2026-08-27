@@ -340,10 +340,30 @@ function ballOnFlipper(role: 'core' | 'hostile' | 'echo') {
     flipper.pivot.y + Math.sin(flipper.angle) * flipper.length * 0.5 - 10,
     role,
   );
+
   ball.vy = 100;
   world.balls = [ball];
   return world;
 }
+
+describe('contact sound limiting', () => {
+  it('plays wall sound at most once per ball every three simulation ticks', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const ball = createBall(1, 3, 350);
+    world.balls = [ball];
+
+    const wallSounds: number[] = [];
+    for (let tick = 0; tick < 4; tick++) {
+      ball.x = 3;
+      ball.vx = -100;
+      step(world, NO_CONTROLS, FIXED_DT);
+      if (world.sfx.includes('wallTick')) wallSounds.push(tick);
+    }
+
+    expect(wallSounds).toEqual([0, 3]);
+  });
+});
 
 describe('ball roles', () => {
   it('removes non-core balls when their lifetime runs out but never times out cores', () => {

@@ -61,6 +61,7 @@ import {
   STUCK_RESCUE_SPEED,
   STUCK_TIMEOUT,
   WALL_THICKNESS,
+  WALL_SOUND_TICKS,
 } from './constants';
 import { ABILITIES } from './abilities';
 import { createBall } from './entities';
@@ -234,6 +235,7 @@ function updateBalls(world: World, dt: number): void {
 
   for (const ball of world.balls) {
     ball.roleFlash = Math.max(0, ball.roleFlash - dt);
+    ball.wallSoundTicks = Math.max(0, ball.wallSoundTicks - 1);
     if (ball.role !== 'core') {
       ball.lifetime = Math.max(0, ball.lifetime - dt);
       if (ball.lifetime === 0) {
@@ -391,7 +393,10 @@ function updateBalls(world: World, dt: number): void {
     // One tick sound max per ball for plain wall/peg contact, even if it
     // touched several segments across substeps this tick - a rapid clatter
     // of multiple clicks for one visible bounce would sound like a glitch.
-    if (bounced && !drained && !aiming && !expired) world.sfx.push('wallTick');
+    if (bounced && !drained && !aiming && !expired && ball.wallSoundTicks === 0) {
+      world.sfx.push('wallTick');
+      ball.wallSoundTicks = WALL_SOUND_TICKS;
+    }
 
     if (drained) continue; // ball (and its accumulated build) is lost
     if (expired) {

@@ -119,6 +119,7 @@ export const LAUNCH_MIN_SPEED = 260;
 export const LAUNCH_MAX_SPEED = 560;
 
 export const FIXED_DT = 1 / 60;
+export const WALL_SOUND_TICKS = 3; // per-ball wall/peg sound limiter
 
 // Visual-only feedback (fx.ts): hit-flash, screen shake, floating damage
 // numbers. Purely cosmetic/render-side state, not simulation state - see

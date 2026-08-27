@@ -61,6 +61,7 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
     rescueCount: 0,
     stability: 0,
     lifetime: role === 'hostile' ? HOSTILE_LIFETIME : role === 'echo' ? ECHO_LIFETIME : 0,
+    wallSoundTicks: 0,
     roleFlash: 0,
   };
 }
