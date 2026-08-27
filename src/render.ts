@@ -461,6 +461,6 @@ function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
   } else if (world.phase === 'lose') {
     ctx.textAlign = 'center';
     ctx.font = '24px monospace';
-    ctx.fillText('BASE DESTROYED', FIELD_W / 2, FIELD_H / 2);
+    ctx.fillText('GAME OVER', FIELD_W / 2, FIELD_H / 2);
   }
 }
