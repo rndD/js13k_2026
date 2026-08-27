@@ -301,6 +301,20 @@ describe('wild upgrades', () => {
     expect(world.bullets[0].lifetime).toBeLessThan(ECHO_LIFETIME);
   });
 
+  it('scales bullet damage from its ball modifier at half strength above x2', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.autoGun = 1;
+    const ball = createBall(1, 40, 400);
+    ball.vy = -300;
+    ball.multiplier = 4;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.bullets[0].damage).toBe(8);
+  });
+
   it('gun shots disappear on table walls instead of passing through', () => {
     const world = createWorld();
     world.phase = 'battle';

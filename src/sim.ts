@@ -302,7 +302,7 @@ function updateGun(world: World, dt: number): void {
       vx: Math.cos(angle) * BULLET_SPEED,
       vy: Math.sin(angle) * BULLET_SPEED,
       r: 2,
-      damage,
+      damage: damage * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier),
       lifetime: BULLET_LIFETIME,
     });
     ball.gunTimer = interval;
