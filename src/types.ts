@@ -69,7 +69,6 @@ export interface Boss {
 
 export interface ArmorNode {
   angle: number;
-  r: number;
   hp: number;
   maxHp: number;
 }

@@ -12,11 +12,13 @@ import {
   AIM_SWEEP_PERIOD,
   AIM_TIMEOUT,
   ARMOR_ACCENT_BONUS,
+  ARMOR_ARC_HALF,
   ARMOR_DAMAGE_BASE,
   ARMOR_DEFLECT_SPEED,
   ARMOR_HIT_COOLDOWN,
   ARMOR_ORBIT_RADIUS,
   ARMOR_ROTATION_SPEED,
+  ARMOR_THICKNESS,
   BOSS_HIT_COOLDOWN,
   BOSS_MOVE_SPEED,
   BOSS_MOVE_X,
@@ -123,7 +125,9 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
 }
 
 function updateLaunch(world: World, controls: ControlsState, dt: number): void {
-  if (world.phase !== 'launch') return;
+  const hasCore = world.balls.some((ball) => ball.role === 'core');
+  const canLaunch = world.phase === 'launch' || (world.phase === 'battle' && !hasCore && world.coreBalls > 0);
+  if (!canLaunch) return;
 
   if (controls.launch) {
     world.launch.charging = true;
@@ -161,6 +165,7 @@ function updateBalls(world: World, dt: number): void {
     let drained = false;
     let aiming = false;
     let expired = false;
+    let blockedBossThisTick = false;
     let bounced = false; // plain non-scoring wall/peg contact this tick, see wallTick push below
 
     for (let i = 0; i < BALL_SUBSTEPS && !drained && !aiming && !expired; i++) {
@@ -260,21 +265,18 @@ function updateBalls(world: World, dt: number): void {
       let hitArmor = false;
       for (const armor of world.boss.armor) {
         if (armor.hp <= 0) continue;
-        const collider = {
-          x: world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS,
-          y: world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS,
-          r: armor.r,
-        };
-        if (!resolveBumper(ball, collider, ARMOR_DEFLECT_SPEED)) continue;
+        const hit = resolveArmorArc(ball, world.boss.x, world.boss.y, armor.angle);
+        if (!hit) continue;
         hitArmor = true;
-        world.contacts.push({ kind: 'armor', x: collider.x, y: collider.y });
+        blockedBossThisTick = true;
+        world.contacts.push({ kind: 'armor', x: hit.x, y: hit.y });
         if (ball.role !== 'hostile' && ball.armorCooldown <= 0) {
           const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1));
           armor.hp = Math.max(0, armor.hp - damage);
           ball.armorCooldown = ARMOR_HIT_COOLDOWN;
           addPoints(world, damage + (armor.hp === 0 ? POINTS_ARMOR_BREAK : 0));
           world.sfx.push(armor.hp === 0 ? 'armorBreak' : 'armorHit');
-          world.fx.push({ kind: 'armor', x: collider.x, y: collider.y, amount: damage });
+          world.fx.push({ kind: 'armor', x: hit.x, y: hit.y, amount: damage });
           expired = spendEchoStability(ball);
         }
         break;
@@ -282,7 +284,7 @@ function updateBalls(world: World, dt: number): void {
       if (expired) break;
 
       const bossExposed = world.boss.armor.every((armor) => armor.hp <= 0);
-      if (!hitArmor && bossExposed && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
+      if (!hitArmor && !blockedBossThisTick && bossExposed && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
         const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
@@ -319,6 +321,27 @@ function updateBalls(world: World, dt: number): void {
   }
 
   world.balls = remaining;
+}
+
+function resolveArmorArc(ball: Ball, cx: number, cy: number, angle: number): { x: number; y: number } | null {
+  const dx = ball.x - cx;
+  const dy = ball.y - cy;
+  const distance = Math.hypot(dx, dy) || 0.0001;
+  const ballAngle = Math.atan2(dy, dx);
+  const angleDelta = Math.atan2(Math.sin(ballAngle - angle), Math.cos(ballAngle - angle));
+  if (Math.abs(angleDelta) > ARMOR_ARC_HALF || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ball.r + ARMOR_THICKNESS / 2) return null;
+
+  const nx = dx / distance;
+  const ny = dy / distance;
+  const outside = distance >= ARMOR_ORBIT_RADIUS;
+  const targetDistance = ARMOR_ORBIT_RADIUS + (outside ? 1 : -1) * (ball.r + ARMOR_THICKNESS / 2);
+  ball.x = cx + nx * targetDistance;
+  ball.y = cy + ny * targetDistance;
+  const speed = Math.max(ARMOR_DEFLECT_SPEED, Math.hypot(ball.vx, ball.vy));
+  const direction = outside ? 1 : -1;
+  ball.vx = nx * speed * direction;
+  ball.vy = ny * speed * direction;
+  return { x: cx + nx * ARMOR_ORBIT_RADIUS, y: cy + ny * ARMOR_ORBIT_RADIUS };
 }
 
 function consumeDrainedBall(world: World, ball: Ball): void {
@@ -500,9 +523,13 @@ function updateBoss(world: World, dt: number): void {
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
   for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt;
   boss.spawnTimer -= dt;
-  if (boss.spawnTimer > 0 || world.balls.some((ball) => ball.role === 'hostile')) return;
+  // One living boss supports one hostile ball. When encounters gain several
+  // bosses, this count is the only value the spawn cadence/cap must consume.
+  const livingBosses = boss.hp > 0 ? 1 : 0;
+  const hostileCount = world.balls.filter((ball) => ball.role === 'hostile').length;
+  if (!livingBosses || boss.spawnTimer > 0 || hostileCount >= livingBosses) return;
 
-  boss.spawnTimer = HOSTILE_SPAWN_INTERVAL;
+  boss.spawnTimer = HOSTILE_SPAWN_INTERVAL / livingBosses;
   const ball = createBall(world.nextBallId++, boss.x, boss.y + boss.r + 8, 'hostile');
   const angle = Math.PI / 2 + Math.sin(world.time * 1.7) * 0.45;
   ball.vx = Math.cos(angle) * HOSTILE_BALL_SPEED;

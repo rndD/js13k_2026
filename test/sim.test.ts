@@ -19,6 +19,23 @@ describe('launch', () => {
     expect(world.balls).toHaveLength(1);
     expect(world.launch.power).toBe(0);
   });
+
+  it('can immediately launch the next core while echoes remain in play', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.coreBalls = 2;
+    const echo = createBall(1, 120, 300, 'echo');
+    echo.stability = 5;
+    world.balls = [echo];
+
+    step(world, { ...NO_CONTROLS, launch: true }, FIXED_DT);
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.phase).toBe('battle');
+    expect(world.balls.some((ball) => ball.role === 'core')).toBe(true);
+    expect(world.balls.some((ball) => ball.role === 'echo')).toBe(true);
+    expect(world.coreBalls).toBe(2);
+  });
 });
 
 describe('boss ghost damage', () => {
@@ -414,6 +431,23 @@ describe('moving armored boss', () => {
     expect(armor.hp).toBeLessThan(armorHp);
     expect(world.boss.hp).toBe(bossHp);
     expect(world.points).toBeGreaterThan(0);
+  });
+
+  it('lets a ball pass through a gap between curved armor plates', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const gapAngle = Math.PI / 3;
+    const ball = createBall(
+      1,
+      world.boss.x + Math.cos(gapAngle) * ARMOR_ORBIT_RADIUS,
+      world.boss.y + Math.sin(gapAngle) * ARMOR_ORBIT_RADIUS,
+    );
+    world.balls = [ball];
+    const armorHp = world.boss.armor.map((armor) => armor.hp);
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.armor.map((armor) => armor.hp)).toEqual(armorHp);
   });
 
   it('exposes the boss after every armor node breaks', () => {

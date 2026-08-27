@@ -6,7 +6,7 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, BALL_RADIUS, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, ROLE_FLASH_DURATION } from './constants';
+import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, BALL_RADIUS, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, ROLE_FLASH_DURATION } from './constants';
 import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
@@ -174,7 +174,8 @@ function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
  * here" before the first ball exists. Only relevant during the 'launch'
  * phase - once a real ball is in play it's drawn by drawBalls() instead. */
 function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
-  if (world.phase !== 'launch') return;
+  const hasCore = world.balls.some((ball) => ball.role === 'core');
+  if (world.phase !== 'launch' && (world.phase !== 'battle' || hasCore || world.coreBalls <= 0)) return;
   const { x, y } = world.launch;
   const power = world.launch.power;
 
@@ -210,27 +211,30 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
 
   for (const armor of boss.armor) {
     if (armor.hp <= 0) continue;
-    const x = boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS;
-    const y = boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS;
     withGlow(ctx, CYAN, 8, () => {
-      ctx.fillStyle = BG;
-      ctx.strokeStyle = CYAN;
-      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = withAlpha(CYAN, 0.2);
+      ctx.lineWidth = ARMOR_THICKNESS;
       ctx.beginPath();
-      ctx.arc(x, y, armor.r, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(boss.x, boss.y, ARMOR_ORBIT_RADIUS, armor.angle - ARMOR_ARC_HALF, armor.angle + ARMOR_ARC_HALF);
       ctx.stroke();
-      ctx.strokeStyle = YELLOW;
-      ctx.lineWidth = 2;
+
+      ctx.strokeStyle = CYAN;
+      ctx.lineWidth = ARMOR_THICKNESS - 2;
       ctx.beginPath();
-      ctx.arc(x, y, armor.r + 3, -Math.PI / 2, -Math.PI / 2 + armor.hp / armor.maxHp * Math.PI * 2);
+      ctx.arc(
+        boss.x,
+        boss.y,
+        ARMOR_ORBIT_RADIUS,
+        armor.angle - ARMOR_ARC_HALF,
+        armor.angle - ARMOR_ARC_HALF + armor.hp / armor.maxHp * ARMOR_ARC_HALF * 2,
+      );
       ctx.stroke();
     });
   }
 
-  const ringColor = exposed ? RED : STRUCTURE;
-  withGlow(ctx, ringColor, exposed ? 10 : 3, () => {
-    ctx.strokeStyle = ringColor;
+  withGlow(ctx, RED, exposed ? 10 : 6, () => {
+    ctx.strokeStyle = RED;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
@@ -306,12 +310,11 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
     else {
       const opacity = ball.role === 'echo' ? Math.max(0.25, ball.stability / ECHO_STABILITY) : 1;
       drawBallSphere(ctx, ball, color, world.time, opacity);
-      ctx.strokeStyle = ball.role === 'core' ? WHITE : CYAN;
-      ctx.lineWidth = 1.5;
-      const rings = ball.role === 'core' ? 2 : 1;
-      for (let i = 0; i < rings; i++) {
+      if (ball.role === 'echo') {
+        ctx.strokeStyle = CYAN;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.r + 3 + i * 3, 0, Math.PI * 2);
+        ctx.arc(ball.x, ball.y, ball.r + 3, 0, Math.PI * 2);
         ctx.stroke();
       }
     }

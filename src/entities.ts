@@ -5,7 +5,6 @@
 import {
   ARMOR_COUNT,
   ARMOR_MAX_HP,
-  ARMOR_RADIUS,
   BALL_RADIUS,
   BOSS_MAX_HP,
   FLIPPER_ACTIVE_ANGLE,
@@ -86,7 +85,6 @@ export function createWorld(level: LevelData = LEVEL): World {
       spawnTimer: HOSTILE_SPAWN_INTERVAL,
       armor: Array.from({ length: ARMOR_COUNT }, (_, i) => ({
         angle: i * Math.PI * 2 / ARMOR_COUNT,
-        r: ARMOR_RADIUS,
         hp: ARMOR_MAX_HP,
         maxHp: ARMOR_MAX_HP,
       })),
