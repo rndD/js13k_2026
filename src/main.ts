@@ -2,7 +2,7 @@
 // drives sim.step(). This is the only file that touches requestAnimationFrame
 // / the DOM canvas — everything else (sim.ts, physics.ts) is headless and
 // unit-testable on its own.
-import { BALL_RADIUS, CANVAS_H, FIELD_W, FIXED_DT, HUD_HEIGHT } from './constants';
+import { CANVAS_H, FIELD_W, FIXED_DT, HUD_HEIGHT } from './constants';
 import { createWorld } from './entities';
 import { createBgFx, drawBgFx, spawnBgFx, updateBgFx } from './bgfx';
 import { createCrtState, drawCrtFrame } from './crt';
@@ -41,7 +41,7 @@ function loadLevelOverride(): LevelData | undefined {
 
 const world = createWorld(loadLevelOverride());
 
-// Short neon afterimage per ball (dis_doc.md's trail/juice suggestion),
+// Short tapered neon line per ball (dis_doc.md's trail/juice suggestion),
 // tracked by ball id so a ball's own trail cleanly disappears once it drains
 // instead of leaving orphaned points. Kept here (not in World/sim.ts) since
 // it's pure render state, not simulation state - World must stay a plain,
@@ -65,15 +65,18 @@ function drawTrails(): void {
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
   for (const pts of trails.values()) {
-    pts.forEach((p, i) => {
-      ctx.globalAlpha = ((i + 1) / pts.length) * 0.5;
-      ctx.fillStyle = p.color;
+    ctx.lineCap = 'round';
+    for (let i = 1; i < pts.length; i++) {
+      const t = i / (pts.length - 1);
+      ctx.globalAlpha = t * 0.5;
+      ctx.strokeStyle = pts[i].color;
+      ctx.lineWidth = 1 + t * 3;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, BALL_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
-    });
+      ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
+      ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.stroke();
+    }
   }
-  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
