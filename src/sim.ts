@@ -32,6 +32,11 @@ import {
   PAINT_MULTIPLIER_MAX,
   PAINT_MULTIPLIER_STEP,
   PEG_IMPULSE,
+  POINTS_BOSS_DEFEAT,
+  POINTS_CHARGE_TARGET,
+  POINTS_CORE_DRAIN_PENALTY,
+  POINTS_OTHER_DRAIN_PENALTY,
+  POINTS_PAINT_TARGET,
   STUCK_MAX_RESCUES,
   STUCK_PROGRESS_RADIUS,
   STUCK_RESCUE_SPEED,
@@ -146,6 +151,7 @@ function updateBalls(world: World, dt: number): void {
       const wallResult = resolveWalls(ball, FIELD_W, FIELD_H);
       if (wallResult === 'drained') {
         drained = true;
+        consumeDrainedBall(world, ball);
         world.sfx.push('ballDrain');
         break;
       }
@@ -225,6 +231,7 @@ function updateBalls(world: World, dt: number): void {
       if (ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
         const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
+        addPoints(world, dmg);
         ball.damage = dmg;
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
         world.sfx.push('bossHitThud');
@@ -241,13 +248,26 @@ function updateBalls(world: World, dt: number): void {
 
     if (drained) continue; // ball (and its accumulated build) is lost
 
-    if (!aiming && checkStuck(world, ball, dt)) { world.sfx.push('ballDrain'); continue; } // watchdog gave up on this ball
+    if (!aiming && checkStuck(world, ball, dt)) {
+      consumeDrainedBall(world, ball);
+      world.sfx.push('ballDrain');
+      continue;
+    } // watchdog gave up on this ball
 
     ball.color = deriveColor(ball.charge > 0, ball.accent);
     remaining.push(ball);
   }
 
   world.balls = remaining;
+}
+
+function consumeDrainedBall(world: World, ball: Ball): void {
+  if (ball.role === 'core') world.coreBalls = Math.max(0, world.coreBalls - 1);
+  addPoints(world, -(ball.role === 'core' ? POINTS_CORE_DRAIN_PENALTY : POINTS_OTHER_DRAIN_PENALTY));
+}
+
+function addPoints(world: World, amount: number): void {
+  world.points = Math.max(0, world.points + amount);
 }
 
 /**
@@ -379,6 +399,7 @@ function applyPaintHit(world: World, ball: Ball): void {
   // travelling as a separate projectile (see dis_doc.md "пейнт-снаряд").
   const dmg = Math.round(PAINT_DAMAGE_BASE * ball.multiplier);
   world.boss.hp = Math.max(0, world.boss.hp - dmg);
+  addPoints(world, POINTS_PAINT_TARGET + dmg);
   world.sfx.push('paintHit');
   world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
 }
@@ -386,6 +407,7 @@ function applyPaintHit(world: World, ball: Ball): void {
 function applyEnergyHit(world: World, ball: Ball): void {
   ball.accent = true;
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS);
+  addPoints(world, POINTS_CHARGE_TARGET);
   world.sfx.push('energyChime');
 }
 
@@ -396,6 +418,7 @@ function updateCooldowns(world: World, dt: number): void {
 
 function checkOutcome(world: World): void {
   if (world.boss.hp <= 0) {
+    addPoints(world, POINTS_BOSS_DEFEAT);
     world.phase = 'win';
     world.sfx.push('win');
     world.fx.push({ kind: 'win', x: world.boss.x, y: world.boss.y });
@@ -404,7 +427,11 @@ function checkOutcome(world: World): void {
 
 function checkAllBallsLost(world: World): void {
   if (world.phase === 'battle' && world.balls.length === 0) {
-    world.phase = 'launch';
+    world.phase = world.coreBalls > 0 ? 'launch' : 'lose';
+    if (world.phase === 'lose') {
+      world.sfx.push('lose');
+      world.fx.push({ kind: 'lose', x: FIELD_W / 2, y: FIELD_H });
+    }
   }
 }
 

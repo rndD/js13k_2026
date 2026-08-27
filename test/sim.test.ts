@@ -83,6 +83,7 @@ describe('paint bumper', () => {
     expect(world.balls[0].multiplier).toBeCloseTo(1.5, 5);
     expect(world.balls[0].color).toBe('red');
     expect(world.boss.hp).toBeLessThan(startHp);
+    expect(world.points).toBeGreaterThan(0);
   });
 });
 
@@ -101,6 +102,7 @@ describe('energy target', () => {
     expect(world.balls[0].accent).toBe(true);
     expect(world.balls[0].multiplier).toBeGreaterThan(1);
     expect(world.balls[0].color).toBe('blue');
+    expect(world.points).toBeGreaterThan(0);
   });
 });
 
@@ -143,8 +145,10 @@ describe('outcomes', () => {
 });
 
 describe('drain', () => {
-  it('resets phase to launch once the last ball is drained', () => {
+  it('consumes one of three core balls and returns to launch when reserve remains', () => {
     const world = createWorld();
+    expect(world.coreBalls).toBe(3);
+    world.points = 40;
     world.phase = 'battle';
     const ball = createBall(1, 180, 700); // inside the drain x-range, below the field
     ball.vx = 0;
@@ -154,7 +158,21 @@ describe('drain', () => {
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.balls).toHaveLength(0);
+    expect(world.coreBalls).toBe(2);
+    expect(world.points).toBe(0);
     expect(world.phase).toBe('launch');
+  });
+
+  it('loses when the final core ball drains', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.coreBalls = 1;
+    world.balls = [createBall(1, 180, 700)];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.coreBalls).toBe(0);
+    expect(world.phase).toBe('lose');
   });
 });
 

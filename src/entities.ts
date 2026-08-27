@@ -8,9 +8,10 @@ import {
   FLIPPER_ACTIVE_ANGLE,
   FLIPPER_LENGTH,
   FLIPPER_REST_ANGLE,
+  STARTING_CORE_BALLS,
 } from './constants';
 import { LEVEL, type LevelData, type LevelFlipper } from './level';
-import type { Ball, Bumper, Flipper, World } from './types';
+import type { Ball, BallRole, Bumper, Flipper, World } from './types';
 
 export function createFlippers(levelFlippers: LevelFlipper[] = LEVEL.flippers): Flipper[] {
   return levelFlippers.map((lf) => {
@@ -33,9 +34,10 @@ export function createBumper(base: { x: number; y: number; r: number; kind: Bump
   return { ...base, cooldown: 0 };
 }
 
-export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y): Ball {
+export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, role: BallRole = 'core'): Ball {
   return {
     id,
+    role,
     x,
     y,
     vx: 0,
@@ -59,6 +61,8 @@ export function createWorld(level: LevelData = LEVEL): World {
     time: 0,
     phase: 'launch',
     nextBallId: 1,
+    coreBalls: STARTING_CORE_BALLS,
+    points: 0,
     balls: [],
     walls: level.walls.map((wall) => wall.map((p) => ({ ...p }))),
     flippers: createFlippers(level.flippers),

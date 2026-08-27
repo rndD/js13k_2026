@@ -12,6 +12,7 @@ export const HUD_HEIGHT = 56;
 export const CANVAS_H = FIELD_H + HUD_HEIGHT;
 
 export const BALL_RADIUS = 6;
+export const STARTING_CORE_BALLS = 3;
 export const GRAVITY = 700; // px/s^2, downward under normal tilt
 export const MAX_SPEED = 900; // px/s hard clamp
 export const WALL_RESTITUTION = 0.85; // velocity kept after bouncing off a wall
@@ -43,6 +44,13 @@ export const PAINT_MULTIPLIER_STEP = 0.5;
 export const PAINT_MULTIPLIER_MAX = 8;
 export const DIRECT_DAMAGE_BASE = 10;
 export const ENERGY_TARGET_MULT_BONUS = 0.2;
+
+// Score rewards only deliberate/useful actions; passive geometry gives none.
+export const POINTS_PAINT_TARGET = 20;
+export const POINTS_CHARGE_TARGET = 20;
+export const POINTS_BOSS_DEFEAT = 250;
+export const POINTS_CORE_DRAIN_PENALTY = 50;
+export const POINTS_OTHER_DRAIN_PENALTY = 25;
 
 // Contact aim: when an ACTIVE flipper hits a ball, the whole sim freezes and
 // a sweeping aim indicator appears; releasing that same flipper button (or

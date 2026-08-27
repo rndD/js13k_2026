@@ -93,6 +93,12 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillText('BOSS', pad, 14);
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
 
+  ctx.fillStyle = LIME;
+  ctx.fillText(`POINTS ${world.points}`, pad, 40);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = WHITE;
+  ctx.fillText(`BALLS ${world.coreBalls}`, FIELD_W - pad, 40);
+
   ctx.strokeStyle = STRUCTURE;
   ctx.beginPath();
   ctx.moveTo(0, HUD_HEIGHT - 0.5);

@@ -7,8 +7,11 @@ export interface Vec2 {
   y: number;
 }
 
+export type BallRole = 'core' | 'hostile' | 'echo';
+
 export interface Ball {
   id: number;
+  role: BallRole;
   x: number;
   y: number;
   vx: number;
@@ -184,6 +187,9 @@ export interface World {
   time: number;
   phase: Phase;
   nextBallId: number;
+  /** total core balls left, including one currently in play */
+  coreBalls: number;
+  points: number;
   balls: Ball[];
   walls: Wall[];
   flippers: Flipper[];
