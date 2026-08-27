@@ -188,8 +188,9 @@ function updatePick(world: World, controls: ControlsState): void {
   world.upgrades[id] += 1;
   world.upgradeCount += 1;
   if (id === 'extraCore') {
-    world.coreBalls += 1;
-    world.coreCapacity += 1;
+    const amount = world.upgrades.extraCore + 1;
+    world.coreBalls += amount;
+    world.coreCapacity += amount;
   }
   if (id === 'overcharge') {
     for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier * 2);

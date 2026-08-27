@@ -221,7 +221,8 @@ describe('upgrade milestones', () => {
     expect(world.phase).toBe('battle');
     expect(world.pick).toBeNull();
     expect(world.points).toBe(110);
-    expect(world.coreBalls).toBe(4);
+    expect(world.coreBalls).toBe(5);
+    expect(world.coreCapacity).toBe(5);
     expect(world.upgrades.extraCore).toBe(1);
   });
 
@@ -252,6 +253,17 @@ describe('upgrade milestones', () => {
 });
 
 describe('wild upgrades', () => {
+  it('adds 2, 3, 4, then 5 stock balls across Extra Ball ranks', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+
+    for (const expected of [5, 8, 12, 17]) {
+      applyUpgrade(world, 'extraCore');
+      expect(world.coreBalls).toBe(expected);
+      expect(world.coreCapacity).toBe(expected);
+    }
+  });
+
   it('restores one lost ball every thirty active seconds without exceeding capacity', () => {
     const world = createWorld();
     world.upgrades.ballRestore = 1;

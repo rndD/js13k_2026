@@ -11,7 +11,7 @@ export interface AbilityDefinition {
 
 export const ABILITIES: AbilityDefinition[] = [
   // Extra Ball
-  { id: 'extraCore', description: ['Add one ball', 'to your stock'], rarity: 'common', maxStacks: 5 },
+  { id: 'extraCore', description: ['Add 2 balls', 'to your stock'], rarity: 'common', maxStacks: 4 },
   // Recruiter
   { id: 'recruiter', description: ['Captured balls', 'start stronger'], rarity: 'uncommon', maxStacks: 3 },
   // Poison
@@ -37,6 +37,7 @@ export function abilityById(id: AbilityId): AbilityDefinition {
 }
 
 export function abilityDescription(ability: AbilityDefinition, rank: number): [string, string] {
+  if (ability.id === 'extraCore') return [`Add ${rank + 2} balls`, 'to your stock'];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];
 }
