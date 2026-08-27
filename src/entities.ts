@@ -80,8 +80,6 @@ export function createWorld(level: LevelData = LEVEL): World {
     pendingUpgrades: 0,
     upgradeCount: 0,
     pick: null,
-    hostileHintTimer: 0,
-    hasShownHostileHint: false,
     balls: [],
     walls: level.walls.map((wall) => wall.map((p) => ({ ...p }))),
     flippers: createFlippers(level.flippers),

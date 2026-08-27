@@ -230,8 +230,6 @@ export interface World {
   pendingUpgrades: number;
   upgradeCount: number;
   pick: PickState | null;
-  hostileHintTimer: number;
-  hasShownHostileHint: boolean;
   balls: Ball[];
   walls: Wall[];
   flippers: Flipper[];

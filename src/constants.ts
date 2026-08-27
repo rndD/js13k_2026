@@ -86,7 +86,6 @@ export const HOSTILE_LIFETIME = 12;
 export const ECHO_STABILITY = 5;
 export const ECHO_LIFETIME = 20;
 export const ROLE_FLASH_DURATION = 0.25;
-export const HOSTILE_HINT_DURATION = 2;
 export const ARMOR_COUNT = 3;
 export const ARMOR_ORBIT_RADIUS = 38;
 export const ARMOR_ARC_HALF = 0.72;

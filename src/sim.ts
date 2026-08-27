@@ -36,7 +36,6 @@ import {
   FLIPPER_BOOST_SPEED,
   FLIPPER_THICKNESS,
   HOSTILE_BALL_SPEED,
-  HOSTILE_HINT_DURATION,
   HOSTILE_SPAWN_INTERVAL,
   LAUNCH_CHARGE_TIME,
   LAUNCH_MAX_SPEED,
@@ -618,7 +617,6 @@ function updateCooldowns(world: World, dt: number): void {
 
 function updateBoss(world: World, dt: number): void {
   if (world.phase !== 'battle') return;
-  world.hostileHintTimer = Math.max(0, world.hostileHintTimer - dt);
   const boss = world.boss;
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
@@ -636,10 +634,6 @@ function updateBoss(world: World, dt: number): void {
   ball.vx = Math.cos(angle) * HOSTILE_BALL_SPEED;
   ball.vy = Math.sin(angle) * HOSTILE_BALL_SPEED;
   world.balls.push(ball);
-  if (!world.hasShownHostileHint) {
-    world.hasShownHostileHint = true;
-    world.hostileHintTimer = HOSTILE_HINT_DURATION;
-  }
   world.sfx.push('hostileSpawn');
 }
 

@@ -386,13 +386,6 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
     }
   }
 
-  const hostile = world.balls.find((ball) => ball.role === 'hostile');
-  if (hostile && world.hostileHintTimer > 0) {
-    ctx.font = 'bold 9px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = ORANGE;
-    ctx.fillText('FLIP TO CAPTURE', hostile.x, hostile.y - 18);
-  }
 }
 
 function drawBallSphere(ctx: CanvasRenderingContext2D, ball: Ball, color: string, time: number, opacity: number): void {
