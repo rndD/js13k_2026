@@ -46,7 +46,7 @@ const world = createWorld(loadLevelOverride());
 // instead of leaving orphaned points. Kept here (not in World/sim.ts) since
 // it's pure render state, not simulation state - World must stay a plain,
 // serializable snapshot for tests.
-const TRAIL_LEN = 6;
+const TRAIL_LEN = 8;
 interface TrailPoint { x: number; y: number; color: string }
 const trails = new Map<number, TrailPoint[]>();
 
