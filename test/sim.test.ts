@@ -675,7 +675,13 @@ describe('ball roles', () => {
     const echo = world.balls.find((ball) => ball.id === 1)!;
     expect(echo.role).toBe('echo');
     expect(echo.charge).toBe(2);
-    expect(echo.multiplier).toBe(2);
+    expect(echo.multiplier).toBe(3);
+    expect(echo.stability).toBe(9);
+    expect(abilityById('recruiter').description).toEqual([
+      'Captured balls:',
+      '+1x starting power',
+      'Survive 2 more hits',
+    ]);
   });
 
   it('does not convert a hostile on passive flipper contact', () => {

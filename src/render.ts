@@ -392,7 +392,7 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
     const color = ballColor(ball.color, world.time);
     if (ball.role === 'hostile') drawHostileBall(ctx, ball, world.time);
     else {
-      const opacity = ball.role === 'echo' ? Math.max(0.25, ball.stability / ECHO_STABILITY) : 1;
+      const opacity = ball.role === 'echo' ? Math.min(1, Math.max(0.25, ball.stability / ECHO_STABILITY)) : 1;
       drawBallSphere(ctx, ball, color, world.time, opacity);
       if (ball.role === 'core' && world.upgrades.autoGun > 0) {
         const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);

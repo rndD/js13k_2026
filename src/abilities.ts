@@ -13,7 +13,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Extra Ball
   { id: 'extraCore', description: ['Add 2 balls', 'to your stock'], rarity: 'common', maxStacks: 4 },
   // Recruiter
-  { id: 'recruiter', description: ['Captured balls', 'start stronger'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 'recruiter', description: ['Captured balls:', '+1x starting power', 'Survive 2 more hits'], rarity: 'uncommon', maxStacks: 3 },
   // Poison
   { id: 'poison', description: ['Boss hits plant', 'delayed damage'], rarity: 'rare', maxStacks: 3 },
   // Auto Gun

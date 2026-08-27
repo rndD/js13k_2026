@@ -600,10 +600,10 @@ function explodeBall(world: World, ball: Ball): void {
 function convertHostile(world: World, ball: Ball): void {
   const recruiter = world.upgrades.recruiter;
   ball.role = 'echo';
-  ball.stability = ECHO_STABILITY;
+  ball.stability = ECHO_STABILITY + recruiter * 2;
   ball.lifetime = ECHO_LIFETIME;
   ball.damage = 0;
-  ball.multiplier = 1 + recruiter * 0.5;
+  ball.multiplier = 1 + recruiter;
   ball.charge = recruiter;
   ball.color = 'white';
   ball.accent = false;
