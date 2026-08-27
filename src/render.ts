@@ -174,8 +174,8 @@ function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
  * here" before the first ball exists. Only relevant during the 'launch'
  * phase - once a real ball is in play it's drawn by drawBalls() instead. */
 function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
-  const hasCore = world.balls.some((ball) => ball.role === 'core');
-  if (world.phase !== 'launch' && (world.phase !== 'battle' || hasCore || world.coreBalls <= 0)) return;
+  const activeCores = world.balls.filter((ball) => ball.role === 'core').length;
+  if (world.phase !== 'launch' && (world.phase !== 'battle' || activeCores >= world.coreBalls)) return;
   const { x, y } = world.launch;
   const power = world.launch.power;
 

@@ -125,8 +125,8 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
 }
 
 function updateLaunch(world: World, controls: ControlsState, dt: number): void {
-  const hasCore = world.balls.some((ball) => ball.role === 'core');
-  const canLaunch = world.phase === 'launch' || (world.phase === 'battle' && !hasCore && world.coreBalls > 0);
+  const activeCores = world.balls.filter((ball) => ball.role === 'core').length;
+  const canLaunch = world.phase === 'launch' || (world.phase === 'battle' && activeCores < world.coreBalls);
   if (!canLaunch) return;
 
   if (controls.launch) {
@@ -283,8 +283,7 @@ function updateBalls(world: World, dt: number): void {
       }
       if (expired) break;
 
-      const bossExposed = world.boss.armor.every((armor) => armor.hp <= 0);
-      if (!hitArmor && !blockedBossThisTick && bossExposed && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
+      if (!hitArmor && !blockedBossThisTick && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
         const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
@@ -553,15 +552,14 @@ function checkOutcome(world: World): void {
 
 function checkAllBallsLost(world: World): void {
   const hasPlayerBall = world.balls.some((ball) => ball.role === 'core' || ball.role === 'echo');
-  if (world.phase === 'battle' && !hasPlayerBall) {
-    // Hostiles never keep the run alive and must not remain frozen on the
-    // launch screen after the last player-owned ball disappears.
+  if (world.phase === 'battle' && !hasPlayerBall && world.coreBalls <= 0) {
+    // Hostiles never keep a run alive after all player-owned balls and core
+    // stock are gone. With reserve remaining, battle continues uninterrupted
+    // and the launcher stays available alongside any hostile balls.
     world.balls = world.balls.filter((ball) => ball.role !== 'hostile');
-    world.phase = world.coreBalls > 0 ? 'launch' : 'lose';
-    if (world.phase === 'lose') {
-      world.sfx.push('lose');
-      world.fx.push({ kind: 'lose', x: FIELD_W / 2, y: FIELD_H });
-    }
+    world.phase = 'lose';
+    world.sfx.push('lose');
+    world.fx.push({ kind: 'lose', x: FIELD_W / 2, y: FIELD_H });
   }
 }
 

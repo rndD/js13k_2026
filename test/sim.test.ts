@@ -36,9 +36,37 @@ describe('launch', () => {
     expect(world.balls.some((ball) => ball.role === 'echo')).toBe(true);
     expect(world.coreBalls).toBe(2);
   });
+
+  it('can voluntarily launch a second core while the first is still in play', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.balls = [createBall(1, 120, 300)];
+
+    step(world, { ...NO_CONTROLS, launch: true }, FIXED_DT);
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.phase).toBe('battle');
+    expect(world.balls.filter((ball) => ball.role === 'core')).toHaveLength(2);
+    expect(world.coreBalls).toBe(3);
+  });
 });
 
 describe('boss ghost damage', () => {
+  it('damages the boss through an open armor gap while plates remain', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const ball = createBall(1, world.boss.x, world.boss.y);
+    ball.vx = 0;
+    ball.vy = 0;
+    world.balls = [ball];
+    const bossHp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.armor.some((armor) => armor.hp > 0)).toBe(true);
+    expect(world.boss.hp).toBeLessThan(bossHp);
+  });
+
   it('deals direct damage on overlap but respects the per-ball cooldown', () => {
     const world = createWorld();
     world.phase = 'battle';
@@ -162,7 +190,7 @@ describe('outcomes', () => {
 });
 
 describe('drain', () => {
-  it('consumes one of three core balls and returns to launch when reserve remains', () => {
+  it('consumes a core ball without interrupting battle when reserve remains', () => {
     const world = createWorld();
     expect(world.coreBalls).toBe(3);
     world.points = 40;
@@ -177,7 +205,7 @@ describe('drain', () => {
     expect(world.balls).toHaveLength(0);
     expect(world.coreBalls).toBe(2);
     expect(world.points).toBe(0);
-    expect(world.phase).toBe('launch');
+    expect(world.phase).toBe('battle');
   });
 
   it('loses when the final core ball drains', () => {
@@ -192,7 +220,7 @@ describe('drain', () => {
     expect(world.phase).toBe('lose');
   });
 
-  it('lets echoes postpone relaunch but never lets hostile balls keep play alive', () => {
+  it('keeps battle live between reserve launches but hostiles cannot prevent final defeat', () => {
     const world = createWorld();
     world.phase = 'battle';
     const core = createBall(1, 180, 700);
@@ -206,12 +234,12 @@ describe('drain', () => {
 
     world.balls[0].y = 700;
     step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.phase).toBe('launch');
+    expect(world.phase).toBe('battle');
 
-    world.phase = 'battle';
+    world.coreBalls = 0;
     world.balls = [createBall(3, 180, 300, 'hostile')];
     step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.phase).toBe('launch');
+    expect(world.phase).toBe('lose');
     expect(world.balls).toHaveLength(0);
   });
 });
