@@ -99,6 +99,8 @@ export const ARMOR_ACCENT_BONUS = 1.5;
 export const POISON_DAMAGE = 8;
 export const POISON_DELAY = 1;
 export const BOSS_MAGNET_FORCE = 100;
+export const BALL_RESTORE_TIME = 30;
+export const CRITICAL_CHANCE = 0.15;
 export const POINTS_ARMOR_BREAK = 75;
 
 // Anti-stuck watchdog: pinball physics can pathologically trap a ball

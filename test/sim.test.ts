@@ -252,6 +252,37 @@ describe('upgrade milestones', () => {
 });
 
 describe('wild upgrades', () => {
+  it('restores one lost ball every thirty active seconds without exceeding capacity', () => {
+    const world = createWorld();
+    world.upgrades.ballRestore = 1;
+    world.coreBalls = 2;
+    world.launch.autoTimer = -1000;
+
+    for (let i = 0; i < 29 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.coreBalls).toBe(2);
+    for (let i = 0; i < 2 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.coreBalls).toBe(3);
+
+    for (let i = 0; i < 31 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.coreBalls).toBe(3);
+  });
+
+  it('critical chance can double direct ball damage and marks the hit', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.critical = 3;
+    world.randomSeed = 1;
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    const ball = createBall(1, world.boss.x, world.boss.y);
+    world.balls = [ball];
+    const hp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(hp - world.boss.hp).toBe(20);
+    expect(world.fx).toContainEqual(expect.objectContaining({ kind: 'boss', critical: true, amount: 20 }));
+  });
+
   it('auto gun fires gravity-free short-lived shots toward the boss', () => {
     const world = createWorld();
     world.phase = 'battle';

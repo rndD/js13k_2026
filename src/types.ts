@@ -8,7 +8,7 @@ export interface Vec2 {
 }
 
 export type BallRole = 'core' | 'hostile' | 'echo';
-export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet';
+export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet' | 'ballRestore' | 'critical';
 
 export interface Ball {
   id: number;
@@ -183,6 +183,7 @@ export interface FxEvent {
   y: number;
   /** damage dealt, drawn as a floating number - omitted for win/lose */
   amount?: number;
+  critical?: boolean;
 }
 
 /**
@@ -239,6 +240,9 @@ export interface World {
   nextBallId: number;
   /** total core balls left, including one currently in play */
   coreBalls: number;
+  coreCapacity: number;
+  restoreTimer: number;
+  randomSeed: number;
   points: number;
   upgrades: Record<AbilityId, number>;
   previousUpgradeGap: number;

@@ -20,6 +20,7 @@ import {
   ARMOR_ROTATION_SPEED,
   ARMOR_THICKNESS,
   AUTO_LAUNCH_DELAY,
+  BALL_RESTORE_TIME,
   BULLET_DAMAGES,
   BULLET_INTERVALS,
   BULLET_LIFETIME,
@@ -31,6 +32,7 @@ import {
   BOSS_MAGNET_FORCE,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
+  CRITICAL_CHANCE,
   DIRECT_DAMAGE_BASE,
   ECHO_STABILITY,
   ECHO_LIFETIME,
@@ -105,6 +107,8 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   }
 
   world.time += dt;
+
+  updateBallRestore(world, dt);
 
   updateFlippers(world, controls, dt);
   updateLaunch(world, controls, dt);
@@ -183,7 +187,10 @@ function updatePick(world: World, controls: ControlsState): void {
 
   world.upgrades[id] += 1;
   world.upgradeCount += 1;
-  if (id === 'extraCore') world.coreBalls += 1;
+  if (id === 'extraCore') {
+    world.coreBalls += 1;
+    world.coreCapacity += 1;
+  }
   if (id === 'overcharge') {
     for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier * 2);
   }
@@ -224,6 +231,22 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
     if (Math.abs(diff) <= maxStep) f.angle = target;
     else f.angle += Math.sign(diff) * maxStep;
   }
+}
+
+function updateBallRestore(world: World, dt: number): void {
+  if (!world.upgrades.ballRestore || (world.phase !== 'launch' && world.phase !== 'battle')) return;
+  world.restoreTimer = Math.min(BALL_RESTORE_TIME, world.restoreTimer + dt);
+  if (world.restoreTimer >= BALL_RESTORE_TIME && world.coreBalls < world.coreCapacity) {
+    world.coreBalls += 1;
+    world.restoreTimer = 0;
+    world.sfx.push('energyChime');
+  }
+}
+
+function rollCritical(world: World): boolean {
+  if (!world.upgrades.critical) return false;
+  world.randomSeed = (world.randomSeed * 1664525 + 1013904223) >>> 0;
+  return world.randomSeed / 4294967296 < CRITICAL_CHANCE * world.upgrades.critical;
 }
 
 function updateLaunch(world: World, controls: ControlsState, dt: number): void {
@@ -466,12 +489,14 @@ function updateBalls(world: World, dt: number): void {
         blockedBossThisTick = true;
         world.contacts.push({ kind: 'armor', x: hit.x, y: hit.y });
         if (ball.role !== 'hostile' && ball.armorCooldown <= 0) {
-          const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1));
+          const critical = rollCritical(world);
+          const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1)) * (critical ? 2 : 1);
           armor.hp = Math.max(0, armor.hp - damage);
           ball.armorCooldown = ARMOR_HIT_COOLDOWN;
           addPoints(world, damage + (armor.hp === 0 ? POINTS_ARMOR_BREAK : 0));
           world.sfx.push(armor.hp === 0 ? 'armorBreak' : 'armorHit');
-          world.fx.push({ kind: 'armor', x: hit.x, y: hit.y, amount: damage });
+          world.fx.push({ kind: 'armor', x: hit.x, y: hit.y, amount: damage, critical });
+          if (critical) world.sfx.push('energyChime');
           ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
           expired = spendEchoStability(ball);
         }
@@ -480,13 +505,15 @@ function updateBalls(world: World, dt: number): void {
       if (expired) break;
 
       if (!hitArmor && !blockedBossThisTick && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
-        const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
+        const critical = rollCritical(world);
+        const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier) * (critical ? 2 : 1);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
         ball.damage = dmg;
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
         world.sfx.push('bossHitThud');
-        world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
+        world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg, critical });
+        if (critical) world.sfx.push('energyChime');
         ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
         if (world.upgrades.poison > 0) {
           world.boss.poisonDamage += POISON_DAMAGE * world.upgrades.poison;

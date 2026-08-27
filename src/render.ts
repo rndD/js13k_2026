@@ -6,7 +6,7 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
+import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIME, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
 import { abilityById, type AbilityRarity } from './abilities';
 import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
@@ -100,7 +100,8 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillText(`POINTS ${world.points} / ${world.nextUpgradeAt}`, pad, 40);
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
-  ctx.fillText(`BALLS ${world.coreBalls}`, FIELD_W - pad, 40);
+  const regen = world.upgrades.ballRestore && world.coreBalls < world.coreCapacity ? ` +${Math.ceil(BALL_RESTORE_TIME - world.restoreTimer)}s` : '';
+  ctx.fillText(`BALLS ${world.coreBalls}${regen}`, FIELD_W - pad, 40);
 
   ctx.strokeStyle = STRUCTURE;
   ctx.beginPath();

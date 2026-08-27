@@ -19,6 +19,8 @@ export const ABILITIES: AbilityDefinition[] = [
   { id: 'splitAll', title: 'SPLIT ALL', description: ['Clone every one', 'of your balls'], rarity: 'rare', maxStacks: 2 },
   { id: 'sacrifice', title: 'SACRIFICE', description: ['Halve boss life', 'gain 2 choices'], rarity: 'rare', maxStacks: 1 },
   { id: 'bossMagnet', title: 'BOSS MAGNET', description: ['Your balls curve', 'toward the boss'], rarity: 'rare', maxStacks: 3 },
+  { id: 'ballRestore', title: 'BALL REGEN', description: ['Restore lost ball', 'every 30 seconds'], rarity: 'uncommon', maxStacks: 1 },
+  { id: 'critical', title: 'CRITICAL', description: ['Balls gain 15%', 'double hit chance'], rarity: 'uncommon', maxStacks: 3 },
 ];
 
 export function abilityById(id: AbilityId): AbilityDefinition {
