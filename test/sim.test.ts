@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_DT, MAX_SPEED } from '../src/constants';
+import { ARMOR_ORBIT_RADIUS, BOSS_MOVE_X, BOSS_MOVE_Y, FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createWorld } from '../src/entities';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
@@ -25,6 +25,7 @@ describe('boss ghost damage', () => {
   it('deals direct damage on overlap but respects the per-ball cooldown', () => {
     const world = createWorld();
     world.phase = 'battle';
+    for (const armor of world.boss.armor) armor.hp = 0;
     const ball = createBall(1, world.boss.x, world.boss.y);
     ball.vx = 0;
     ball.vy = 0;
@@ -67,7 +68,7 @@ describe('boss ghost damage', () => {
 });
 
 describe('paint bumper', () => {
-  it('grows the ball build and damages the boss on hit', () => {
+  it('grows the ball build and awards points', () => {
     const world = createWorld();
     world.phase = 'battle';
     const bumper = world.bumpers.find((b) => b.kind === 'paint')!;
@@ -76,13 +77,11 @@ describe('paint bumper', () => {
     ball.vy = 0;
     world.balls = [ball];
 
-    const startHp = world.boss.hp;
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.balls[0].charge).toBe(1);
     expect(world.balls[0].multiplier).toBeCloseTo(1.5, 5);
     expect(world.balls[0].color).toBe('red');
-    expect(world.boss.hp).toBeLessThan(startHp);
     expect(world.points).toBeGreaterThan(0);
   });
 });
@@ -123,6 +122,7 @@ describe('outcomes', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss.hp = 5;
+    for (const armor of world.boss.armor) armor.hp = 0;
     const ball = createBall(1, world.boss.x, world.boss.y);
     ball.vx = 0;
     ball.vy = 0;
@@ -174,6 +174,29 @@ describe('drain', () => {
     expect(world.coreBalls).toBe(0);
     expect(world.phase).toBe('lose');
   });
+
+  it('lets echoes postpone relaunch but never lets hostile balls keep play alive', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const core = createBall(1, 180, 700);
+    const echo = createBall(2, 100, 300, 'echo');
+    echo.stability = 5;
+    world.balls = [core, echo];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.phase).toBe('battle');
+    expect(world.balls).toHaveLength(1);
+
+    world.balls[0].y = 700;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.phase).toBe('launch');
+
+    world.phase = 'battle';
+    world.balls = [createBall(3, 180, 300, 'hostile')];
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.phase).toBe('launch');
+    expect(world.balls).toHaveLength(0);
+  });
 });
 
 describe('flipper tunneling', () => {
@@ -201,5 +224,177 @@ describe('flipper tunneling', () => {
     // The ball must have been stopped/deflected by the flipper, not have
     // tunneled straight past it.
     expect(world.balls[0].y).toBeLessThan(midY + 20);
+  });
+});
+
+function ballOnFlipper(role: 'core' | 'hostile' | 'echo') {
+  const world = createWorld();
+  world.phase = 'battle';
+  const flipper = world.flippers[0];
+  flipper.angle = flipper.activeAngle;
+  const ball = createBall(
+    1,
+    flipper.pivot.x + Math.cos(flipper.angle) * flipper.length * 0.5,
+    flipper.pivot.y + Math.sin(flipper.angle) * flipper.length * 0.5 - 10,
+    role,
+  );
+  ball.vy = 100;
+  world.balls = [ball];
+  return world;
+}
+
+describe('ball roles', () => {
+  it('lets only the core ball open precision aim', () => {
+    const coreWorld = ballOnFlipper('core');
+    step(coreWorld, { ...NO_CONTROLS, left: true }, FIXED_DT);
+    expect(coreWorld.phase).toBe('aim');
+
+    const echoWorld = ballOnFlipper('echo');
+    echoWorld.balls[0].stability = 5;
+    step(echoWorld, { ...NO_CONTROLS, left: true }, FIXED_DT);
+    expect(echoWorld.phase).toBe('battle');
+    expect(echoWorld.aim).toBeNull();
+  });
+
+  it('spawns at most one hostile ball and converts it on an active flipper', () => {
+    const world = ballOnFlipper('hostile');
+    world.boss.spawnTimer = 0;
+
+    step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
+
+    const converted = world.balls.find((ball) => ball.id === 1)!;
+    expect(converted.role).toBe('echo');
+    expect(converted.stability).toBe(5);
+    expect(world.points).toBeGreaterThan(0);
+    expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(0);
+
+    world.boss.spawnTimer = 0;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
+
+    world.boss.spawnTimer = 0;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
+  });
+
+  it('gives echoes half build growth and spends stability only after a useful hit', () => {
+    const coreWorld = createWorld();
+    coreWorld.phase = 'battle';
+    const coreTarget = coreWorld.bumpers.find((bumper) => bumper.kind === 'paint')!;
+    const core = createBall(1, coreTarget.x + coreTarget.r + 3, coreTarget.y);
+    core.vx = -10;
+    coreWorld.balls = [core];
+    step(coreWorld, NO_CONTROLS, FIXED_DT);
+
+    const echoWorld = createWorld();
+    echoWorld.phase = 'battle';
+    const echoTarget = echoWorld.bumpers.find((bumper) => bumper.kind === 'paint')!;
+    const echo = createBall(1, echoTarget.x + echoTarget.r + 3, echoTarget.y, 'echo');
+    echo.vx = -10;
+    echo.stability = 5;
+    echoWorld.balls = [echo];
+    step(echoWorld, NO_CONTROLS, FIXED_DT);
+
+    expect(echoWorld.balls[0].charge).toBeCloseTo(coreWorld.balls[0].charge * 0.5);
+    expect(echoWorld.balls[0].multiplier - 1).toBeCloseTo((coreWorld.balls[0].multiplier - 1) * 0.5);
+    expect(echoWorld.balls[0].stability).toBe(4);
+  });
+
+  it('resolves an echo final useful hit before the echo expires', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
+    const echo = createBall(1, target.x + target.r + 3, target.y, 'echo');
+    echo.vx = -10;
+    echo.stability = 1;
+    world.balls = [echo];
+    const pointsBefore = world.points;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.points).toBeGreaterThan(pointsBefore);
+    expect(world.balls).toHaveLength(0);
+    expect(world.sfx).toContain('echoExpire');
+  });
+
+  it('does not spend echo stability on structure or flipper contact', () => {
+    const wallWorld = createWorld();
+    wallWorld.phase = 'battle';
+    const wallEcho = createBall(1, 3, 350, 'echo');
+    wallEcho.vx = -100;
+    wallEcho.stability = 5;
+    wallWorld.balls = [wallEcho];
+    step(wallWorld, NO_CONTROLS, FIXED_DT);
+    expect(wallWorld.balls[0].stability).toBe(5);
+
+    const flipperWorld = ballOnFlipper('echo');
+    flipperWorld.balls[0].stability = 5;
+    step(flipperWorld, { ...NO_CONTROLS, left: true }, FIXED_DT);
+    expect(flipperWorld.balls[0].stability).toBe(5);
+  });
+
+  it('lets overlapping balls pass through without changing each other', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const left = createBall(1, 180, 350);
+    const right = createBall(2, 180, 350, 'echo');
+    left.vx = -100;
+    right.vx = 100;
+    right.stability = 5;
+    world.balls = [left, right];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls[0].vx).toBe(-100);
+    expect(world.balls[1].vx).toBe(100);
+  });
+});
+
+describe('moving armored boss', () => {
+  it('drifts smoothly inside its compact horizontal and vertical range', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const { homeX, homeY } = world.boss;
+    world.balls = [createBall(1, 180, 350)];
+    world.balls[0].vx = 100;
+
+    for (let i = 0; i < 120; i++) step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.x).not.toBe(homeX);
+    expect(world.boss.y).not.toBe(homeY);
+    expect(Math.abs(world.boss.x - homeX)).toBeLessThanOrEqual(BOSS_MOVE_X);
+    expect(Math.abs(world.boss.y - homeY)).toBeLessThanOrEqual(BOSS_MOVE_Y);
+  });
+
+  it('deflects player balls into armor without damaging the protected boss', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const armor = world.boss.armor[0];
+    const ball = createBall(
+      1,
+      world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS,
+      world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS,
+    );
+    world.balls = [ball];
+    const bossHp = world.boss.hp;
+    const armorHp = armor.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(armor.hp).toBeLessThan(armorHp);
+    expect(world.boss.hp).toBe(bossHp);
+    expect(world.points).toBeGreaterThan(0);
+  });
+
+  it('exposes the boss after every armor node breaks', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    for (const armor of world.boss.armor) armor.hp = 0;
+    world.balls = [createBall(1, world.boss.x, world.boss.y)];
+    const bossHp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.hp).toBeLessThan(bossHp);
   });
 });

@@ -8,7 +8,7 @@ import { createBgFx, drawBgFx, spawnBgFx, updateBgFx } from './bgfx';
 import { createCrtState, drawCrtFrame } from './crt';
 import { createFxState, drawFx, shakeOffset, updateFx } from './fx';
 import { bindInput } from './input';
-import { BG } from './palette';
+import { BG, CYAN, ORANGE } from './palette';
 import { ballColor, render } from './render';
 import { step } from './sim';
 import { playSfx } from './sound';
@@ -47,7 +47,7 @@ const world = createWorld(loadLevelOverride());
 // it's pure render state, not simulation state - World must stay a plain,
 // serializable snapshot for tests.
 const TRAIL_LEN = 10;
-interface TrailPoint { x: number; y: number; color: string }
+interface TrailPoint { x: number; y: number; color: string; role: string }
 const trails = new Map<number, TrailPoint[]>();
 
 function updateTrails(): void {
@@ -55,9 +55,12 @@ function updateTrails(): void {
   for (const id of trails.keys()) if (!liveIds.has(id)) trails.delete(id);
   for (const ball of world.balls) {
     let pts = trails.get(ball.id);
+    if (pts?.length && pts[pts.length - 1].role !== ball.role) pts = [];
     if (!pts) { pts = []; trails.set(ball.id, pts); }
-    pts.push({ x: ball.x, y: ball.y, color: ballColor(ball.color, world.time) });
-    if (pts.length > TRAIL_LEN) pts.shift();
+    const color = ball.role === 'hostile' ? ORANGE : ball.role === 'echo' ? CYAN : ballColor(ball.color, world.time);
+    pts.push({ x: ball.x, y: ball.y, color, role: ball.role });
+    const maxLen = ball.role === 'core' ? TRAIL_LEN : ball.role === 'echo' ? 7 : 5;
+    while (pts.length > maxLen) pts.shift();
   }
 }
 
@@ -68,7 +71,8 @@ function drawTrails(): void {
     ctx.lineCap = 'round';
     for (let i = 1; i < pts.length; i++) {
       const t = i / (pts.length - 1);
-      ctx.globalAlpha = t * 0.5;
+      const roleAlpha = pts[i].role === 'core' ? 0.5 : pts[i].role === 'echo' ? 0.3 : 0.45;
+      ctx.globalAlpha = t * roleAlpha;
       ctx.strokeStyle = pts[i].color;
       ctx.lineWidth = 1 + t * 3;
       ctx.beginPath();

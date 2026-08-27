@@ -62,8 +62,9 @@ export interface BgFxState {
   splats: Splat[];
 }
 
-const HIT_COLOR: Record<'boss' | 'win' | 'lose', string> = {
+const HIT_COLOR: Record<'boss' | 'armor' | 'win' | 'lose', string> = {
   boss: RED,
+  armor: CYAN,
   win: YELLOW,
   lose: RED,
 };
@@ -78,6 +79,7 @@ const CONTACT_COLOR: Record<ContactEvent['kind'], string> = {
   paint: RED,
   energy: CYAN,
   pad: YELLOW,
+  armor: CYAN,
 };
 
 export function createBgFx(): BgFxState {

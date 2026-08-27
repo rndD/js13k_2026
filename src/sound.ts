@@ -21,6 +21,11 @@ const SFX: Record<SfxEvent, SfxParams> = {
   energyChime: [0.8, , 673, , 0.21, 0.23, , 2.9, , , 400, 0.08, 0.11, , , , , 0.72, 0.21, , 774],
   // Direct pass-through boss damage (no paint charge involved): ZzFX "Hit" preset.
   bossHitThud: [1.4, , 112, 0.01, 0.06, 0.19, 4, 3.2, , , , , , 1.1, 22, , 0.14, 0.58, , , 1099],
+  hostileSpawn: [0.8, , 180, 0.02, 0.08, 0.16, 2, 1.4, -3, -35, , , , 0.7],
+  echoCapture: [1.1, , 720, 0.01, 0.08, 0.18, , 2.2, , 90, , , , , , , , 0.7],
+  echoExpire: [0.5, , 260, 0.01, 0.04, 0.12, 3, 1.2, , -80],
+  armorHit: [0.8, , 150, 0.01, 0.03, 0.12, 4, 2.5, , -20],
+  armorBreak: [1.1, , 90, 0.01, 0.08, 0.24, 4, 1.8, , -40, , , , 0.8],
   // Ball lost to a drain: ZzFX "Jump" preset with deltaSlide negated (was
   // +63, rising/triumphant) so it falls instead - fits losing a ball.
   ballDrain: [0.5, , 421, , 0.03, 0.09, 5, 1.27, , -63, , , , 0.9, , , , 0.95, 0.02, , -1500],

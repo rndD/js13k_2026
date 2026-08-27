@@ -11,16 +11,29 @@ import {
   AIM_SPEED_PER_MULT,
   AIM_SWEEP_PERIOD,
   AIM_TIMEOUT,
+  ARMOR_ACCENT_BONUS,
+  ARMOR_DAMAGE_BASE,
+  ARMOR_DEFLECT_SPEED,
+  ARMOR_HIT_COOLDOWN,
+  ARMOR_ORBIT_RADIUS,
+  ARMOR_ROTATION_SPEED,
   BOSS_HIT_COOLDOWN,
+  BOSS_MOVE_SPEED,
+  BOSS_MOVE_X,
+  BOSS_MOVE_Y,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   DIRECT_DAMAGE_BASE,
+  ECHO_STABILITY,
   ENERGY_TARGET_MULT_BONUS,
   FIELD_H,
   FIELD_W,
   FLIPPER_ANGULAR_SPEED,
   FLIPPER_BOOST_SPEED,
   FLIPPER_THICKNESS,
+  HOSTILE_BALL_SPEED,
+  HOSTILE_HINT_DURATION,
+  HOSTILE_SPAWN_INTERVAL,
   LAUNCH_CHARGE_TIME,
   LAUNCH_MAX_SPEED,
   LAUNCH_MIN_SPEED,
@@ -28,15 +41,17 @@ import {
   LAUNCH_PAD_COOLDOWN,
   LAUNCH_PAD_TRIGGER_R,
   MAX_SPEED,
-  PAINT_DAMAGE_BASE,
   PAINT_MULTIPLIER_MAX,
   PAINT_MULTIPLIER_STEP,
   PEG_IMPULSE,
   POINTS_BOSS_DEFEAT,
+  POINTS_ARMOR_BREAK,
   POINTS_CHARGE_TARGET,
   POINTS_CORE_DRAIN_PENALTY,
   POINTS_OTHER_DRAIN_PENALTY,
+  POINTS_HOSTILE_CAPTURE,
   POINTS_PAINT_TARGET,
+  ROLE_FLASH_DURATION,
   STUCK_MAX_RESCUES,
   STUCK_PROGRESS_RADIUS,
   STUCK_RESCUE_SPEED,
@@ -85,6 +100,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
     return world;
   }
 
+  updateBoss(world, dt);
   updateBalls(world, dt);
   updateCooldowns(world, dt);
   checkOutcome(world);
@@ -141,11 +157,13 @@ function updateBalls(world: World, dt: number): void {
   const subDt = dt / BALL_SUBSTEPS;
 
   for (const ball of world.balls) {
+    ball.roleFlash = Math.max(0, ball.roleFlash - dt);
     let drained = false;
     let aiming = false;
+    let expired = false;
     let bounced = false; // plain non-scoring wall/peg contact this tick, see wallTick push below
 
-    for (let i = 0; i < BALL_SUBSTEPS && !drained && !aiming; i++) {
+    for (let i = 0; i < BALL_SUBSTEPS && !drained && !aiming && !expired; i++) {
       integrate(ball, subDt);
 
       const wallResult = resolveWalls(ball, FIELD_W, FIELD_H);
@@ -175,7 +193,9 @@ function updateBalls(world: World, dt: number): void {
         // ball right where it landed and let the player pick the exact
         // launch vector (see updateAim/fireAimedBall) rather than reacting
         // on reflex to an unpredictable bounce.
-        if (hit && f.active && !world.aim) {
+        if (hit && f.active && ball.role === 'hostile') {
+          convertHostile(world, ball);
+        } else if (hit && f.active && ball.role === 'core' && !world.aim) {
           ball.vx = 0;
           ball.vy = 0;
           // Lift the ball clear of the flipper's entire swept arc (not just
@@ -217,18 +237,50 @@ function updateBalls(world: World, dt: number): void {
       }
 
       for (const bumper of world.bumpers) {
-        if (resolveBumper(ball, bumper, BUMPER_IMPULSE) && bumper.cooldown <= 0) {
-          if (bumper.kind === 'paint') applyPaintHit(world, ball);
-          else applyEnergyHit(world, ball);
-          bumper.cooldown = BUMPER_COOLDOWN;
+        if (resolveBumper(ball, bumper, BUMPER_IMPULSE)) {
           world.contacts.push({ kind: bumper.kind, x: ball.x, y: ball.y });
+          if (ball.role !== 'hostile' && bumper.cooldown <= 0) {
+            if (bumper.kind === 'paint') applyPaintHit(world, ball);
+            else applyEnergyHit(world, ball);
+            bumper.cooldown = BUMPER_COOLDOWN;
+            expired = spendEchoStability(ball);
+          }
+          if (expired) break;
         }
       }
+      if (expired) break;
 
       if (ball.bossCooldown > 0) {
         ball.bossCooldown = Math.max(0, ball.bossCooldown - subDt);
       }
-      if (ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
+      if (ball.armorCooldown > 0) {
+        ball.armorCooldown = Math.max(0, ball.armorCooldown - subDt);
+      }
+
+      for (const armor of world.boss.armor) {
+        if (armor.hp <= 0) continue;
+        const collider = {
+          x: world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS,
+          y: world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS,
+          r: armor.r,
+        };
+        if (!resolveBumper(ball, collider, ARMOR_DEFLECT_SPEED)) continue;
+        world.contacts.push({ kind: 'armor', x: collider.x, y: collider.y });
+        if (ball.role !== 'hostile' && ball.armorCooldown <= 0) {
+          const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1));
+          armor.hp = Math.max(0, armor.hp - damage);
+          ball.armorCooldown = ARMOR_HIT_COOLDOWN;
+          addPoints(world, damage + (armor.hp === 0 ? POINTS_ARMOR_BREAK : 0));
+          world.sfx.push(armor.hp === 0 ? 'armorBreak' : 'armorHit');
+          world.fx.push({ kind: 'armor', x: collider.x, y: collider.y, amount: damage });
+          expired = spendEchoStability(ball);
+        }
+        break;
+      }
+      if (expired) break;
+
+      const bossExposed = world.boss.armor.every((armor) => armor.hp <= 0);
+      if (bossExposed && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
         const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
@@ -236,6 +288,7 @@ function updateBalls(world: World, dt: number): void {
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
         world.sfx.push('bossHitThud');
         world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
+        expired = spendEchoStability(ball);
       }
 
       clampSpeed(ball);
@@ -244,9 +297,10 @@ function updateBalls(world: World, dt: number): void {
     // One tick sound max per ball for plain wall/peg contact, even if it
     // touched several segments across substeps this tick - a rapid clatter
     // of multiple clicks for one visible bounce would sound like a glitch.
-    if (bounced && !drained && !aiming) world.sfx.push('wallTick');
+    if (bounced && !drained && !aiming && !expired) world.sfx.push('wallTick');
 
     if (drained) continue; // ball (and its accumulated build) is lost
+    if (expired) { world.sfx.push('echoExpire'); continue; }
 
     if (!aiming && checkStuck(world, ball, dt)) {
       consumeDrainedBall(world, ball);
@@ -268,6 +322,25 @@ function consumeDrainedBall(world: World, ball: Ball): void {
 
 function addPoints(world: World, amount: number): void {
   world.points = Math.max(0, world.points + amount);
+}
+
+function spendEchoStability(ball: Ball): boolean {
+  if (ball.role !== 'echo') return false;
+  ball.stability = Math.max(0, ball.stability - 1);
+  return ball.stability === 0;
+}
+
+function convertHostile(world: World, ball: Ball): void {
+  ball.role = 'echo';
+  ball.stability = ECHO_STABILITY;
+  ball.damage = 0;
+  ball.multiplier = 1;
+  ball.charge = 0;
+  ball.color = 'white';
+  ball.accent = false;
+  ball.roleFlash = ROLE_FLASH_DURATION;
+  addPoints(world, POINTS_HOSTILE_CAPTURE);
+  world.sfx.push('echoCapture');
 }
 
 /**
@@ -393,20 +466,17 @@ function fireAimedBall(world: World, aim: AimState): void {
 }
 
 function applyPaintHit(world: World, ball: Ball): void {
-  ball.charge += 1;
-  ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + PAINT_MULTIPLIER_STEP);
-  // MVP simplification: the paint attack lands instantly instead of
-  // travelling as a separate projectile (see dis_doc.md "пейнт-снаряд").
-  const dmg = Math.round(PAINT_DAMAGE_BASE * ball.multiplier);
-  world.boss.hp = Math.max(0, world.boss.hp - dmg);
-  addPoints(world, POINTS_PAINT_TARGET + dmg);
+  const growth = ball.role === 'echo' ? 0.5 : 1;
+  ball.charge += growth;
+  ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + PAINT_MULTIPLIER_STEP * growth);
+  addPoints(world, POINTS_PAINT_TARGET);
   world.sfx.push('paintHit');
-  world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
 }
 
 function applyEnergyHit(world: World, ball: Ball): void {
+  const growth = ball.role === 'echo' ? 0.5 : 1;
   ball.accent = true;
-  ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS);
+  ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS * growth);
   addPoints(world, POINTS_CHARGE_TARGET);
   world.sfx.push('energyChime');
 }
@@ -414,6 +484,29 @@ function applyEnergyHit(world: World, ball: Ball): void {
 function updateCooldowns(world: World, dt: number): void {
   for (const b of world.bumpers) b.cooldown = Math.max(0, b.cooldown - dt);
   for (const p of world.launchPads) p.cooldown = Math.max(0, p.cooldown - dt);
+}
+
+function updateBoss(world: World, dt: number): void {
+  if (world.phase !== 'battle') return;
+  world.hostileHintTimer = Math.max(0, world.hostileHintTimer - dt);
+  const boss = world.boss;
+  boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
+  boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
+  for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt;
+  boss.spawnTimer -= dt;
+  if (boss.spawnTimer > 0 || world.balls.some((ball) => ball.role === 'hostile')) return;
+
+  boss.spawnTimer = HOSTILE_SPAWN_INTERVAL;
+  const ball = createBall(world.nextBallId++, boss.x, boss.y + boss.r + 8, 'hostile');
+  const angle = Math.PI / 2 + Math.sin(world.time * 1.7) * 0.45;
+  ball.vx = Math.cos(angle) * HOSTILE_BALL_SPEED;
+  ball.vy = Math.sin(angle) * HOSTILE_BALL_SPEED;
+  world.balls.push(ball);
+  if (!world.hasShownHostileHint) {
+    world.hasShownHostileHint = true;
+    world.hostileHintTimer = HOSTILE_HINT_DURATION;
+  }
+  world.sfx.push('hostileSpawn');
 }
 
 function checkOutcome(world: World): void {
@@ -426,7 +519,11 @@ function checkOutcome(world: World): void {
 }
 
 function checkAllBallsLost(world: World): void {
-  if (world.phase === 'battle' && world.balls.length === 0) {
+  const hasPlayerBall = world.balls.some((ball) => ball.role === 'core' || ball.role === 'echo');
+  if (world.phase === 'battle' && !hasPlayerBall) {
+    // Hostiles never keep the run alive and must not remain frozen on the
+    // launch screen after the last player-owned ball disappears.
+    world.balls = world.balls.filter((ball) => ball.role !== 'hostile');
     world.phase = world.coreBalls > 0 ? 'launch' : 'lose';
     if (world.phase === 'lose') {
       world.sfx.push('lose');

@@ -6,8 +6,8 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { AIM_TIMEOUT, BALL_RADIUS, BUMPER_COOLDOWN, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN } from './constants';
-import { BG, CYAN, HUD_BG, LIME, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
+import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, BALL_RADIUS, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, ROLE_FLASH_DURATION } from './constants';
+import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
 export const COLOR_HEX: Record<Ball['color'], string> = {
@@ -206,9 +206,31 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
 function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const { boss } = world;
   const r = boss.r;
+  const exposed = boss.armor.every((armor) => armor.hp <= 0);
 
-  withGlow(ctx, RED, 10, () => {
-    ctx.strokeStyle = RED;
+  for (const armor of boss.armor) {
+    if (armor.hp <= 0) continue;
+    const x = boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS;
+    const y = boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS;
+    withGlow(ctx, CYAN, 8, () => {
+      ctx.fillStyle = BG;
+      ctx.strokeStyle = CYAN;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y, armor.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = YELLOW;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, armor.r + 3, -Math.PI / 2, -Math.PI / 2 + armor.hp / armor.maxHp * Math.PI * 2);
+      ctx.stroke();
+    });
+  }
+
+  const ringColor = exposed ? RED : STRUCTURE;
+  withGlow(ctx, ringColor, exposed ? 10 : 3, () => {
+    ctx.strokeStyle = ringColor;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
@@ -280,30 +302,88 @@ function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
 function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
   for (const ball of world.balls) {
     const color = ballColor(ball.color, world.time);
-    withGlow(ctx, color, 10, () => {
-      // Offset highlight + dark rim turns the flat disc into a cheap sphere.
-      const gradient = ctx.createRadialGradient(ball.x - ball.r * 0.35, ball.y - ball.r * 0.35, 1, ball.x, ball.y, ball.r);
-      gradient.addColorStop(0, WHITE);
-      gradient.addColorStop(0.35, color);
-      gradient.addColorStop(1, BG);
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-      ctx.fill();
-
-      // A rotating off-centre crescent is the surface cue that makes the
-      // sphere visibly spin while the existing trail communicates flight.
-      ctx.save();
-      ctx.translate(ball.x, ball.y);
-      ctx.rotate(world.time * 8 + ball.id);
-      ctx.strokeStyle = withAlpha(WHITE, 0.7);
+    if (ball.role === 'hostile') drawHostileBall(ctx, ball, world.time);
+    else {
+      const opacity = ball.role === 'echo' ? Math.max(0.25, ball.stability / ECHO_STABILITY) : 1;
+      drawBallSphere(ctx, ball, color, world.time, opacity);
+      ctx.strokeStyle = ball.role === 'core' ? WHITE : CYAN;
       ctx.lineWidth = 1.5;
+      const rings = ball.role === 'core' ? 2 : 1;
+      for (let i = 0; i < rings; i++) {
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r + 3 + i * 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    if (ball.roleFlash > 0) {
+      const t = 1 - ball.roleFlash / ROLE_FLASH_DURATION;
+      ctx.globalAlpha = 1 - t;
+      ctx.strokeStyle = CYAN;
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(ball.r * 0.15, 0, ball.r * 0.55, -1.1, 1.1);
+      ctx.arc(ball.x, ball.y, ball.r + 5 + t * 14, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.restore();
-    });
+      ctx.globalAlpha = 1;
+    }
   }
+
+  const hostile = world.balls.find((ball) => ball.role === 'hostile');
+  if (hostile && world.hostileHintTimer > 0) {
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = ORANGE;
+    ctx.fillText('FLIP TO CAPTURE', hostile.x, hostile.y - 18);
+  }
+}
+
+function drawBallSphere(ctx: CanvasRenderingContext2D, ball: Ball, color: string, time: number, opacity: number): void {
+  withGlow(ctx, color, 10, () => {
+    // Offset highlight + dark rim turns the flat disc into a cheap sphere.
+    const gradient = ctx.createRadialGradient(ball.x - ball.r * 0.35, ball.y - ball.r * 0.35, 1, ball.x, ball.y, ball.r);
+    gradient.addColorStop(0, withAlpha(WHITE, opacity));
+    gradient.addColorStop(0.35, withAlpha(color, opacity));
+    gradient.addColorStop(1, withAlpha(BG, opacity));
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // A rotating off-centre crescent preserves the visible spin cue.
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+    ctx.rotate(time * 8 + ball.id);
+    ctx.strokeStyle = withAlpha(WHITE, 0.7 * opacity);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(ball.r * 0.15, 0, ball.r * 0.55, -1.1, 1.1);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function drawHostileBall(ctx: CanvasRenderingContext2D, ball: Ball, time: number): void {
+  withGlow(ctx, ORANGE, 10, () => {
+    ctx.fillStyle = BG;
+    ctx.strokeStyle = RED;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+    ctx.rotate(time * 3);
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      ctx.moveTo(ball.r + 2, 0);
+      ctx.lineTo(ball.r + 7, 0);
+      ctx.rotate(Math.PI / 2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  });
 }
 
 /**

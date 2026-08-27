@@ -3,11 +3,15 @@
 // custom fixtures easily. Positions/shapes come from a LevelData (level.ts
 // by default) - this file only assembles behavioral fields from constants.ts.
 import {
+  ARMOR_COUNT,
+  ARMOR_MAX_HP,
+  ARMOR_RADIUS,
   BALL_RADIUS,
   BOSS_MAX_HP,
   FLIPPER_ACTIVE_ANGLE,
   FLIPPER_LENGTH,
   FLIPPER_REST_ANGLE,
+  HOSTILE_SPAWN_INTERVAL,
   STARTING_CORE_BALLS,
 } from './constants';
 import { LEVEL, type LevelData, type LevelFlipper } from './level';
@@ -49,10 +53,13 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
     color: 'white',
     accent: false,
     bossCooldown: 0,
+    armorCooldown: 0,
     anchorX: x,
     anchorY: y,
     stuckTimer: 0,
     rescueCount: 0,
+    stability: 0,
+    roleFlash: 0,
   };
 }
 
@@ -63,15 +70,26 @@ export function createWorld(level: LevelData = LEVEL): World {
     nextBallId: 1,
     coreBalls: STARTING_CORE_BALLS,
     points: 0,
+    hostileHintTimer: 0,
+    hasShownHostileHint: false,
     balls: [],
     walls: level.walls.map((wall) => wall.map((p) => ({ ...p }))),
     flippers: createFlippers(level.flippers),
     boss: {
       x: level.boss.x,
       y: level.boss.y,
+      homeX: level.boss.x,
+      homeY: level.boss.y,
       r: level.boss.r,
       hp: BOSS_MAX_HP,
       maxHp: BOSS_MAX_HP,
+      spawnTimer: HOSTILE_SPAWN_INTERVAL,
+      armor: Array.from({ length: ARMOR_COUNT }, (_, i) => ({
+        angle: i * Math.PI * 2 / ARMOR_COUNT,
+        r: ARMOR_RADIUS,
+        hp: ARMOR_MAX_HP,
+        maxHp: ARMOR_MAX_HP,
+      })),
     },
     bumpers: level.bumpers.map((b) => createBumper(b)),
     pegs: level.pegs.map((p) => ({ ...p })),

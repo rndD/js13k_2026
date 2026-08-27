@@ -39,7 +39,6 @@ export const LAUNCH_PAD_TRIGGER_R = 16; // trigger radius around the pad center
 export const LAUNCH_PAD_COOLDOWN = 0.3; // s, re-trigger cooldown per pad
 
 // Ball build growth
-export const PAINT_DAMAGE_BASE = 40;
 export const PAINT_MULTIPLIER_STEP = 0.5;
 export const PAINT_MULTIPLIER_MAX = 8;
 export const DIRECT_DAMAGE_BASE = 10;
@@ -51,6 +50,7 @@ export const POINTS_CHARGE_TARGET = 20;
 export const POINTS_BOSS_DEFEAT = 250;
 export const POINTS_CORE_DRAIN_PENALTY = 50;
 export const POINTS_OTHER_DRAIN_PENALTY = 25;
+export const POINTS_HOSTILE_CAPTURE = 75;
 
 // Contact aim: when an ACTIVE flipper hits a ball, the whole sim freezes and
 // a sweeping aim indicator appears; releasing that same flipper button (or
@@ -74,9 +74,27 @@ export const AIM_BASE_SPEED = 660; // px/s at multiplier 1 - tuned so a center-a
 export const AIM_SPEED_PER_MULT = 35; // extra px/s per point of ball.multiplier - a "cooler" ball aims further/faster
 
 // Boss
-export const BOSS_RADIUS = 30;
+export const BOSS_RADIUS = 22;
 export const BOSS_MAX_HP = 1000;
 export const BOSS_HIT_COOLDOWN = 0.25; // s, per-ball direct-damage cooldown while inside boss
+export const BOSS_MOVE_X = 55;
+export const BOSS_MOVE_Y = 12;
+export const BOSS_MOVE_SPEED = 0.55;
+export const HOSTILE_SPAWN_INTERVAL = 15;
+export const HOSTILE_BALL_SPEED = 190;
+export const ECHO_STABILITY = 5;
+export const ROLE_FLASH_DURATION = 0.25;
+export const HOSTILE_HINT_DURATION = 2;
+export const ARMOR_COUNT = 3;
+export const ARMOR_ORBIT_RADIUS = 38;
+export const ARMOR_RADIUS = 8;
+export const ARMOR_MAX_HP = 120;
+export const ARMOR_ROTATION_SPEED = 0.7;
+export const ARMOR_DEFLECT_SPEED = 360;
+export const ARMOR_HIT_COOLDOWN = 0.2;
+export const ARMOR_DAMAGE_BASE = 15;
+export const ARMOR_ACCENT_BONUS = 1.5;
+export const POINTS_ARMOR_BREAK = 75;
 
 // Anti-stuck watchdog: pinball physics can pathologically trap a ball
 // bouncing forever in a tight pocket (net displacement ~0 even though it's

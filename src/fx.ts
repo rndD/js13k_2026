@@ -14,7 +14,7 @@ import {
   FX_SHAKE_WIN,
   HUD_HEIGHT,
 } from './constants';
-import { RED, WHITE, YELLOW, withGlow } from './palette';
+import { CYAN, RED, WHITE, YELLOW, withGlow } from './palette';
 import type { FxEvent, World } from './types';
 
 interface Floater {
@@ -37,12 +37,14 @@ export function createFxState(): FxState {
 
 const FLOATER_COLOR: Record<FxEvent['kind'], string> = {
   boss: RED,
+  armor: CYAN,
   win: YELLOW,
   lose: RED,
 };
 
 const SHAKE_FOR: Record<FxEvent['kind'], number> = {
   boss: FX_SHAKE_BOSS,
+  armor: FX_SHAKE_BOSS,
   win: FX_SHAKE_WIN,
   lose: FX_SHAKE_LOSE,
 };

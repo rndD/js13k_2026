@@ -29,6 +29,7 @@ export interface Ball {
   accent: boolean;
   /** seconds remaining before this ball can deal direct damage to the boss again */
   bossCooldown: number;
+  armorCooldown: number;
   /** position the last time "am I actually making progress" was checked (anti-stuck) */
   anchorX: number;
   anchorY: number;
@@ -36,6 +37,9 @@ export interface Ball {
   stuckTimer: number;
   /** how many times this ball has already been nudged free of a stuck spot */
   rescueCount: number;
+  /** useful hits remaining for an echo; zero for core/hostile balls */
+  stability: number;
+  roleFlash: number;
 }
 
 export type FlipperSide = 'left' | 'right';
@@ -54,6 +58,17 @@ export interface Flipper {
 export interface Boss {
   x: number;
   y: number;
+  homeX: number;
+  homeY: number;
+  r: number;
+  hp: number;
+  maxHp: number;
+  spawnTimer: number;
+  armor: ArmorNode[];
+}
+
+export interface ArmorNode {
+  angle: number;
   r: number;
   hp: number;
   maxHp: number;
@@ -113,6 +128,11 @@ export type SfxEvent =
   | 'paintHit'
   | 'energyChime'
   | 'bossHitThud'
+  | 'hostileSpawn'
+  | 'echoCapture'
+  | 'echoExpire'
+  | 'armorHit'
+  | 'armorBreak'
   | 'ballDrain'
   | 'launchWhoosh'
   | 'padBoost'
@@ -129,7 +149,7 @@ export type SfxEvent =
  * state that needs to be deterministic/serializable for tests).
  */
 export interface FxEvent {
-  kind: 'boss' | 'win' | 'lose';
+  kind: 'boss' | 'armor' | 'win' | 'lose';
   x: number;
   y: number;
   /** damage dealt, drawn as a floating number - omitted for win/lose */
@@ -147,7 +167,7 @@ export interface FxEvent {
  * pegs, and BUMPER_COLOR keying off bumper.kind).
  */
 export interface ContactEvent {
-  kind: 'structure' | 'flipper' | 'paint' | 'energy' | 'pad';
+  kind: 'structure' | 'flipper' | 'paint' | 'energy' | 'pad' | 'armor';
   x: number;
   y: number;
 }
@@ -190,6 +210,8 @@ export interface World {
   /** total core balls left, including one currently in play */
   coreBalls: number;
   points: number;
+  hostileHintTimer: number;
+  hasShownHostileHint: boolean;
   balls: Ball[];
   walls: Wall[];
   flippers: Flipper[];
