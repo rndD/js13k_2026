@@ -96,7 +96,9 @@ export const ARMOR_DEFLECT_SPEED = 360;
 export const ARMOR_HIT_COOLDOWN = 0.2;
 export const ARMOR_DAMAGE_BASE = 15;
 export const ARMOR_ACCENT_BONUS = 1.5;
-export const ARMOR_SHATTER_DAMAGE = 30;
+export const POISON_DAMAGE = 8;
+export const POISON_DELAY = 1;
+export const BOSS_MAGNET_FORCE = 100;
 export const POINTS_ARMOR_BREAK = 75;
 
 // Anti-stuck watchdog: pinball physics can pathologically trap a ball

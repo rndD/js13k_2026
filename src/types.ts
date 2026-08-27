@@ -8,7 +8,7 @@ export interface Vec2 {
 }
 
 export type BallRole = 'core' | 'hostile' | 'echo';
-export type AbilityId = 'extraCore' | 'recruiter' | 'armorShatter' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'lastBounce';
+export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet';
 
 export interface Ball {
   id: number;
@@ -82,6 +82,8 @@ export interface Boss {
   hp: number;
   maxHp: number;
   spawnTimer: number;
+  poisonDamage: number;
+  poisonTimer: number;
   armor: ArmorNode[];
 }
 
@@ -244,7 +246,6 @@ export interface World {
   nextUpgradeAt: number;
   pendingUpgrades: number;
   upgradeCount: number;
-  rescueBounces: number;
   pick: PickState | null;
   balls: Ball[];
   bullets: Bullet[];

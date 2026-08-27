@@ -6,7 +6,7 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, ROLE_FLASH_DURATION } from './constants';
+import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
 import { abilityById, type AbilityRarity } from './abilities';
 import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
@@ -66,7 +66,6 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
     drawImpactPulse(ctx, b.x, b.y, b.r, b.cooldown, BUMPER_COOLDOWN, BUMPER_COLOR[b.kind]);
   }
   drawFlippers(ctx, world);
-  drawDrainGuard(ctx, world);
   drawBullets(ctx, world);
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
@@ -306,6 +305,16 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.stroke();
   });
 
+  if (boss.poisonDamage > 0) {
+    withGlow(ctx, LIME, 9, () => {
+      ctx.strokeStyle = LIME;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(boss.x, boss.y, r + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * boss.poisonTimer / POISON_DELAY);
+      ctx.stroke();
+    });
+  }
+
   drawAngryFace(ctx, boss.x, boss.y, r);
 }
 
@@ -368,17 +377,6 @@ function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
   }
 }
 
-function drawDrainGuard(ctx: CanvasRenderingContext2D, world: World): void {
-  if (!world.rescueBounces) return;
-  withGlow(ctx, CYAN, 12, () => {
-    ctx.strokeStyle = CYAN;
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.arc(FIELD_W / 2, FIELD_H - 5, 35, Math.PI, Math.PI * 2);
-    ctx.stroke();
-  });
-}
-
 function drawBullets(ctx: CanvasRenderingContext2D, world: World): void {
   withGlow(ctx, YELLOW, 7, () => {
     ctx.fillStyle = YELLOW;
@@ -403,7 +401,7 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(ball.x + Math.cos(angle) * 5, ball.y + Math.sin(angle) * 5);
-        ctx.lineTo(ball.x + Math.cos(angle) * (ball.r + 5), ball.y + Math.sin(angle) * (ball.r + 5));
+        ctx.lineTo(ball.x + Math.cos(angle) * (ball.r + 2), ball.y + Math.sin(angle) * (ball.r + 2));
         ctx.stroke();
       }
       if (ball.role === 'echo') {

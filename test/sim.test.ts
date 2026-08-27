@@ -209,7 +209,7 @@ describe('upgrade milestones', () => {
     expect(world.phase).toBe('pick');
     expect(world.points).toBe(110);
     expect(world.nextUpgradeAt).toBe(250);
-    expect(world.pick?.offers).toEqual(['extraCore', 'recruiter', 'armorShatter']);
+    expect(world.pick?.offers).toEqual(['extraCore', 'recruiter', 'poison']);
     const frozen = world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }));
 
     step(world, NO_CONTROLS, FIXED_DT); // release/arm the choice screen
@@ -338,19 +338,36 @@ describe('wild upgrades', () => {
     expect(world.sfx.filter((event) => event === 'ballExplode')).toHaveLength(2);
   });
 
-  it('last bounce rescues one falling player ball without spending stock', () => {
+  it('boss magnet curves player-owned balls but not boss balls', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.rescueBounces = 1;
-    const ball = createBall(1, 100, 700);
-    world.balls = [ball];
+    world.upgrades.bossMagnet = 1;
+    const mine = createBall(1, 40, world.boss.y);
+    const bossBall = createBall(2, 40, world.boss.y, 'hostile');
+    world.balls = [mine, bossBall];
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.balls).toContain(ball);
-    expect(ball.vy).toBeLessThan(0);
-    expect(world.rescueBounces).toBe(0);
-    expect(world.coreBalls).toBe(3);
+    expect(mine.vx).toBeGreaterThan(0);
+    expect(bossBall.vx).toBe(0);
+  });
+
+  it('poison adds delayed damage after a direct boss hit', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.poison = 1;
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    world.balls = [createBall(1, world.boss.x, world.boss.y)];
+    const hp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.hp).toBe(hp - 10);
+    expect(world.boss.poisonDamage).toBe(8);
+    world.balls = [];
+    for (let i = 0; i < 61; i++) step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.hp).toBe(hp - 18);
+    expect(world.boss.poisonDamage).toBe(0);
   });
 });
 
@@ -781,22 +798,4 @@ describe('moving armored boss', () => {
     expect(world.boss.hp).toBe(bossHp);
   });
 
-  it('damages the remaining plates when Armor Shatter breaks one', () => {
-    const world = createWorld();
-    world.phase = 'battle';
-    world.upgrades.armorShatter = 1;
-    const armor = world.boss.armor[0];
-    armor.hp = 1;
-    const otherHp = world.boss.armor.slice(1).map((plate) => plate.hp);
-    world.balls = [createBall(
-      1,
-      world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS,
-      world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS,
-    )];
-
-    step(world, NO_CONTROLS, FIXED_DT);
-
-    expect(armor.hp).toBe(0);
-    expect(world.boss.armor.slice(1).map((plate) => plate.hp)).toEqual(otherHp.map((hp) => hp - 30));
-  });
 });

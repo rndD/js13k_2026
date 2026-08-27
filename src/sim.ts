@@ -18,7 +18,6 @@ import {
   ARMOR_HIT_COOLDOWN,
   ARMOR_ORBIT_RADIUS,
   ARMOR_ROTATION_SPEED,
-  ARMOR_SHATTER_DAMAGE,
   ARMOR_THICKNESS,
   AUTO_LAUNCH_DELAY,
   BULLET_DAMAGES,
@@ -29,6 +28,7 @@ import {
   BOSS_MOVE_SPEED,
   BOSS_MOVE_X,
   BOSS_MOVE_Y,
+  BOSS_MAGNET_FORCE,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   DIRECT_DAMAGE_BASE,
@@ -60,6 +60,8 @@ import {
   POINTS_OTHER_DRAIN_PENALTY,
   POINTS_HOSTILE_CAPTURE,
   POINTS_PAINT_TARGET,
+  POISON_DAMAGE,
+  POISON_DELAY,
   ROLE_FLASH_DURATION,
   STUCK_MAX_RESCUES,
   STUCK_PROGRESS_RADIUS,
@@ -203,7 +205,6 @@ function updatePick(world: World, controls: ControlsState): void {
     world.bullets = [];
     world.pendingUpgrades += 2;
   }
-  if (id === 'lastBounce') world.rescueBounces += 1;
   world.sfx.push('upgradePick');
 
   const resumePhase = pick.resumePhase;
@@ -348,6 +349,14 @@ function updateBalls(world: World, dt: number): void {
         continue;
       }
     }
+    if (ball.role !== 'hostile' && world.upgrades.bossMagnet > 0) {
+      const dx = world.boss.x - ball.x;
+      const dy = world.boss.y - ball.y;
+      const distance = Math.hypot(dx, dy) || 1;
+      const pull = BOSS_MAGNET_FORCE * world.upgrades.bossMagnet * dt;
+      ball.vx += dx / distance * pull;
+      ball.vy += dy / distance * pull;
+    }
     let drained = false;
     let aiming = false;
     let expired = false;
@@ -359,15 +368,6 @@ function updateBalls(world: World, dt: number): void {
 
       const wallResult = resolveWalls(ball, FIELD_W, FIELD_H);
       if (wallResult === 'drained') {
-        if (ball.role !== 'hostile' && world.rescueBounces > 0) {
-          world.rescueBounces -= 1;
-          ball.y = FIELD_H - ball.r - 8;
-          ball.vx = (FIELD_W / 2 - ball.x) * 2;
-          ball.vy = -MAX_SPEED * 0.85;
-          world.sfx.push('padBoost');
-          world.contacts.push({ kind: 'pad', x: ball.x, y: ball.y });
-          continue;
-        }
         drained = true;
         consumeDrainedBall(world, ball);
         world.sfx.push('ballDrain');
@@ -473,18 +473,6 @@ function updateBalls(world: World, dt: number): void {
           world.sfx.push(armor.hp === 0 ? 'armorBreak' : 'armorHit');
           world.fx.push({ kind: 'armor', x: hit.x, y: hit.y, amount: damage });
           ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
-          if (armor.hp === 0 && world.upgrades.armorShatter > 0) {
-            const splash = ARMOR_SHATTER_DAMAGE * world.upgrades.armorShatter;
-            for (const other of world.boss.armor) {
-              if (other === armor || other.hp <= 0) continue;
-              const dealt = Math.min(other.hp, splash);
-              other.hp -= dealt;
-              addPoints(world, dealt + (other.hp === 0 ? POINTS_ARMOR_BREAK : 0));
-              const ox = world.boss.x + Math.cos(other.angle) * ARMOR_ORBIT_RADIUS;
-              const oy = world.boss.y + Math.sin(other.angle) * ARMOR_ORBIT_RADIUS;
-              world.fx.push({ kind: 'armor', x: ox, y: oy, amount: dealt });
-            }
-          }
           expired = spendEchoStability(ball);
         }
         break;
@@ -500,6 +488,10 @@ function updateBalls(world: World, dt: number): void {
         world.sfx.push('bossHitThud');
         world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
         ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
+        if (world.upgrades.poison > 0) {
+          world.boss.poisonDamage += POISON_DAMAGE * world.upgrades.poison;
+          world.boss.poisonTimer = POISON_DELAY;
+        }
         expired = spendEchoStability(ball);
       }
 
@@ -738,6 +730,17 @@ function updateBoss(world: World, dt: number): void {
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
   for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt;
+  if (boss.poisonDamage > 0) {
+    boss.poisonTimer -= dt;
+    if (boss.poisonTimer <= 0) {
+      const damage = Math.min(boss.hp, boss.poisonDamage);
+      boss.hp -= damage;
+      addPoints(world, damage);
+      world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount: damage });
+      world.sfx.push('energyChime');
+      boss.poisonDamage = 0;
+    }
+  }
   boss.spawnTimer -= dt;
   // One living boss supports one hostile ball. When encounters gain several
   // bosses, this count is the only value the spawn cadence/cap must consume.
