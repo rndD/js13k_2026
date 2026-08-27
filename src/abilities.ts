@@ -10,15 +10,25 @@ export interface AbilityDefinition {
 }
 
 export const ABILITIES: AbilityDefinition[] = [
+  // Extra Ball
   { id: 'extraCore', description: ['Add one ball', 'to your stock'], rarity: 'common', maxStacks: 5 },
+  // Recruiter
   { id: 'recruiter', description: ['Captured balls', 'start stronger'], rarity: 'uncommon', maxStacks: 3 },
+  // Poison
   { id: 'poison', description: ['Boss hits plant', 'delayed damage'], rarity: 'rare', maxStacks: 3 },
+  // Auto Gun
   { id: 'autoGun', description: ['Main balls fire', 'tiny boss shots'], rarity: 'rare', maxStacks: 4 },
+  // Overcharge
   { id: 'overcharge', description: ['Double power of', 'your live balls'], rarity: 'uncommon', maxStacks: 3 },
+  // Split All
   { id: 'splitAll', description: ['Clone every one', 'of your live balls'], rarity: 'rare', maxStacks: 2 },
+  // Sacrifice
   { id: 'sacrifice', description: ['Halve boss life', 'gain 2 choices'], rarity: 'rare', maxStacks: 1 },
+  // Boss Magnet
   { id: 'bossMagnet', description: ['Your balls curve', 'toward the boss'], rarity: 'rare', maxStacks: 3 },
+  // Ball Regen
   { id: 'ballRestore', description: ['Restore lost ball', 'every 30 seconds'], rarity: 'uncommon', maxStacks: 1 },
+  // Critical
   { id: 'critical', description: ['Balls gain 15%', 'double hit chance'], rarity: 'uncommon', maxStacks: 3 },
 ];
 
