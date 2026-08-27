@@ -85,8 +85,7 @@ const bgFx = createBgFx();
 const crt = createCrtState(ctx);
 
 // Toggle button (see index.html) - kept as a plain DOM element rather than
-// a canvas hit-zone so it never competes with input.ts's flipper/shield/
-// launch touch zones. "Easy to turn off" per the user's ask.
+// a canvas hit-zone so it never competes with the gameplay touch zones.
 document.getElementById('crtBtn')?.addEventListener('click', () => {
   crt.on = !crt.on;
 });
@@ -103,9 +102,7 @@ function frame(now: number): void {
     step(world, controls, FIXED_DT);
     // sim.ts pushes sound-event tags onto world.sfx at the exact point each
     // event actually happens (see types.ts's SfxEvent) instead of us trying
-    // to infer them by diffing stats before/after - diffing missed events
-    // with no lasting stat change (e.g. an energy bumper hit while the
-    // shield is already fully charged).
+    // to infer transient contacts by diffing stats before/after.
     for (const name of world.sfx) playSfx(name);
     // Same point-of-cause push pattern as sfx, but carrying position/damage
     // payload for hit-flash/screen-shake/floating-damage-number feedback -

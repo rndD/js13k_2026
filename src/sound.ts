@@ -21,10 +21,6 @@ const SFX: Record<SfxEvent, SfxParams> = {
   energyChime: [0.8, , 673, , 0.21, 0.23, , 2.9, , , 400, 0.08, 0.11, , , , , 0.72, 0.21, , 774],
   // Direct pass-through boss damage (no paint charge involved): ZzFX "Hit" preset.
   bossHitThud: [1.4, , 112, 0.01, 0.06, 0.19, 4, 3.2, , , , , , 1.1, 22, , 0.14, 0.58, , , 1099],
-  // Shield absorbing a projectile: another ZzFX "Hit" roll, volume normalized down from the generator's 4.6.
-  shieldBlock: [1.5, , 294, 0.01, 0.1, 0.15, , 0.3, , -2, , , , 0.2, , 0.4, , 0.86, 0.1, , -1821],
-  // Enemy projectile reaching the base: a third ZzFX "Hit" roll.
-  baseHit: [1.1, , 307, 0.03, , 0.04, 2, 0.3, , , , , , 1.1, , 0.3, , 0.47, 0.01],
   // Ball lost to a drain: ZzFX "Jump" preset with deltaSlide negated (was
   // +63, rising/triumphant) so it falls instead - fits losing a ball.
   ballDrain: [0.5, , 421, , 0.03, 0.09, 5, 1.27, , -63, , , , 0.9, , , , 0.95, 0.02, , -1500],
@@ -36,7 +32,7 @@ const SFX: Record<SfxEvent, SfxParams> = {
   wallTick: [0.5, , 128, 0.01, 0.03, 0.009, 1, 1.9, 3, 36, -391, 0.07, , , , , , 0.53, , 0.03, -1382],
   // Boss defeated (win): ZzFX "Powerup" preset.
   win: [, , 610, 0.07, 0.16, 0.23, 1, 1.5, 5, , , , , , , 0.1, , 0.55, 0.12],
-  // Base destroyed (lose): ZzFX "Explosion" preset, shortened + quieted
+  // Run lost: ZzFX "Explosion" preset, shortened + quieted
   // (was 1.6 volume / 0.76s tail - way too much for what should be a clean
   // "round over" beat, not a war-movie explosion).
   lose: [0.9, , 33, 0.08, 0.1, 0.25, 1, 0.6, , , , , , 0.9, , 0.3, 0.06, 0.31, 0.11, , -2208],

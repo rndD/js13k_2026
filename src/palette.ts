@@ -9,13 +9,13 @@ export const HUD_BG = '#0a0612'; // HUD strip background
 export const STRUCTURE = '#8888a0'; // pale grey - walls, pegs, flippers, HUD labels
 export const WHITE = '#e8e8f0'; // bright neutral - fresh ball, boss face, plunger outline
 
-export const CYAN = '#38d6ff'; // energy bumper / shield
-export const MAGENTA = '#ff3bd6'; // overload/"big" projectiles
-export const YELLOW = '#ffe93b'; // launch pads (speed), aim indicator, overload telegraph
+export const CYAN = '#38d6ff'; // energy bumper / charged ball
+export const MAGENTA = '#ff3bd6'; // spectral accent
+export const YELLOW = '#ffe93b'; // launch pads (speed), aim indicator
 export const LIME = '#9dff3b'; // build-power / multiplier readout
 export const VIOLET = '#b23bff'; // rainbow-tier spectrum accent, active-flipper glow
 export const RED = '#ff3b6b'; // paint bumper / boss hp / damage
-export const ORANGE = '#ff8a3b'; // base hp / normal projectiles / base-hit flash
+export const ORANGE = '#ff8a3b'; // warm hostile accent
 
 /** The fully-charged "rainbow" ball tier cycles through this sequence. */
 const SPECTRUM = [RED, YELLOW, LIME, CYAN, VIOLET, MAGENTA];
@@ -68,7 +68,7 @@ export function withAlpha(hex: string, a: number): string {
  * caller can never forget to reset it and accidentally bleed glow onto
  * unrelated later draws.
  *
- * Reserved for "charged/energized" things only (balls, bumpers, shield,
+ * Reserved for "charged/energized" things only (balls, bumpers,
  * boss, launch pads, pulses) - structural geometry (walls/pegs/flippers)
  * and HUD text stay flat, per dis_doc.md's "effects must never come before
  * readability" rule.

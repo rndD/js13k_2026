@@ -45,8 +45,6 @@ export interface LevelData {
   launchPads: LevelLaunchPad[];
   boss: { x: number; y: number; r: number };
   launch: Vec2;
-  base: { y: number };
-  shield: { y: number };
 }
 
 // Flippers sit well above the true bottom of the field so a solid hit has
@@ -105,6 +103,4 @@ export const LEVEL: LevelData = {
 
   boss: { x: BOSS_X, y: BOSS_Y, r: BOSS_RADIUS },
   launch: { x: FIELD_W - 20, y: FLIPPER_PIVOT_Y - 20 },
-  base: { y: FIELD_H - 40 },
-  shield: { y: FIELD_H - 90 },
 };

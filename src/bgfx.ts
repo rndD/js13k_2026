@@ -41,7 +41,7 @@ import {
   BGFX_SWAY_FREQ,
   HUD_HEIGHT,
 } from './constants';
-import { BG, CYAN, ORANGE, RED, STRUCTURE, VIOLET, YELLOW, withAlpha } from './palette';
+import { BG, CYAN, RED, STRUCTURE, VIOLET, YELLOW, withAlpha } from './palette';
 import type { ContactEvent, World } from './types';
 
 interface Splat {
@@ -62,10 +62,8 @@ export interface BgFxState {
   splats: Splat[];
 }
 
-const HIT_COLOR: Record<'boss' | 'shield' | 'base' | 'win' | 'lose', string> = {
+const HIT_COLOR: Record<'boss' | 'win' | 'lose', string> = {
   boss: RED,
-  shield: CYAN,
-  base: ORANGE,
   win: YELLOW,
   lose: RED,
 };
@@ -108,7 +106,7 @@ function spawnSplat(state: BgFxState, x: number, y: number, color: string, radiu
  * anything), spawning one splat per event, colored per its kind. */
 export function spawnBgFx(state: BgFxState, world: World): void {
   for (const ev of world.fx) {
-    spawnSplat(state, ev.x, ev.y, HIT_COLOR[ev.kind], BGFX_HIT_RADIUS * (ev.big ? 1.6 : 1), BGFX_HIT_ALPHA);
+    spawnSplat(state, ev.x, ev.y, HIT_COLOR[ev.kind], BGFX_HIT_RADIUS, BGFX_HIT_ALPHA);
   }
   for (const c of world.contacts) {
     spawnSplat(state, c.x, c.y, CONTACT_COLOR[c.kind], BGFX_HIT_RADIUS, BGFX_HIT_ALPHA);

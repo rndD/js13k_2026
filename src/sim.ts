@@ -12,14 +12,9 @@ import {
   AIM_SWEEP_PERIOD,
   AIM_TIMEOUT,
   BOSS_HIT_COOLDOWN,
-  BOSS_PROJECTILE_DAMAGE,
-  BOSS_PROJECTILE_RADIUS,
-  BOSS_PROJECTILE_SPEED,
-  BOSS_SHOOT_INTERVAL,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   DIRECT_DAMAGE_BASE,
-  ENERGY_TARGET_GAIN,
   ENERGY_TARGET_MULT_BONUS,
   FIELD_H,
   FIELD_W,
@@ -33,14 +28,10 @@ import {
   LAUNCH_PAD_COOLDOWN,
   LAUNCH_PAD_TRIGGER_R,
   MAX_SPEED,
-  OVERLOAD_CHARGE_TIME,
-  OVERLOAD_DAMAGE,
-  OVERLOAD_INTERVAL,
   PAINT_DAMAGE_BASE,
   PAINT_MULTIPLIER_MAX,
   PAINT_MULTIPLIER_STEP,
   PEG_IMPULSE,
-  SHIELD_DRAIN_RATE,
   STUCK_MAX_RESCUES,
   STUCK_PROGRESS_RADIUS,
   STUCK_RESCUE_SPEED,
@@ -48,7 +39,6 @@ import {
   WALL_THICKNESS,
 } from './constants';
 import { createBall } from './entities';
-import { LEVEL } from './level';
 import {
   clampSpeed,
   integrate,
@@ -82,21 +72,16 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   updateLaunch(world, controls, dt);
 
   if (world.phase === 'aim') {
-    // Everything else (boss, projectiles, other balls, shield) is fully
-    // frozen while aiming - only the sweep indicator itself advances, on
+    // Everything else (boss and other balls) is fully frozen while aiming -
+    // only the sweep indicator itself advances, on
     // real time, so the player gets an unhurried, fully readable window to
     // pick a launch vector instead of reacting on reflex.
     updateAim(world, controls, dt);
     return world;
   }
 
-  // Shield state must be resolved before projectiles are checked against it,
-  // otherwise a projectile arriving this tick would see last tick's state.
-  updateShield(world, controls, dt);
   updateBalls(world, dt);
   updateCooldowns(world, dt);
-  updateBoss(world, dt);
-  updateProjectiles(world, dt);
   checkOutcome(world);
   checkAllBallsLost(world);
 
@@ -401,10 +386,6 @@ function applyPaintHit(world: World, ball: Ball): void {
 function applyEnergyHit(world: World, ball: Ball): void {
   ball.accent = true;
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS);
-  // Pushed unconditionally on contact (not diffed off the energy value)
-  // because Math.min below silently no-ops once shield.energy is already
-  // maxed - a diff-based check would then wrongly stay silent on a real hit.
-  world.shield.energy = Math.min(world.shield.maxEnergy, world.shield.energy + ENERGY_TARGET_GAIN);
   world.sfx.push('energyChime');
 }
 
@@ -413,96 +394,11 @@ function updateCooldowns(world: World, dt: number): void {
   for (const p of world.launchPads) p.cooldown = Math.max(0, p.cooldown - dt);
 }
 
-function updateBoss(world: World, dt: number): void {
-  // The boss must not attack while the player has no ball in play (e.g. while
-  // still charging the launcher) - that felt unfair and let projectiles pile
-  // up against an undefended base before the round even started.
-  if (world.phase !== 'battle') return;
-
-  const boss = world.boss;
-
-  boss.shootTimer -= dt;
-  if (boss.shootTimer <= 0) {
-    boss.shootTimer = BOSS_SHOOT_INTERVAL;
-    spawnProjectile(world, BOSS_PROJECTILE_DAMAGE, BOSS_PROJECTILE_SPEED, BOSS_PROJECTILE_RADIUS, false);
-  }
-
-  if (!boss.overloadCharging) {
-    boss.overloadTimer -= dt;
-    if (boss.overloadTimer <= 0) {
-      boss.overloadCharging = true;
-      boss.overloadProgress = 0;
-    }
-  } else {
-    boss.overloadProgress += dt / OVERLOAD_CHARGE_TIME;
-    if (boss.overloadProgress >= 1) {
-      boss.overloadCharging = false;
-      boss.overloadProgress = 0;
-      boss.overloadTimer = OVERLOAD_INTERVAL;
-      spawnProjectile(world, OVERLOAD_DAMAGE, BOSS_PROJECTILE_SPEED * 1.4, BOSS_PROJECTILE_RADIUS * 1.6, true);
-    }
-  }
-}
-
-function spawnProjectile(world: World, damage: number, speed: number, r: number, big: boolean): void {
-  const boss = world.boss;
-  const targetX = FIELD_W / 2;
-  const targetY = LEVEL.base.y;
-  const dx = targetX - boss.x;
-  const dy = targetY - boss.y;
-  const dist = Math.hypot(dx, dy) || 1;
-  world.projectiles.push({
-    x: boss.x,
-    y: boss.y,
-    vx: (dx / dist) * speed,
-    vy: (dy / dist) * speed,
-    r,
-    damage,
-    big,
-  });
-}
-
-function updateProjectiles(world: World, dt: number): void {
-  const remaining = [];
-  for (const p of world.projectiles) {
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-
-    if (p.y >= LEVEL.base.y) {
-      const blocked = world.shield.active && world.shield.energy > 0;
-      if (blocked) {
-        world.shield.hp = Math.max(0, world.shield.hp - p.damage);
-        world.sfx.push('shieldBlock');
-        world.fx.push({ kind: 'shield', x: p.x, y: p.y, amount: p.damage, big: p.big });
-      } else {
-        world.base.hp = Math.max(0, world.base.hp - p.damage);
-        world.sfx.push('baseHit');
-        world.fx.push({ kind: 'base', x: p.x, y: p.y, amount: p.damage, big: p.big });
-      }
-      continue; // resolved, remove projectile
-    }
-    remaining.push(p);
-  }
-  world.projectiles = remaining;
-}
-
-function updateShield(world: World, controls: ControlsState, dt: number): void {
-  const shield = world.shield;
-  shield.active = controls.shield && shield.energy > 0;
-  if (shield.active) {
-    shield.energy = Math.max(0, shield.energy - SHIELD_DRAIN_RATE * dt);
-  }
-}
-
 function checkOutcome(world: World): void {
   if (world.boss.hp <= 0) {
     world.phase = 'win';
     world.sfx.push('win');
     world.fx.push({ kind: 'win', x: world.boss.x, y: world.boss.y });
-  } else if (world.base.hp <= 0) {
-    world.phase = 'lose';
-    world.sfx.push('lose');
-    world.fx.push({ kind: 'lose', x: FIELD_W / 2, y: LEVEL.base.y });
   }
 }
 

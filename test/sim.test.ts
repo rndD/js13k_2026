@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_MAX_HP, FIXED_DT, MAX_SPEED } from '../src/constants';
+import { FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createWorld } from '../src/entities';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
@@ -87,10 +87,9 @@ describe('paint bumper', () => {
 });
 
 describe('energy target', () => {
-  it('restores shield energy and tags the ball with an accent', () => {
+  it('tags the ball with an accent and increases its multiplier', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.shield.energy = 0;
     const target = world.bumpers.find((b) => b.kind === 'energy')!;
     const ball = createBall(1, target.x + target.r + 3, target.y);
     ball.vx = -10;
@@ -99,37 +98,21 @@ describe('energy target', () => {
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.shield.energy).toBeGreaterThan(0);
     expect(world.balls[0].accent).toBe(true);
+    expect(world.balls[0].multiplier).toBeGreaterThan(1);
     expect(world.balls[0].color).toBe('blue');
   });
 });
 
-describe('shield vs base', () => {
-  it('absorbs projectile damage into the shield when active with energy', () => {
+describe('combat model', () => {
+  it('does not expose the removed projectile, shield, base, or overload systems', () => {
     const world = createWorld();
-    world.phase = 'battle';
-    world.balls = [createBall(1, -100, -100)]; // keep a ball alive so phase stays 'battle'
-    world.shield.energy = world.shield.maxEnergy;
-    world.projectiles = [{ x: 180, y: 599, vx: 0, vy: 100, r: 7, damage: 20, big: false }];
-
-    step(world, { ...NO_CONTROLS, shield: true }, FIXED_DT);
-
-    expect(world.base.hp).toBe(BASE_MAX_HP);
-    expect(world.shield.hp).toBeLessThan(world.shield.maxHp);
-    expect(world.projectiles).toHaveLength(0);
-  });
-
-  it('damages the base when the shield is not raised', () => {
-    const world = createWorld();
-    world.phase = 'battle';
-    world.balls = [createBall(1, -100, -100)];
-    world.projectiles = [{ x: 180, y: 599, vx: 0, vy: 100, r: 7, damage: 20, big: false }];
-
-    step(world, NO_CONTROLS, FIXED_DT);
-
-    expect(world.base.hp).toBe(BASE_MAX_HP - 20);
-    expect(world.shield.hp).toBe(world.shield.maxHp);
+    expect('projectiles' in world).toBe(false);
+    expect('shield' in world).toBe(false);
+    expect('base' in world).toBe(false);
+    expect('overloadTimer' in world.boss).toBe(false);
+    expect('overloadCharging' in world.boss).toBe(false);
+    expect('overloadProgress' in world.boss).toBe(false);
   });
 });
 
@@ -149,25 +132,12 @@ describe('outcomes', () => {
     expect(world.phase).toBe('win');
   });
 
-  it('loses when the base hp reaches zero', () => {
-    const world = createWorld();
-    world.phase = 'battle';
-    world.balls = [createBall(1, -100, -100)];
-    world.base.hp = 15;
-    world.projectiles = [{ x: 180, y: 599, vx: 0, vy: 100, r: 7, damage: 20, big: false }];
-
-    step(world, NO_CONTROLS, FIXED_DT);
-
-    expect(world.base.hp).toBe(0);
-    expect(world.phase).toBe('lose');
-  });
-
   it('freezes the world once a win/lose outcome is reached', () => {
     const world = createWorld();
     world.phase = 'win';
     world.boss.hp = 0;
     const before = JSON.stringify(world);
-    step(world, { ...NO_CONTROLS, left: true, shield: true }, FIXED_DT);
+    step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
     expect(JSON.stringify(world)).toBe(before);
   });
 });

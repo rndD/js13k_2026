@@ -48,37 +48,10 @@ export interface Flipper {
   active: boolean;
 }
 
-export interface Projectile {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  damage: number;
-  big: boolean;
-}
-
 export interface Boss {
   x: number;
   y: number;
   r: number;
-  hp: number;
-  maxHp: number;
-  shootTimer: number;
-  overloadTimer: number;
-  overloadCharging: boolean;
-  overloadProgress: number; // 0..1
-}
-
-export interface Shield {
-  energy: number;
-  maxEnergy: number;
-  hp: number;
-  maxHp: number;
-  active: boolean;
-}
-
-export interface Base {
   hp: number;
   maxHp: number;
 }
@@ -129,18 +102,14 @@ export type Phase = 'launch' | 'battle' | 'aim' | 'win' | 'lose';
  * its own) but pushes these plain string tags onto World.sfx at the exact
  * point-of-cause (a bumper actually being hit, a wall actually being
  * bounced off, etc) - main.ts drains/clears the array once per step() and
- * maps each tag to a playSfx() call. This is deliberately NOT diffed from
- * before/after stat snapshots: some hits (e.g. an energy bumper hit while
- * shield.energy is already maxed) cause no lasting stat change at all, so
- * diffing silently misses them - pushing at the source can't miss anything.
+ * maps each tag to a playSfx() call. Pushing at the source means transient
+ * contacts cannot be missed by trying to infer them from state snapshots.
  */
 export type SfxEvent =
   | 'flipperClick'
   | 'paintHit'
   | 'energyChime'
   | 'bossHitThud'
-  | 'shieldBlock'
-  | 'baseHit'
   | 'ballDrain'
   | 'launchWhoosh'
   | 'padBoost'
@@ -150,20 +119,18 @@ export type SfxEvent =
 
 /**
  * Discrete visual-feedback tags, pushed by sim.ts alongside SfxEvent at the
- * same points-of-cause (a boss/shield/base actually taking a hit, or the
- * round ending) - see fx.ts, which owns the actual hit-flash/screen-shake/
+ * same points-of-cause (the boss taking a hit, or the round ending) - see
+ * fx.ts, which owns the actual hit-flash/screen-shake/
  * floating-damage-number render state (kept outside World, same reasoning
  * as main.ts's ball-trail Map: it's ephemeral render state, not simulation
  * state that needs to be deterministic/serializable for tests).
  */
 export interface FxEvent {
-  kind: 'boss' | 'shield' | 'base' | 'win' | 'lose';
+  kind: 'boss' | 'win' | 'lose';
   x: number;
   y: number;
   /** damage dealt, drawn as a floating number - omitted for win/lose */
   amount?: number;
-  /** true for an overload hit getting through - a bigger jolt than a normal hit */
-  big?: boolean;
 }
 
 /**
@@ -190,8 +157,8 @@ export interface LaunchState {
 }
 
 /**
- * Active while `phase === 'aim'`: the whole simulation is frozen (boss,
- * projectiles, other balls) except this sweeping aim indicator, so the
+ * Active while `phase === 'aim'`: the whole simulation is frozen (boss and
+ * other balls) except this sweeping aim indicator, so the
  * player gets a fully readable window to pick a launch vector for the ball
  * that just touched an active flipper. See sim.ts's updateAim/fireAimedBall.
  */
@@ -221,12 +188,9 @@ export interface World {
   walls: Wall[];
   flippers: Flipper[];
   boss: Boss;
-  shield: Shield;
-  base: Base;
   bumpers: Bumper[];
   pegs: Peg[];
   launchPads: LaunchPad[];
-  projectiles: Projectile[];
   launch: LaunchState;
   aim: AimState | null;
   /** transient per-step sound-event queue, see SfxEvent - drained by main.ts, cleared by sim.ts at the start of each step() */
@@ -240,13 +204,11 @@ export interface World {
 export interface ControlsState {
   left: boolean;
   right: boolean;
-  shield: boolean;
   launch: boolean;
 }
 
 export const NO_CONTROLS: ControlsState = {
   left: false,
   right: false,
-  shield: false,
   launch: false,
 };

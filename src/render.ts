@@ -2,13 +2,12 @@
 // direction in dis_doc.md: dark field, bright thin geometry, color reserved
 // for charged/energized things. No image assets.
 //
-// Layout: the top HUD_HEIGHT strip holds the boss/shield/base status bars,
+// Layout: the top HUD_HEIGHT strip holds combat/status readouts,
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, BALL_RADIUS, BUMPER_COOLDOWN, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN } from './constants';
-import { LEVEL } from './level';
-import { BG, CYAN, HUD_BG, LIME, MAGENTA, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
+import { BG, CYAN, HUD_BG, LIME, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
 export const COLOR_HEX: Record<Ball['color'], string> = {
@@ -31,8 +30,8 @@ export const BUMPER_COLOR: Record<'paint' | 'energy', string> = {
 };
 
 /** Short-lived expanding, fading ring around a just-triggered bumper/pad -
- * dis_doc.md's "Pulse" effect (#5 in the high-payoff effects list): bumper,
- * shield and charged targets briefly expand on trigger. Derived purely from
+ * dis_doc.md's "Pulse" effect (#5 in the high-payoff effects list): bumpers
+ * and charged targets briefly expand on trigger. Derived purely from
  * the existing cooldown field (no new World state). */
 function drawImpactPulse(ctx: CanvasRenderingContext2D, x: number, y: number, baseR: number, cooldown: number, maxCooldown: number, color: string): void {
   if (cooldown <= 0) return;
@@ -54,7 +53,6 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.translate(0, HUD_HEIGHT);
   drawFieldBorder(ctx);
   drawWalls(ctx, world);
-  drawShieldIndicator(ctx, world);
   drawPegs(ctx, world);
   drawLaunchPads(ctx, world);
   drawLaunchZone(ctx, world);
@@ -67,7 +65,6 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
     drawImpactPulse(ctx, b.x, b.y, b.r, b.cooldown, BUMPER_COOLDOWN, BUMPER_COLOR[b.kind]);
   }
   drawFlippers(ctx, world);
-  drawProjectiles(ctx, world);
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
   drawFieldOverlay(ctx, world);
@@ -82,7 +79,7 @@ function drawBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number,
 }
 
 function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
-  const { boss, shield, base } = world;
+  const { boss } = world;
   const pad = 10;
   const w = FIELD_W - pad * 2;
   const barH = 6;
@@ -95,14 +92,6 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillStyle = STRUCTURE;
   ctx.fillText('BOSS', pad, 14);
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
-
-  ctx.fillStyle = STRUCTURE;
-  ctx.fillText('SHIELD', pad, 35);
-  drawBar(ctx, pad, 38, w * 0.45, barH, shield.energy / shield.maxEnergy, CYAN);
-
-  ctx.fillStyle = STRUCTURE;
-  ctx.fillText('BASE', pad + w * 0.55, 35);
-  drawBar(ctx, pad + w * 0.55, 38, w * 0.45, barH, base.hp / base.maxHp, ORANGE);
 
   ctx.strokeStyle = STRUCTURE;
   ctx.beginPath();
@@ -139,20 +128,6 @@ function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
     }
     ctx.stroke();
   }
-}
-
-/** Thin highlighted line across the floor while the shield is raised, as
- * on-field feedback (the actual shield/base status lives in the HUD bar). */
-function drawShieldIndicator(ctx: CanvasRenderingContext2D, world: World): void {
-  if (!world.shield.active) return;
-  withGlow(ctx, CYAN, 12, () => {
-    ctx.strokeStyle = withAlpha(CYAN, 0.85);
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, LEVEL.shield.y);
-    ctx.lineTo(FIELD_W, LEVEL.shield.y);
-    ctx.stroke();
-  });
 }
 
 function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
@@ -225,23 +200,14 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
 function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const { boss } = world;
   const r = boss.r;
-  const ringColor = boss.overloadCharging ? YELLOW : RED;
 
-  withGlow(ctx, ringColor, 10, () => {
-    ctx.strokeStyle = ringColor;
+  withGlow(ctx, RED, 10, () => {
+    ctx.strokeStyle = RED;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
     ctx.stroke();
   });
-
-  if (boss.overloadCharging) {
-    ctx.strokeStyle = withAlpha(YELLOW, 0.6);
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.arc(boss.x, boss.y, r + 8, -Math.PI / 2, -Math.PI / 2 + boss.overloadProgress * Math.PI * 2);
-    ctx.stroke();
-  }
 
   drawAngryFace(ctx, boss.x, boss.y, r);
 }
@@ -302,21 +268,6 @@ function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
       ctx.lineTo(tipX, tipY);
       ctx.stroke();
     });
-  }
-}
-
-function drawProjectiles(ctx: CanvasRenderingContext2D, world: World): void {
-  // Squares (not circles) so enemy shots are never mistaken for the player's
-  // ball at a glance, even when the ball is charged red from paint hits.
-  // Colors are chosen to not collide with any ball color (white/red/blue/yellow).
-  for (const p of world.projectiles) {
-    ctx.fillStyle = p.big ? MAGENTA : ORANGE;
-    const size = p.r * 2;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(Math.atan2(p.vy, p.vx));
-    ctx.fillRect(-size / 2, -size / 2, size, size);
-    ctx.restore();
   }
 }
 

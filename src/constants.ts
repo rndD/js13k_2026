@@ -5,8 +5,8 @@
 export const FIELD_W = 360;
 export const FIELD_H = 640;
 
-// Reserved strip at the very top of the canvas for the boss/shield/base
-// status readouts, so the playfield itself starts below it instead of
+// Reserved strip at the very top of the canvas for combat/status readouts,
+// so the playfield itself starts below it instead of
 // having bars overlaid on top of gameplay.
 export const HUD_HEIGHT = 56;
 export const CANVAS_H = FIELD_H + HUD_HEIGHT;
@@ -42,7 +42,6 @@ export const PAINT_DAMAGE_BASE = 40;
 export const PAINT_MULTIPLIER_STEP = 0.5;
 export const PAINT_MULTIPLIER_MAX = 8;
 export const DIRECT_DAMAGE_BASE = 10;
-export const ENERGY_TARGET_GAIN = 18; // shield energy restored per hit
 export const ENERGY_TARGET_MULT_BONUS = 0.2;
 
 // Contact aim: when an ACTIVE flipper hits a ball, the whole sim freezes and
@@ -69,25 +68,7 @@ export const AIM_SPEED_PER_MULT = 35; // extra px/s per point of ball.multiplier
 // Boss
 export const BOSS_RADIUS = 30;
 export const BOSS_MAX_HP = 1000;
-export const BOSS_SHOOT_INTERVAL = 6.5; // s between normal shots
-export const BOSS_PROJECTILE_SPEED = 140; // px/s, intentionally slow/readable
-export const BOSS_PROJECTILE_DAMAGE = 12;
-export const BOSS_PROJECTILE_RADIUS = 7;
 export const BOSS_HIT_COOLDOWN = 0.25; // s, per-ball direct-damage cooldown while inside boss
-
-// Boss special action: shield overload
-export const OVERLOAD_INTERVAL = 18; // s between overload attempts
-export const OVERLOAD_CHARGE_TIME = 2.2; // s telegraph before the hit lands
-export const OVERLOAD_DAMAGE = 45;
-
-// Shield
-export const SHIELD_MAX_ENERGY = 100;
-export const SHIELD_MAX_HP = 60;
-export const SHIELD_DRAIN_RATE = 22; // energy/s while held active
-export const SHIELD_WIDTH = FIELD_W * 0.5;
-
-// Base
-export const BASE_MAX_HP = 100;
 
 // Anti-stuck watchdog: pinball physics can pathologically trap a ball
 // bouncing forever in a tight pocket (net displacement ~0 even though it's
@@ -118,16 +99,13 @@ export const FX_FLOATER_LIFE = 0.7; // s a floating damage number stays visible 
 export const FX_FLOATER_RISE = 26; // px a floating damage number drifts upward over its life
 export const FX_SHAKE_DECAY = 90; // px/s, how fast screen shake magnitude falls off
 export const FX_SHAKE_BOSS = 3; // px, direct/paint hit on the boss
-export const FX_SHAKE_SHIELD = 4; // px, shield blocking a projectile
-export const FX_SHAKE_BASE = 6; // px, base taking a hit (bigger - more alarming than a blocked shot)
-export const FX_SHAKE_BIG = 10; // px, an overload projectile getting through (shield or base)
 export const FX_SHAKE_WIN = 8; // px, boss defeated
-export const FX_SHAKE_LOSE = 5; // px, base destroyed - noticeable but not disorienting (was 12, way too much for a single beat)
+export const FX_SHAKE_LOSE = 5; // px, run lost - noticeable but not disorienting
 
 // Background "paint wash" particle system (bgfx.ts): a splat spawns at
 // EVERY contact a ball has with anything (peg/wall/bumper/flipper - detected
 // generically via a sudden ball velocity-direction change, not per-object
-// special-casing) plus every boss/shield/base/win/lose fx event. Each splat
+// special-casing) plus every boss/win/lose fx event. Each splat
 // is its own independent particle that sways sideways on a sine wave, drifts
 // slowly up or down (direction randomized per splat), grows a little, and
 // fades out over its lifetime - rather than being painted onto a fixed spot

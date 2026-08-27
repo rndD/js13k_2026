@@ -5,21 +5,16 @@
 // deliberately NOT part of World: it's ephemeral/non-deterministic-looking
 // render dressing, not simulation state a test would ever need to assert on.
 import {
-  FIELD_W,
   FX_FLASH_DURATION,
   FX_FLOATER_LIFE,
   FX_FLOATER_RISE,
-  FX_SHAKE_BASE,
-  FX_SHAKE_BIG,
   FX_SHAKE_BOSS,
   FX_SHAKE_DECAY,
   FX_SHAKE_LOSE,
-  FX_SHAKE_SHIELD,
   FX_SHAKE_WIN,
   HUD_HEIGHT,
 } from './constants';
-import { LEVEL } from './level';
-import { CYAN, ORANGE, RED, WHITE, YELLOW, withGlow } from './palette';
+import { RED, WHITE, YELLOW, withGlow } from './palette';
 import type { FxEvent, World } from './types';
 
 interface Floater {
@@ -42,16 +37,12 @@ export function createFxState(): FxState {
 
 const FLOATER_COLOR: Record<FxEvent['kind'], string> = {
   boss: RED,
-  shield: CYAN,
-  base: ORANGE,
   win: YELLOW,
   lose: RED,
 };
 
 const SHAKE_FOR: Record<FxEvent['kind'], number> = {
   boss: FX_SHAKE_BOSS,
-  shield: FX_SHAKE_SHIELD,
-  base: FX_SHAKE_BASE,
   win: FX_SHAKE_WIN,
   lose: FX_SHAKE_LOSE,
 };
@@ -60,7 +51,7 @@ const SHAKE_FOR: Record<FxEvent['kind'], number> = {
  * everything already in flight (shake magnitude, flash timers, floaters). */
 export function updateFx(fx: FxState, world: World, dt: number): void {
   for (const ev of world.fx) {
-    fx.shake = Math.max(fx.shake, ev.big ? FX_SHAKE_BIG : SHAKE_FOR[ev.kind]);
+    fx.shake = Math.max(fx.shake, SHAKE_FOR[ev.kind]);
     if (ev.kind !== 'win' && ev.kind !== 'lose') fx.flashes.set(ev.kind, FX_FLASH_DURATION);
     if (ev.amount !== undefined) {
       fx.floaters.push({ x: ev.x, y: ev.y, text: String(ev.amount), color: FLOATER_COLOR[ev.kind], age: 0 });
@@ -91,10 +82,8 @@ export function shakeOffset(fx: FxState): { x: number; y: number } {
   return { x: Math.cos(angle) * fx.shake, y: Math.sin(angle) * fx.shake };
 }
 
-/** Draws hit-flashes and floating damage numbers. Called in the same
- * HUD_HEIGHT-translated playfield space as render()'s own draw calls, so
- * world coordinates (boss.x/y, projectile x/y at the moment of impact,
- * LEVEL.shield.y/base.y) line up without any extra conversion. */
+/** Draws hit-flashes and floating damage numbers in the same
+ * HUD_HEIGHT-translated playfield space as render()'s own draw calls. */
 export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World): void {
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
@@ -107,24 +96,6 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
     ctx.beginPath();
     ctx.arc(world.boss.x, world.boss.y, world.boss.r + 4, 0, Math.PI * 2);
     ctx.stroke();
-  }
-
-  const shieldFlash = fx.flashes.get('shield');
-  if (shieldFlash) {
-    ctx.globalAlpha = shieldFlash / FX_FLASH_DURATION;
-    ctx.strokeStyle = WHITE;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(0, LEVEL.shield.y);
-    ctx.lineTo(FIELD_W, LEVEL.shield.y);
-    ctx.stroke();
-  }
-
-  const baseFlash = fx.flashes.get('base');
-  if (baseFlash) {
-    ctx.globalAlpha = baseFlash / FX_FLASH_DURATION;
-    ctx.fillStyle = ORANGE;
-    ctx.fillRect(0, LEVEL.base.y - 4, FIELD_W, 8);
   }
 
   ctx.globalAlpha = 1;

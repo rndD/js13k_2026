@@ -4,15 +4,10 @@
 // by default) - this file only assembles behavioral fields from constants.ts.
 import {
   BALL_RADIUS,
-  BASE_MAX_HP,
   BOSS_MAX_HP,
-  BOSS_SHOOT_INTERVAL,
   FLIPPER_ACTIVE_ANGLE,
   FLIPPER_LENGTH,
   FLIPPER_REST_ANGLE,
-  OVERLOAD_INTERVAL,
-  SHIELD_MAX_ENERGY,
-  SHIELD_MAX_HP,
 } from './constants';
 import { LEVEL, type LevelData, type LevelFlipper } from './level';
 import type { Ball, Bumper, Flipper, World } from './types';
@@ -73,23 +68,10 @@ export function createWorld(level: LevelData = LEVEL): World {
       r: level.boss.r,
       hp: BOSS_MAX_HP,
       maxHp: BOSS_MAX_HP,
-      shootTimer: BOSS_SHOOT_INTERVAL,
-      overloadTimer: OVERLOAD_INTERVAL,
-      overloadCharging: false,
-      overloadProgress: 0,
     },
-    shield: {
-      energy: SHIELD_MAX_ENERGY,
-      maxEnergy: SHIELD_MAX_ENERGY,
-      hp: SHIELD_MAX_HP,
-      maxHp: SHIELD_MAX_HP,
-      active: false,
-    },
-    base: { hp: BASE_MAX_HP, maxHp: BASE_MAX_HP },
     bumpers: level.bumpers.map((b) => createBumper(b)),
     pegs: level.pegs.map((p) => ({ ...p })),
     launchPads: level.launchPads.map((p) => ({ ...p, cooldown: 0 })),
-    projectiles: [],
     launch: { x: level.launch.x, y: level.launch.y, charging: false, power: 0 },
     aim: null,
     sfx: [],
