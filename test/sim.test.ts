@@ -427,4 +427,24 @@ describe('moving armored boss', () => {
 
     expect(world.boss.hp).toBeLessThan(bossHp);
   });
+
+  it('does not double-hit the boss on the same contact that breaks the final armor', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    for (const armor of world.boss.armor) armor.hp = 0;
+    const armor = world.boss.armor[0];
+    armor.hp = 1;
+    const ball = createBall(
+      1,
+      world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS,
+      world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS,
+    );
+    world.balls = [ball];
+    const bossHp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(armor.hp).toBe(0);
+    expect(world.boss.hp).toBe(bossHp);
+  });
 });

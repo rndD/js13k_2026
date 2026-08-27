@@ -257,6 +257,7 @@ function updateBalls(world: World, dt: number): void {
         ball.armorCooldown = Math.max(0, ball.armorCooldown - subDt);
       }
 
+      let hitArmor = false;
       for (const armor of world.boss.armor) {
         if (armor.hp <= 0) continue;
         const collider = {
@@ -265,6 +266,7 @@ function updateBalls(world: World, dt: number): void {
           r: armor.r,
         };
         if (!resolveBumper(ball, collider, ARMOR_DEFLECT_SPEED)) continue;
+        hitArmor = true;
         world.contacts.push({ kind: 'armor', x: collider.x, y: collider.y });
         if (ball.role !== 'hostile' && ball.armorCooldown <= 0) {
           const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1));
@@ -280,7 +282,7 @@ function updateBalls(world: World, dt: number): void {
       if (expired) break;
 
       const bossExposed = world.boss.armor.every((armor) => armor.hp <= 0);
-      if (bossExposed && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
+      if (!hitArmor && bossExposed && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
         const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
