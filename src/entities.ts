@@ -43,6 +43,7 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
   return {
     id,
     role,
+    stocked: role === 'core',
     x,
     y,
     vx: 0,
@@ -62,6 +63,7 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
     stability: 0,
     lifetime: role === 'hostile' ? HOSTILE_LIFETIME : role === 'echo' ? ECHO_LIFETIME : 0,
     wallSoundTicks: 0,
+    gunTimer: 0,
     roleFlash: 0,
   };
 }
@@ -73,14 +75,16 @@ export function createWorld(level: LevelData = LEVEL): World {
     nextBallId: 1,
     coreBalls: STARTING_CORE_BALLS,
     points: 0,
-    upgrades: { extraCore: 0, recruiter: 0, armorShatter: 0 },
+    upgrades: { extraCore: 0, recruiter: 0, armorShatter: 0, autoGun: 0, overcharge: 0, splitAll: 0, sacrifice: 0, lastBounce: 0 },
     previousUpgradeGap: 50,
     upgradeGap: 100,
     nextUpgradeAt: 100,
     pendingUpgrades: 0,
     upgradeCount: 0,
+    rescueBounces: 0,
     pick: null,
     balls: [],
+    bullets: [],
     walls: level.walls.map((wall) => wall.map((p) => ({ ...p }))),
     flippers: createFlippers(level.flippers),
     boss: {
@@ -101,7 +105,7 @@ export function createWorld(level: LevelData = LEVEL): World {
     bumpers: level.bumpers.map((b) => createBumper(b)),
     pegs: level.pegs.map((p) => ({ ...p })),
     launchPads: level.launchPads.map((p) => ({ ...p, cooldown: 0 })),
-    launch: { x: level.launch.x, y: level.launch.y, charging: false, power: 0 },
+    launch: { x: level.launch.x, y: level.launch.y, charging: false, power: 0, autoTimer: 0 },
     aim: null,
     sfx: [],
     fx: [],

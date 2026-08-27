@@ -20,6 +20,11 @@ import {
   ARMOR_ROTATION_SPEED,
   ARMOR_SHATTER_DAMAGE,
   ARMOR_THICKNESS,
+  AUTO_LAUNCH_DELAY,
+  BULLET_DAMAGES,
+  BULLET_INTERVALS,
+  BULLET_LIFETIME,
+  BULLET_SPEED,
   BOSS_HIT_COOLDOWN,
   BOSS_MOVE_SPEED,
   BOSS_MOVE_X,
@@ -37,6 +42,7 @@ import {
   FLIPPER_THICKNESS,
   HOSTILE_BALL_SPEED,
   HOSTILE_SPAWN_INTERVAL,
+  HIT_MULTIPLIER_COST,
   LAUNCH_CHARGE_TIME,
   LAUNCH_MAX_SPEED,
   LAUNCH_MIN_SPEED,
@@ -74,7 +80,7 @@ import {
   resolveWall,
   resolveWalls,
 } from './physics';
-import type { AimState, Ball, ControlsState, Flipper, World } from './types';
+import type { AimState, Ball, Bullet, ControlsState, Flipper, World } from './types';
 
 /** Advance the world by one fixed timestep. Mutates and returns `world`. */
 export function step(world: World, controls: ControlsState, dt: number): World {
@@ -112,6 +118,8 @@ export function step(world: World, controls: ControlsState, dt: number): World {
 
   updateBoss(world, dt);
   updateBalls(world, dt);
+  updateGun(world, dt);
+  updateBullets(world, dt);
   updateCooldowns(world, dt);
   queueUpgradeMilestones(world);
   checkOutcome(world);
@@ -136,10 +144,9 @@ function queueUpgradeMilestones(world: World): void {
 }
 
 function beginPick(world: World, resumePhase = world.phase): void {
-  const offers = ABILITIES
-    .filter((ability) => world.upgrades[ability.id] < ability.maxStacks)
-    .slice(0, 3)
-    .map((ability) => ability.id);
+  const eligible = ABILITIES.filter((ability) => world.upgrades[ability.id] < ability.maxStacks);
+  const start = (world.upgradeCount * 3) % Math.max(1, eligible.length);
+  const offers = [...eligible.slice(start), ...eligible.slice(0, start)].slice(0, 3).map((ability) => ability.id);
   if (!offers.length) {
     world.pendingUpgrades = 0;
     return;
@@ -175,6 +182,28 @@ function updatePick(world: World, controls: ControlsState): void {
   world.upgrades[id] += 1;
   world.upgradeCount += 1;
   if (id === 'extraCore') world.coreBalls += 1;
+  if (id === 'overcharge') {
+    for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier * 2);
+  }
+  if (id === 'splitAll') {
+    const originals = world.balls.filter((ball) => ball.role !== 'hostile');
+    world.nextBallId = Math.max(world.nextBallId, ...world.balls.map((ball) => ball.id + 1));
+    for (const ball of originals) {
+      const sign = ball.id % 2 ? 1 : -1;
+      world.balls.push({ ...ball, id: world.nextBallId++, stocked: false, x: ball.x + sign * ball.r, vx: ball.vx + sign * 90, gunTimer: 0 });
+    }
+  }
+  if (id === 'sacrifice') {
+    world.boss.hp = Math.ceil(world.boss.hp / 2);
+    for (const ball of world.balls) {
+      if (ball.role === 'core' && ball.stocked) world.coreBalls = Math.max(0, world.coreBalls - 1);
+      explodeBall(world, ball);
+    }
+    world.balls = [];
+    world.bullets = [];
+    world.pendingUpgrades += 2;
+  }
+  if (id === 'lastBounce') world.rescueBounces += 1;
   world.sfx.push('upgradePick');
 
   const resumePhase = pick.resumePhase;
@@ -201,6 +230,14 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
   const canLaunch = world.phase === 'launch' || (world.phase === 'battle' && activeCores < world.coreBalls);
   if (!canLaunch) return;
 
+  if (activeCores === 0 && world.coreBalls > 0) {
+    world.launch.autoTimer += dt;
+    if (world.launch.autoTimer >= AUTO_LAUNCH_DELAY) {
+      launchBall(world, 1);
+      return;
+    }
+  } else world.launch.autoTimer = 0;
+
   if (controls.launch) {
     world.launch.charging = true;
     world.launch.power = Math.min(1, world.launch.power + dt / LAUNCH_CHARGE_TIME);
@@ -208,17 +245,86 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
   }
 
   if (world.launch.charging) {
-    const power = world.launch.power;
-    const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
-    const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
-    ball.vx = -60; // small nudge toward the field, away from the lane wall
-    ball.vy = -speed;
-    world.balls.push(ball);
-    world.launch.charging = false;
-    world.launch.power = 0;
-    world.phase = 'battle';
-    world.sfx.push('launchWhoosh');
+    launchBall(world, world.launch.power);
   }
+}
+
+function launchBall(world: World, power: number): void {
+  const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
+  const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
+  ball.vx = -60;
+  ball.vy = -speed;
+  world.balls.push(ball);
+  world.launch.charging = false;
+  world.launch.power = 0;
+  world.launch.autoTimer = 0;
+  world.phase = 'battle';
+  world.sfx.push('launchWhoosh');
+}
+
+function updateGun(world: World, dt: number): void {
+  const rank = world.upgrades.autoGun;
+  if (!rank) return;
+  const interval = BULLET_INTERVALS[rank - 1];
+  const damage = BULLET_DAMAGES[rank - 1];
+  for (const ball of world.balls) {
+    if (ball.role !== 'core' || Math.hypot(ball.vx, ball.vy) < 100 || ball.y > world.launch.y - 15) continue;
+    ball.gunTimer -= dt;
+    if (ball.gunTimer > 0) continue;
+    const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);
+    world.bullets.push({
+      x: ball.x + Math.cos(angle) * (ball.r + 4),
+      y: ball.y + Math.sin(angle) * (ball.r + 4),
+      vx: Math.cos(angle) * BULLET_SPEED,
+      vy: Math.sin(angle) * BULLET_SPEED,
+      r: 2,
+      damage,
+      lifetime: BULLET_LIFETIME,
+    });
+    ball.gunTimer = interval;
+    world.sfx.push('gunShot');
+  }
+}
+
+function updateBullets(world: World, dt: number): void {
+  const remaining: Bullet[] = [];
+  for (const bullet of world.bullets) {
+    bullet.lifetime -= dt;
+    let hit = false;
+    for (let step = 0; step < BALL_SUBSTEPS && !hit; step++) {
+      bullet.x += bullet.vx * dt / BALL_SUBSTEPS;
+      bullet.y += bullet.vy * dt / BALL_SUBSTEPS;
+      hit = resolveWalls(bullet, FIELD_W, FIELD_H) !== 'none';
+      for (const wall of world.walls) if (resolveWall(bullet, wall, WALL_THICKNESS)) hit = true;
+      for (const peg of world.pegs) if (resolveBumper(bullet, peg, PEG_IMPULSE)) hit = true;
+      for (const bumper of world.bumpers) if (resolveBumper(bullet, bumper, 0)) hit = true;
+      for (const flipper of world.flippers) if (resolveFlipper(bullet, flipper, 0, FLIPPER_THICKNESS)) hit = true;
+      for (const pad of world.launchPads) if (resolveLaunchPad(bullet, pad, LAUNCH_PAD_TRIGGER_R, 0)) hit = true;
+      if (hit) break;
+
+      const dx = bullet.x - world.boss.x;
+      const dy = bullet.y - world.boss.y;
+      const distance = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      for (const armor of world.boss.armor) {
+        const angleDelta = Math.atan2(Math.sin(angle - armor.angle), Math.cos(angle - armor.angle));
+        if (armor.hp <= 0 || Math.abs(angleDelta) > ARMOR_ARC_HALF || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ARMOR_THICKNESS / 2 + bullet.r) continue;
+        armor.hp = Math.max(0, armor.hp - bullet.damage);
+        addPoints(world, bullet.damage);
+        world.fx.push({ kind: 'armor', x: bullet.x, y: bullet.y, amount: bullet.damage });
+        hit = true;
+        break;
+      }
+      if (!hit && distance < world.boss.r + bullet.r) {
+        world.boss.hp = Math.max(0, world.boss.hp - bullet.damage);
+        addPoints(world, bullet.damage);
+        world.fx.push({ kind: 'boss', x: bullet.x, y: bullet.y, amount: bullet.damage });
+        hit = true;
+      }
+    }
+    if (!hit && bullet.lifetime > 0 && bullet.y - bullet.r <= FIELD_H) remaining.push(bullet);
+  }
+  world.bullets = remaining;
 }
 
 // Movement is subdivided into several substeps so that fast-moving balls
@@ -253,6 +359,15 @@ function updateBalls(world: World, dt: number): void {
 
       const wallResult = resolveWalls(ball, FIELD_W, FIELD_H);
       if (wallResult === 'drained') {
+        if (ball.role !== 'hostile' && world.rescueBounces > 0) {
+          world.rescueBounces -= 1;
+          ball.y = FIELD_H - ball.r - 8;
+          ball.vx = (FIELD_W / 2 - ball.x) * 2;
+          ball.vy = -MAX_SPEED * 0.85;
+          world.sfx.push('padBoost');
+          world.contacts.push({ kind: 'pad', x: ball.x, y: ball.y });
+          continue;
+        }
         drained = true;
         consumeDrainedBall(world, ball);
         world.sfx.push('ballDrain');
@@ -357,6 +472,7 @@ function updateBalls(world: World, dt: number): void {
           addPoints(world, damage + (armor.hp === 0 ? POINTS_ARMOR_BREAK : 0));
           world.sfx.push(armor.hp === 0 ? 'armorBreak' : 'armorHit');
           world.fx.push({ kind: 'armor', x: hit.x, y: hit.y, amount: damage });
+          ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
           if (armor.hp === 0 && world.upgrades.armorShatter > 0) {
             const splash = ARMOR_SHATTER_DAMAGE * world.upgrades.armorShatter;
             for (const other of world.boss.armor) {
@@ -383,6 +499,7 @@ function updateBalls(world: World, dt: number): void {
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
         world.sfx.push('bossHitThud');
         world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg });
+        ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
         expired = spendEchoStability(ball);
       }
 
@@ -438,7 +555,7 @@ function resolveArmorArc(ball: Ball, cx: number, cy: number, angle: number): { x
 }
 
 function consumeDrainedBall(world: World, ball: Ball): void {
-  if (ball.role === 'core') world.coreBalls = Math.max(0, world.coreBalls - 1);
+  if (ball.role === 'core' && ball.stocked) world.coreBalls = Math.max(0, world.coreBalls - 1);
   addPoints(world, -(ball.role === 'core' ? POINTS_CORE_DRAIN_PENALTY : POINTS_OTHER_DRAIN_PENALTY));
 }
 
@@ -641,7 +758,7 @@ function checkOutcome(world: World): void {
   if (world.boss.hp <= 0) {
     addPoints(world, POINTS_BOSS_DEFEAT);
     world.phase = 'win';
-    world.sfx.push('win');
+    world.sfx.push('ballExplode', 'win');
     world.fx.push({ kind: 'win', x: world.boss.x, y: world.boss.y });
   }
 }

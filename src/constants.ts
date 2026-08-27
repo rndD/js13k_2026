@@ -114,11 +114,17 @@ export const STUCK_MAX_RESCUES = 3; // rescues tolerated per ball before giving 
 
 // Launch / plunger
 export const LAUNCH_CHARGE_TIME = 0.5; // s to reach full power from empty
+export const AUTO_LAUNCH_DELAY = 10;
 export const LAUNCH_MIN_SPEED = 260;
 export const LAUNCH_MAX_SPEED = 560;
 
 export const FIXED_DT = 1 / 60;
 export const WALL_SOUND_TICKS = 3; // per-ball wall/peg sound limiter
+export const HIT_MULTIPLIER_COST = 0.5;
+export const BULLET_SPEED = 420;
+export const BULLET_LIFETIME = 1.5;
+export const BULLET_INTERVALS = [0.9, 0.6, 0.6, 0.4];
+export const BULLET_DAMAGES = [4, 4, 8, 8];
 
 // Visual-only feedback (fx.ts): hit-flash, screen shake, floating damage
 // numbers. Purely cosmetic/render-side state, not simulation state - see

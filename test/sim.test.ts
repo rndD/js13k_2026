@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { ARMOR_ORBIT_RADIUS, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
+import { ARMOR_ORBIT_RADIUS, AUTO_LAUNCH_DELAY, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createWorld } from '../src/entities';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
+import type { AbilityId } from '../src/types';
+
+function applyUpgrade(world: ReturnType<typeof createWorld>, id: AbilityId): void {
+  world.phase = 'pick';
+  world.pick = { offers: [id], resumePhase: 'battle', armed: true, selected: 0 };
+  step(world, NO_CONTROLS, FIXED_DT);
+}
 
 describe('launch', () => {
   it('does nothing while charging, then spawns a ball and enters battle on release', () => {
@@ -48,6 +55,28 @@ describe('launch', () => {
     expect(world.phase).toBe('battle');
     expect(world.balls.filter((ball) => ball.role === 'core')).toHaveLength(2);
     expect(world.coreBalls).toBe(3);
+  });
+
+  it('automatically launches after ten seconds without a player ball', () => {
+    const world = createWorld();
+
+    for (let t = 0; t < AUTO_LAUNCH_DELAY - FIXED_DT; t += FIXED_DT) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.balls).toHaveLength(0);
+    expect(world.launch.autoTimer).toBeGreaterThan(9);
+
+    step(world, NO_CONTROLS, FIXED_DT * 2);
+    expect(world.phase).toBe('battle');
+    expect(world.balls.filter((ball) => ball.role === 'core')).toHaveLength(1);
+  });
+
+  it('counts down again when only boss balls remain', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.balls = [createBall(9, 100, 100, 'hostile')];
+
+    for (let t = 0; t < AUTO_LAUNCH_DELAY + FIXED_DT; t += FIXED_DT) step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls.some((ball) => ball.role === 'core')).toBe(true);
   });
 });
 
@@ -109,6 +138,21 @@ describe('boss ghost damage', () => {
     step(world, NO_CONTROLS, FIXED_DT);
     // velocity should be unaffected by the boss (only gravity applies)
     expect(world.balls[0].vx).toBe(50);
+  });
+
+  it('spends half a power step after directly damaging the boss', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    const ball = createBall(1, world.boss.x, world.boss.y);
+    ball.multiplier = 2;
+    world.balls = [ball];
+    const hp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(hp - world.boss.hp).toBe(20);
+    expect(ball.multiplier).toBe(1.5);
   });
 });
 
@@ -196,14 +240,117 @@ describe('upgrade milestones', () => {
 
     for (let i = 0; i < 3; i++) {
       step(world, NO_CONTROLS, FIXED_DT);
-      step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT);
+      const safeIndex = world.pick!.offers.findIndex((id) => id !== 'sacrifice');
+      step(world, { ...NO_CONTROLS, choice: safeIndex }, FIXED_DT);
       step(world, NO_CONTROLS, FIXED_DT);
     }
 
     expect(world.phase).toBe('battle');
     expect(world.pendingUpgrades).toBe(0);
     expect(world.upgradeCount).toBe(3);
-    expect(world.upgrades.extraCore).toBe(3);
+  });
+});
+
+describe('wild upgrades', () => {
+  it('auto gun fires gravity-free short-lived shots toward the boss', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const ball = createBall(1, 40, 400);
+    ball.vy = -300;
+    world.balls = [ball];
+    world.upgrades.autoGun = 1;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.bullets).toHaveLength(1);
+    expect(world.bullets[0].vy).toBeLessThan(0);
+    const vy = world.bullets[0].vy;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.bullets[0].vy).toBe(vy);
+    expect(world.bullets[0].lifetime).toBeLessThan(ECHO_LIFETIME);
+  });
+
+  it('gun shots disappear on table walls instead of passing through', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.bullets = [{ x: 359, y: 300, vx: 420, vy: 0, r: 2, damage: 4, lifetime: 1 }];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.bullets).toHaveLength(0);
+  });
+
+  it('does not fire while the ball is still at the launcher', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.autoGun = 1;
+    const ball = createBall(1, world.launch.x, world.launch.y);
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.sfx).not.toContain('gunShot');
+
+    ball.x = 80;
+    ball.y -= 30;
+    ball.vy = -300;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.sfx).toContain('gunShot');
+  });
+
+  it('overcharges only player-owned balls currently on the field', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const mine = createBall(1, 80, 300);
+    const bossBall = createBall(2, 160, 300, 'hostile');
+    world.balls = [mine, bossBall];
+
+    applyUpgrade(world, 'overcharge');
+
+    expect(mine.multiplier).toBe(2);
+    expect(bossBall.multiplier).toBe(1);
+  });
+
+  it('splits every current player-owned ball but not boss balls', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.balls = [createBall(1, 80, 300), createBall(2, 160, 300, 'echo'), createBall(3, 220, 300, 'hostile')];
+
+    applyUpgrade(world, 'splitAll');
+
+    expect(world.balls.filter((ball) => ball.role !== 'hostile')).toHaveLength(4);
+    expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
+    expect(new Set(world.balls.map((ball) => ball.id)).size).toBe(world.balls.length);
+  });
+
+  it('sacrifice halves boss life, bursts every ball, and grants two choices', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss.hp = 301;
+    world.balls = [createBall(1, 80, 300), createBall(2, 160, 300, 'hostile')];
+
+    applyUpgrade(world, 'sacrifice');
+
+    expect(world.boss.hp).toBe(151);
+    expect(world.balls).toHaveLength(0);
+    expect(world.phase).toBe('pick');
+    expect(world.pendingUpgrades).toBe(1);
+    expect(world.coreBalls).toBe(2);
+    expect(world.sfx.filter((event) => event === 'ballExplode')).toHaveLength(2);
+  });
+
+  it('last bounce rescues one falling player ball without spending stock', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.rescueBounces = 1;
+    const ball = createBall(1, 100, 700);
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls).toContain(ball);
+    expect(ball.vy).toBeLessThan(0);
+    expect(world.rescueBounces).toBe(0);
+    expect(world.coreBalls).toBe(3);
   });
 });
 
@@ -234,6 +381,8 @@ describe('outcomes', () => {
 
     expect(world.boss.hp).toBe(0);
     expect(world.phase).toBe('win');
+    expect(world.fx).toContainEqual(expect.objectContaining({ kind: 'win' }));
+    expect(world.sfx).toContain('ballExplode');
   });
 
   it('freezes the world once a win/lose outcome is reached', () => {
@@ -567,6 +716,20 @@ describe('moving armored boss', () => {
     expect(armor.hp).toBeLessThan(armorHp);
     expect(world.boss.hp).toBe(bossHp);
     expect(world.points).toBeGreaterThan(0);
+  });
+
+  it('spends power after directly damaging armor', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const armor = world.boss.armor[0];
+    const ball = createBall(1, world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS, world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS);
+    ball.multiplier = 2;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(armor.hp).toBeLessThan(armor.maxHp);
+    expect(ball.multiplier).toBe(1.5);
   });
 
   it('lets a ball pass through a gap between curved armor plates', () => {

@@ -68,17 +68,18 @@ const SHAKE_FOR: Record<FxEvent['kind'], number> = {
 export function updateFx(fx: FxState, world: World, dt: number): void {
   for (const ev of world.fx) {
     fx.shake = Math.max(fx.shake, SHAKE_FOR[ev.kind]);
-    if (ev.kind === 'hostileBurst' || ev.kind === 'echoBurst') {
-      const color = ev.kind === 'hostileBurst' ? ORANGE : CYAN;
+    if (ev.kind === 'hostileBurst' || ev.kind === 'echoBurst' || ev.kind === 'win') {
+      const color = ev.kind === 'hostileBurst' ? ORANGE : ev.kind === 'echoBurst' ? CYAN : YELLOW;
+      const count = ev.kind === 'win' ? 20 : 10;
       fx.bursts.push({
         x: ev.x,
         y: ev.y,
         color,
         age: 0,
-        shards: Array.from({ length: 10 }, (_, i) => ({
-          angle: i / 10 * Math.PI * 2 + Math.random() * 0.35,
-          speed: 28 + Math.random() * 45,
-          size: 1.5 + Math.random() * 2.5,
+        shards: Array.from({ length: count }, (_, i) => ({
+          angle: i / count * Math.PI * 2 + Math.random() * 0.35,
+          speed: 28 + Math.random() * (ev.kind === 'win' ? 100 : 45),
+          size: 1.5 + Math.random() * (ev.kind === 'win' ? 5 : 2.5),
         })),
       });
     }

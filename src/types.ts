@@ -8,11 +8,13 @@ export interface Vec2 {
 }
 
 export type BallRole = 'core' | 'hostile' | 'echo';
-export type AbilityId = 'extraCore' | 'recruiter' | 'armorShatter';
+export type AbilityId = 'extraCore' | 'recruiter' | 'armorShatter' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'lastBounce';
 
 export interface Ball {
   id: number;
   role: BallRole;
+  /** whether draining this core consumes one ball from stock; split clones do not */
+  stocked: boolean;
   x: number;
   y: number;
   vx: number;
@@ -44,7 +46,18 @@ export interface Ball {
   lifetime: number;
   /** simulation ticks remaining before this ball may emit another wall/peg sound */
   wallSoundTicks: number;
+  gunTimer: number;
   roleFlash: number;
+}
+
+export interface Bullet {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  damage: number;
+  lifetime: number;
 }
 
 export type FlipperSide = 'left' | 'right';
@@ -144,6 +157,7 @@ export type SfxEvent =
   | 'ballExplode'
   | 'upgradeOpen'
   | 'upgradePick'
+  | 'gunShot'
   | 'armorHit'
   | 'armorBreak'
   | 'ballDrain'
@@ -190,6 +204,7 @@ export interface LaunchState {
   y: number;
   charging: boolean;
   power: number; // 0..1
+  autoTimer: number;
 }
 
 /**
@@ -229,8 +244,10 @@ export interface World {
   nextUpgradeAt: number;
   pendingUpgrades: number;
   upgradeCount: number;
+  rescueBounces: number;
   pick: PickState | null;
   balls: Ball[];
+  bullets: Bullet[];
   walls: Wall[];
   flippers: Flipper[];
   boss: Boss;
