@@ -21,6 +21,8 @@ import {
   ARMOR_THICKNESS,
   AUTO_LAUNCH_DELAY,
   BALL_RESTORE_TIME,
+  BALL_RADIUS,
+  BALL_SIZE_PER_MULT,
   BULLET_DAMAGES,
   BULLET_INTERVALS,
   BULLET_LIFETIME,
@@ -364,6 +366,7 @@ function updateBalls(world: World, dt: number): void {
   const subDt = dt / BALL_SUBSTEPS;
 
   for (const ball of world.balls) {
+    ball.r = ball.role === 'hostile' ? BALL_RADIUS : BALL_RADIUS * (1 + Math.max(0, ball.multiplier - 1) * BALL_SIZE_PER_MULT);
     ball.roleFlash = Math.max(0, ball.roleFlash - dt);
     ball.wallSoundTicks = Math.max(0, ball.wallSoundTicks - 1);
     if (ball.role !== 'core') {

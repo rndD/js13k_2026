@@ -12,6 +12,7 @@ export const HUD_HEIGHT = 56;
 export const CANVAS_H = FIELD_H + HUD_HEIGHT;
 
 export const BALL_RADIUS = 6;
+export const BALL_SIZE_PER_MULT = 0.035;
 export const STARTING_CORE_BALLS = 3;
 export const GRAVITY = 700; // px/s^2, downward under normal tilt
 export const MAX_SPEED = 900; // px/s hard clamp

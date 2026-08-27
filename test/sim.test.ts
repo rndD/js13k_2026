@@ -175,6 +175,22 @@ describe('paint bumper', () => {
   });
 });
 
+describe('ball power size', () => {
+  it('grows player balls slightly with their multiplier', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const ball = createBall(1, 100, 300);
+    ball.multiplier = 4;
+    const bossBall = createBall(2, 200, 300, 'hostile');
+    world.balls = [ball, bossBall];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(ball.r).toBeCloseTo(6.63);
+    expect(bossBall.r).toBe(6);
+  });
+});
+
 describe('energy target', () => {
   it('tags the ball with an accent and increases its multiplier', () => {
     const world = createWorld();

@@ -523,20 +523,20 @@ function drawAimIndicator(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillStyle = WHITE;
   ctx.font = '11px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('release to fire', ball.x, ball.y - 20);
+  ctx.fillText('release to fire', ball.x, ball.y - ball.r - 22);
 }
 
 function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillStyle = WHITE;
   ctx.font = '12px monospace';
-  ctx.textAlign = 'left';
+  ctx.textAlign = 'center';
   for (const ball of world.balls) {
     if (ball.role !== 'core') continue;
     // LIME (previously unused) reads as a distinct "power" readout, separate
     // from the plain white HUD/status text - dis_doc.md's color-progression
     // table treats build strength as its own visual channel.
     ctx.fillStyle = LIME;
-    ctx.fillText(`x${ball.multiplier.toFixed(1)}`, ball.x + 10, ball.y - 10);
+    ctx.fillText(`x${ball.multiplier.toFixed(1)}`, ball.x, ball.y - ball.r - 4);
   }
   if (world.phase === 'launch') {
     ctx.textAlign = 'center';
