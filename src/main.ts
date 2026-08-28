@@ -33,16 +33,17 @@ const controls = bindInput(canvas);
 // localStorage and opens this page with ?level=draft, so `LEVEL` can be
 // swapped for the draft without a rebuild. Storage key must match
 // leveleditor.ts's STORAGE_KEY. Harmless/inert for a normal play session.
-function loadLevelOverride(): LevelData | undefined {
+function loadLevelOverride(): [LevelData | undefined, number] {
   const value = new URLSearchParams(location.search).get('level');
   if (value === 'draft') {
     const raw = localStorage.getItem('js13k-level-draft');
-    return raw ? JSON.parse(raw) : undefined;
+    return [raw ? JSON.parse(raw) : undefined, -1];
   }
-  return LEVELS[value === null ? Math.floor(Math.random() * LEVELS.length) : Number(value)];
+  const index = value === null ? Math.floor(Math.random() * LEVELS.length) : Number(value);
+  return [LEVELS[index], index];
 }
 
-const world = createWorld(loadLevelOverride());
+const world = createWorld(...loadLevelOverride());
 
 // Short tapered neon line per ball (dis_doc.md's trail/juice suggestion),
 // tracked by ball id so a ball's own trail cleanly disappears once it drains

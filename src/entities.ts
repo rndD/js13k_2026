@@ -3,20 +3,23 @@
 // custom fixtures easily. Positions/shapes come from a LevelData (level.ts
 // by default) - this file only assembles behavioral fields from constants.ts.
 import {
-  ARMOR_COUNT,
-  ARMOR_MAX_HP,
   BALL_RADIUS,
-  BOSS_MAX_HP,
+  BOSS_ARMOR_ARCS,
+  BOSS_ARMOR_COUNTS,
+  BOSS_ARMOR_HPS,
+  BOSS_HOSTILE_INTERVALS,
+  BOSS_HPS,
+  BOSS_BLAST_INTERVAL,
+  BOSS_SHOT_INTERVAL,
   FLIPPER_ACTIVE_ANGLE,
   FLIPPER_LENGTH,
   FLIPPER_REST_ANGLE,
   ECHO_LIFETIME,
   HOSTILE_LIFETIME,
-  HOSTILE_SPAWN_INTERVAL,
   STARTING_CORE_BALLS,
 } from './constants';
 import { LEVEL, type LevelData, type LevelFlipper } from './level';
-import type { Ball, BallRole, Bumper, Flipper, World } from './types';
+import type { Ball, BallRole, Boss, Bumper, Flipper, World } from './types';
 
 export function createFlippers(levelFlippers: LevelFlipper[] = LEVEL.flippers): Flipper[] {
   return levelFlippers.map((lf) => {
@@ -67,13 +70,49 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
   };
 }
 
-export function createWorld(level: LevelData = LEVEL): World {
+export function createBoss(spot: LevelData['boss'], rank: number): Boss {
+  const count = BOSS_ARMOR_COUNTS[rank];
+  const armorHp = BOSS_ARMOR_HPS[rank];
+  return {
+    rank,
+    x: spot.x,
+    y: spot.y,
+    homeX: spot.x,
+    homeY: spot.y,
+    r: spot.r,
+    hp: BOSS_HPS[rank],
+    maxHp: BOSS_HPS[rank],
+    spawnTimer: BOSS_HOSTILE_INTERVALS[rank],
+    specialTimer: rank === 1 ? BOSS_SHOT_INTERVAL : BOSS_BLAST_INTERVAL,
+    warningTimer: 0,
+    armorArc: BOSS_ARMOR_ARCS[rank],
+    poisonDamage: 0,
+    poisonTimer: 0,
+    armor: Array.from({ length: count }, (_, i) => ({
+      angle: i * Math.PI * 2 / count,
+      hp: armorHp,
+      maxHp: armorHp,
+    })),
+  };
+}
+
+export function loadTable(world: World, level: LevelData): void {
+  world.walls = level.walls.map((wall) => wall.map((p) => ({ ...p })));
+  world.flippers = createFlippers(level.flippers);
+  world.bumpers = level.bumpers.map((b) => createBumper(b));
+  world.pegs = level.pegs.map((p) => ({ ...p }));
+  world.launchPads = level.launchPads.map((p) => ({ ...p, cooldown: 0 }));
+  world.launch = { x: level.launch.x, y: level.launch.y, charging: false, power: 0, autoTimer: 0 };
+}
+
+export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
   return {
     time: 0,
     phase: 'launch',
+    tableIndex,
+    transitionTimer: 0,
     nextBallId: 1,
     coreBalls: STARTING_CORE_BALLS,
-    coreCapacity: STARTING_CORE_BALLS,
     restoreTimer: 0,
     randomSeed: 1,
     points: 0,
@@ -88,23 +127,7 @@ export function createWorld(level: LevelData = LEVEL): World {
     bullets: [],
     walls: level.walls.map((wall) => wall.map((p) => ({ ...p }))),
     flippers: createFlippers(level.flippers),
-    boss: {
-      x: level.boss.x,
-      y: level.boss.y,
-      homeX: level.boss.x,
-      homeY: level.boss.y,
-      r: level.boss.r,
-      hp: BOSS_MAX_HP,
-      maxHp: BOSS_MAX_HP,
-      spawnTimer: HOSTILE_SPAWN_INTERVAL,
-      poisonDamage: 0,
-      poisonTimer: 0,
-      armor: Array.from({ length: ARMOR_COUNT }, (_, i) => ({
-        angle: i * Math.PI * 2 / ARMOR_COUNT,
-        hp: ARMOR_MAX_HP,
-        maxHp: ARMOR_MAX_HP,
-      })),
-    },
+    boss: createBoss(level.boss, 0),
     bumpers: level.bumpers.map((b) => createBumper(b)),
     pegs: level.pegs.map((p) => ({ ...p })),
     launchPads: level.launchPads.map((p) => ({ ...p, cooldown: 0 })),

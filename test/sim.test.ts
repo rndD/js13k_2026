@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ARMOR_ORBIT_RADIUS, AUTO_LAUNCH_DELAY, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
-import { createBall, createWorld } from '../src/entities';
+import { createBall, createBoss, createWorld } from '../src/entities';
 import { abilityById } from '../src/abilities';
+import { LEVEL, LEVELS } from '../src/level';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
 import type { AbilityId } from '../src/types';
@@ -243,7 +244,6 @@ describe('upgrade milestones', () => {
     expect(world.pick).toBeNull();
     expect(world.points).toBe(110);
     expect(world.coreBalls).toBe(5);
-    expect(world.coreCapacity).toBe(5);
     expect(world.upgrades.extraCore).toBe(1);
   });
 
@@ -289,11 +289,10 @@ describe('wild upgrades', () => {
     for (const expected of [5, 8, 12, 17]) {
       applyUpgrade(world, 'extraCore');
       expect(world.coreBalls).toBe(expected);
-      expect(world.coreCapacity).toBe(expected);
     }
   });
 
-  it('restores one lost ball every thirty active seconds without exceeding capacity', () => {
+  it('restores one lost ball every thirty active seconds and pauses at four', () => {
     const world = createWorld();
     world.upgrades.ballRestore = 1;
     world.coreBalls = 2;
@@ -305,7 +304,15 @@ describe('wild upgrades', () => {
     expect(world.coreBalls).toBe(3);
 
     for (let i = 0; i < 31 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.coreBalls).toBe(3);
+    expect(world.coreBalls).toBe(4);
+    world.restoreTimer = 29;
+    for (let i = 0; i < 2 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.coreBalls).toBe(4);
+    expect(world.restoreTimer).toBe(29);
+
+    world.balls = [createBall(1)];
+    for (let i = 0; i < 2 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.coreBalls).toBe(5); // one active plus four actually stored
   });
 
   it('critical chance can double direct ball damage and marks the hit', () => {
@@ -470,7 +477,7 @@ describe('combat model', () => {
 });
 
 describe('outcomes', () => {
-  it('wins when the boss hp reaches zero', () => {
+  it('advances after the first boss and wins after the third', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss.hp = 5;
@@ -483,9 +490,100 @@ describe('outcomes', () => {
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.boss.hp).toBe(0);
-    expect(world.phase).toBe('win');
+    expect(world.phase).toBe('transition');
     expect(world.fx).toContainEqual(expect.objectContaining({ kind: 'win' }));
     expect(world.sfx).toContain('ballExplode');
+
+    for (let i = 0; i < 121; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.phase).toBe('launch');
+    expect(world.boss.rank).toBe(1);
+    expect(world.boss.armor).toHaveLength(9);
+
+    world.phase = 'battle';
+    world.boss.rank = 2;
+    world.boss.hp = 0;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.phase).toBe('win');
+  });
+
+  it('banks temporary player balls, discards hostiles, and changes production table', () => {
+    const world = createWorld(LEVELS[0], 0);
+    world.phase = 'battle';
+    const core = createBall(1, 40, 400);
+    const clone = createBall(2, 80, 400);
+    clone.stocked = false;
+    const echo = createBall(3, 120, 400, 'echo');
+    const hostile = createBall(4, 160, 400, 'hostile');
+    world.balls = [core, clone, echo, hostile];
+    world.boss.hp = 0;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.coreBalls).toBe(5);
+    expect(world.balls).toHaveLength(0);
+    for (let i = 0; i < 121; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.tableIndex).toBe(1);
+    expect(world.bumpers).toHaveLength(LEVELS[1].bumpers.length);
+  });
+
+  it('boss two bullets weaken stocked cores and destroy temporary balls', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 1);
+    const core = createBall(1, 150, 350);
+    core.multiplier = 3;
+    world.balls = [core];
+    world.bullets = [{ x: core.x, y: core.y, vx: 0, vy: 0, r: 3, damage: 0, lifetime: 1, enemy: true }];
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(core.multiplier).toBe(2.5);
+
+    const clone = createBall(2, 150, 350);
+    clone.stocked = false;
+    world.balls = [clone];
+    world.bullets = [{ x: clone.x, y: clone.y, vx: 0, vy: 0, r: 3, damage: 0, lifetime: 1, enemy: true }];
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.balls).not.toContain(clone);
+  });
+
+  it('boss two automatically aims a rare shot at a player ball', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 1);
+    world.boss.specialTimer = 0;
+    world.balls = [createBall(1, 180, 500)];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.bullets.some((bullet) => bullet.enemy)).toBe(true);
+  });
+
+  it('boss three warns before destroying nearby player balls only', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 2);
+    world.boss.warningTimer = FIXED_DT / 2;
+    const core = createBall(1, world.boss.x + 20, world.boss.y);
+    const hostile = createBall(2, world.boss.x + 20, world.boss.y, 'hostile');
+    world.balls = [core, hostile];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls).toEqual([hostile]);
+    expect(world.coreBalls).toBe(2);
+  });
+
+  it('boss three starts its warning before the blast becomes dangerous', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 2);
+    world.boss.specialTimer = 0;
+    const core = createBall(1, world.boss.x + 20, world.boss.y);
+    world.balls = [core];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.warningTimer).toBeGreaterThan(0);
+    expect(world.balls).toContain(core);
   });
 
   it('freezes the world once a win/lose outcome is reached', () => {

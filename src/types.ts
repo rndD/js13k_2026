@@ -56,6 +56,7 @@ export interface Bullet {
   r: number;
   damage: number;
   lifetime: number;
+  enemy?: boolean;
 }
 
 export type FlipperSide = 'left' | 'right';
@@ -72,6 +73,7 @@ export interface Flipper {
 }
 
 export interface Boss {
+  rank: number;
   x: number;
   y: number;
   homeX: number;
@@ -80,6 +82,9 @@ export interface Boss {
   hp: number;
   maxHp: number;
   spawnTimer: number;
+  specialTimer: number;
+  warningTimer: number;
+  armorArc: number;
   poisonDamage: number;
   poisonTimer: number;
   armor: ArmorNode[];
@@ -130,7 +135,7 @@ export interface LaunchPad {
   cooldown: number;
 }
 
-export type Phase = 'launch' | 'battle' | 'aim' | 'pick' | 'win' | 'lose';
+export type Phase = 'launch' | 'battle' | 'aim' | 'pick' | 'transition' | 'win' | 'lose';
 
 export interface PickState {
   offers: AbilityId[];
@@ -236,10 +241,11 @@ export interface AimState {
 export interface World {
   time: number;
   phase: Phase;
+  tableIndex: number;
+  transitionTimer: number;
   nextBallId: number;
   /** total core balls left, including one currently in play */
   coreBalls: number;
-  coreCapacity: number;
   restoreTimer: number;
   randomSeed: number;
   points: number;

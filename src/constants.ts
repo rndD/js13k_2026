@@ -76,22 +76,22 @@ export const AIM_SPEED_PER_MULT = 35; // extra px/s per point of ball.multiplier
 
 // Boss
 export const BOSS_RADIUS = 22;
-export const BOSS_MAX_HP = 1000;
+export const BOSS_HPS = [1000, 1400, 1800];
+export const BOSS_ARMOR_COUNTS = [3, 9, 9];
+export const BOSS_ARMOR_HPS = [120, 80, 100];
+export const BOSS_ARMOR_ARCS = [0.72, 0.25, 0.25];
+export const BOSS_HOSTILE_INTERVALS = [15, 11, 8];
 export const BOSS_HIT_COOLDOWN = 0.25; // s, per-ball direct-damage cooldown while inside boss
 export const BOSS_MOVE_X = 55;
 export const BOSS_MOVE_Y = 12;
 export const BOSS_MOVE_SPEED = 0.55;
-export const HOSTILE_SPAWN_INTERVAL = 15;
 export const HOSTILE_BALL_SPEED = 190;
 export const HOSTILE_LIFETIME = 12;
 export const ECHO_STABILITY = 5;
 export const ECHO_LIFETIME = 20;
 export const ROLE_FLASH_DURATION = 0.25;
-export const ARMOR_COUNT = 3;
 export const ARMOR_ORBIT_RADIUS = 38;
-export const ARMOR_ARC_HALF = 0.72;
 export const ARMOR_THICKNESS = 8;
-export const ARMOR_MAX_HP = 120;
 export const ARMOR_ROTATION_SPEED = 0.7;
 export const ARMOR_DEFLECT_SPEED = 360;
 export const ARMOR_HIT_COOLDOWN = 0.2;
@@ -103,6 +103,12 @@ export const BOSS_MAGNET_FORCE = 100;
 export const BALL_RESTORE_TIME = 30;
 export const CRITICAL_CHANCE = 0.15;
 export const POINTS_ARMOR_BREAK = 75;
+export const BOSS_SHOT_INTERVAL = 9;
+export const BOSS_SHOT_SPEED = 180;
+export const BOSS_BLAST_INTERVAL = 13;
+export const BOSS_BLAST_WARNING = 1.5;
+export const BOSS_BLAST_RADIUS = 95;
+export const LEVEL_TRANSITION_TIME = 2;
 
 // Anti-stuck watchdog: pinball physics can pathologically trap a ball
 // bouncing forever in a tight pocket (net displacement ~0 even though it's

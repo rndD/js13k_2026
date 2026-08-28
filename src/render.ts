@@ -6,7 +6,7 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { AIM_TIMEOUT, ARMOR_ARC_HALF, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIME, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
+import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIME, BOSS_BLAST_RADIUS, BOSS_BLAST_WARNING, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
 import { abilityById, abilityDescription, type AbilityRarity } from './abilities';
 import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
@@ -93,14 +93,15 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.font = '9px monospace';
   ctx.textAlign = 'left';
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText('BOSS', pad, 14);
+  ctx.fillText(`BOSS ${boss.rank + 1}`, pad, 14);
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
 
   ctx.fillStyle = LIME;
   ctx.fillText(`POINTS ${Math.round(world.points)} / ${world.nextUpgradeAt}`, pad, 40);
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
-  const regen = world.upgrades.ballRestore && world.coreBalls < world.coreCapacity ? ` +${Math.ceil(BALL_RESTORE_TIME - world.restoreTimer)}s` : '';
+  const stored = world.coreBalls - world.balls.filter((ball) => ball.role === 'core' && ball.stocked).length;
+  const regen = world.upgrades.ballRestore && stored < 4 ? ` +${Math.ceil(BALL_RESTORE_TIME - world.restoreTimer)}s` : '';
   ctx.fillText(`BALLS ${world.coreBalls}${regen}`, FIELD_W - pad, 40);
 
   ctx.strokeStyle = STRUCTURE;
@@ -267,7 +268,7 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
-  if (world.phase === 'win') return;
+  if (world.boss.hp <= 0) return;
   const { boss } = world;
   const r = boss.r;
   const exposed = boss.armor.every((armor) => armor.hp <= 0);
@@ -279,7 +280,7 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
       ctx.strokeStyle = withAlpha(CYAN, 0.2);
       ctx.lineWidth = ARMOR_THICKNESS;
       ctx.beginPath();
-      ctx.arc(boss.x, boss.y, ARMOR_ORBIT_RADIUS, armor.angle - ARMOR_ARC_HALF, armor.angle + ARMOR_ARC_HALF);
+      ctx.arc(boss.x, boss.y, ARMOR_ORBIT_RADIUS, armor.angle - boss.armorArc, armor.angle + boss.armorArc);
       ctx.stroke();
 
       ctx.strokeStyle = CYAN;
@@ -289,8 +290,8 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
         boss.x,
         boss.y,
         ARMOR_ORBIT_RADIUS,
-        armor.angle - ARMOR_ARC_HALF,
-        armor.angle - ARMOR_ARC_HALF + armor.hp / armor.maxHp * ARMOR_ARC_HALF * 2,
+        armor.angle - boss.armorArc,
+        armor.angle - boss.armorArc + armor.hp / armor.maxHp * boss.armorArc * 2,
       );
       ctx.stroke();
     });
@@ -312,6 +313,20 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
       ctx.arc(boss.x, boss.y, r + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * boss.poisonTimer / POISON_DELAY);
       ctx.stroke();
     });
+  }
+
+  if (boss.warningTimer > 0) {
+    const charge = 1 - boss.warningTimer / BOSS_BLAST_WARNING;
+    ctx.globalAlpha = 0.06 + 0.12 * charge;
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(boss.x, boss.y, BOSS_BLAST_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.5 + 0.5 * charge;
+    ctx.strokeStyle = RED;
+    ctx.lineWidth = 3 + charge * 3;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 
   drawAngryFace(ctx, boss.x, boss.y, r);
@@ -377,14 +392,15 @@ function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawBullets(ctx: CanvasRenderingContext2D, world: World): void {
-  withGlow(ctx, YELLOW, 7, () => {
-    ctx.fillStyle = YELLOW;
-    for (const bullet of world.bullets) {
+  for (const bullet of world.bullets) {
+    const color = bullet.enemy ? RED : YELLOW;
+    withGlow(ctx, color, 7, () => {
+      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(bullet.x, bullet.y, bullet.r, 0, Math.PI * 2);
       ctx.fill();
-    }
-  });
+    });
+  }
 }
 
 function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
@@ -540,6 +556,10 @@ function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
   if (world.phase === 'launch') {
     ctx.textAlign = 'center';
     ctx.fillText('hold launch zone to charge', FIELD_W / 2, FIELD_H / 2);
+  } else if (world.phase === 'transition') {
+    ctx.textAlign = 'center';
+    ctx.font = '24px monospace';
+    ctx.fillText(`LEVEL ${world.boss.rank + 1} CLEAR`, FIELD_W / 2, FIELD_H / 2);
   } else if (world.phase === 'win') {
     ctx.textAlign = 'center';
     ctx.font = '24px monospace';

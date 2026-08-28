@@ -12,7 +12,6 @@ import {
   AIM_SWEEP_PERIOD,
   AIM_TIMEOUT,
   ARMOR_ACCENT_BONUS,
-  ARMOR_ARC_HALF,
   ARMOR_DAMAGE_BASE,
   ARMOR_DEFLECT_SPEED,
   ARMOR_HIT_COOLDOWN,
@@ -28,10 +27,16 @@ import {
   BULLET_LIFETIME,
   BULLET_SPEED,
   BOSS_HIT_COOLDOWN,
+  BOSS_BLAST_INTERVAL,
+  BOSS_BLAST_RADIUS,
+  BOSS_BLAST_WARNING,
+  BOSS_HOSTILE_INTERVALS,
   BOSS_MOVE_SPEED,
   BOSS_MOVE_X,
   BOSS_MOVE_Y,
   BOSS_MAGNET_FORCE,
+  BOSS_SHOT_INTERVAL,
+  BOSS_SHOT_SPEED,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   CRITICAL_CHANCE,
@@ -45,7 +50,6 @@ import {
   FLIPPER_BOOST_SPEED,
   FLIPPER_THICKNESS,
   HOSTILE_BALL_SPEED,
-  HOSTILE_SPAWN_INTERVAL,
   HIT_MULTIPLIER_COST,
   LAUNCH_CHARGE_TIME,
   LAUNCH_MAX_SPEED,
@@ -53,6 +57,7 @@ import {
   LAUNCH_PAD_BOOST,
   LAUNCH_PAD_COOLDOWN,
   LAUNCH_PAD_TRIGGER_R,
+  LEVEL_TRANSITION_TIME,
   MAX_SPEED,
   PAINT_MULTIPLIER_MAX,
   PAINT_MULTIPLIER_STEP,
@@ -75,7 +80,8 @@ import {
   WALL_SOUND_TICKS,
 } from './constants';
 import { ABILITIES } from './abilities';
-import { createBall } from './entities';
+import { createBall, createBoss, loadTable } from './entities';
+import { LEVELS } from './level';
 import {
   clampSpeed,
   integrate,
@@ -100,6 +106,12 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   world.contacts = [];
 
   if (world.phase === 'win' || world.phase === 'lose') {
+    return world;
+  }
+
+  if (world.phase === 'transition') {
+    world.transitionTimer -= dt;
+    if (world.transitionTimer <= 0) startNextBoss(world);
     return world;
   }
 
@@ -138,7 +150,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
 }
 
 function isFinished(world: World): boolean {
-  return world.phase === 'win' || world.phase === 'lose';
+  return world.phase === 'win' || world.phase === 'lose' || world.phase === 'transition';
 }
 
 function queueUpgradeMilestones(world: World): void {
@@ -195,7 +207,6 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
   if (id === 'extraCore') {
     const amount = world.upgrades.extraCore + 1;
     world.coreBalls += amount;
-    world.coreCapacity += amount;
   }
   if (id === 'overcharge') {
     for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier * 2);
@@ -241,8 +252,10 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
 
 function updateBallRestore(world: World, dt: number): void {
   if (!world.upgrades.ballRestore || (world.phase !== 'launch' && world.phase !== 'battle')) return;
+  const stored = world.coreBalls - world.balls.filter((ball) => ball.role === 'core' && ball.stocked).length;
+  if (stored >= 4) return;
   world.restoreTimer = Math.min(BALL_RESTORE_TIME, world.restoreTimer + dt);
-  if (world.restoreTimer >= BALL_RESTORE_TIME && world.coreBalls < world.coreCapacity) {
+  if (world.restoreTimer >= BALL_RESTORE_TIME) {
     world.coreBalls += 1;
     world.restoreTimer = 0;
     world.sfx.push('energyChime');
@@ -324,6 +337,19 @@ function updateBullets(world: World, dt: number): void {
     for (let step = 0; step < BALL_SUBSTEPS && !hit; step++) {
       bullet.x += bullet.vx * dt / BALL_SUBSTEPS;
       bullet.y += bullet.vy * dt / BALL_SUBSTEPS;
+      if (bullet.enemy) {
+        const index = world.balls.findIndex((ball) => ball.role !== 'hostile' && overlapsCircle(bullet, ball));
+        if (index >= 0) {
+          const ball = world.balls[index];
+          if (ball.role === 'echo' || !ball.stocked) {
+            explodeBall(world, ball);
+            world.balls.splice(index, 1);
+          } else ball.multiplier = Math.max(1, ball.multiplier - 0.5);
+          world.sfx.push('armorHit');
+          hit = true;
+        }
+      }
+      if (hit) break;
       hit = resolveWalls(bullet, FIELD_W, FIELD_H) !== 'none';
       for (const wall of world.walls) if (resolveWall(bullet, wall, WALL_THICKNESS)) hit = true;
       for (const peg of world.pegs) if (resolveBumper(bullet, peg, PEG_IMPULSE)) hit = true;
@@ -332,13 +358,14 @@ function updateBullets(world: World, dt: number): void {
       for (const pad of world.launchPads) if (resolveLaunchPad(bullet, pad, LAUNCH_PAD_TRIGGER_R, 0)) hit = true;
       if (hit) break;
 
+      if (bullet.enemy) continue;
       const dx = bullet.x - world.boss.x;
       const dy = bullet.y - world.boss.y;
       const distance = Math.hypot(dx, dy);
       const angle = Math.atan2(dy, dx);
       for (const armor of world.boss.armor) {
         const angleDelta = Math.atan2(Math.sin(angle - armor.angle), Math.cos(angle - armor.angle));
-        if (armor.hp <= 0 || Math.abs(angleDelta) > ARMOR_ARC_HALF || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ARMOR_THICKNESS / 2 + bullet.r) continue;
+        if (armor.hp <= 0 || Math.abs(angleDelta) > world.boss.armorArc || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ARMOR_THICKNESS / 2 + bullet.r) continue;
         armor.hp = Math.max(0, armor.hp - bullet.damage);
         addPoints(world, bullet.damage);
         world.fx.push({ kind: 'armor', x: bullet.x, y: bullet.y, amount: bullet.damage });
@@ -486,7 +513,7 @@ function updateBalls(world: World, dt: number): void {
       let hitArmor = false;
       for (const armor of world.boss.armor) {
         if (armor.hp <= 0) continue;
-        const hit = resolveArmorArc(ball, world.boss.x, world.boss.y, armor.angle);
+        const hit = resolveArmorArc(ball, world.boss.x, world.boss.y, armor.angle, world.boss.armorArc);
         if (!hit) continue;
         hitArmor = true;
         blockedBossThisTick = true;
@@ -554,13 +581,13 @@ function updateBalls(world: World, dt: number): void {
   world.balls = remaining;
 }
 
-function resolveArmorArc(ball: Ball, cx: number, cy: number, angle: number): { x: number; y: number } | null {
+function resolveArmorArc(ball: Ball, cx: number, cy: number, angle: number, arc: number): { x: number; y: number } | null {
   const dx = ball.x - cx;
   const dy = ball.y - cy;
   const distance = Math.hypot(dx, dy) || 0.0001;
   const ballAngle = Math.atan2(dy, dx);
   const angleDelta = Math.atan2(Math.sin(ballAngle - angle), Math.cos(ballAngle - angle));
-  if (Math.abs(angleDelta) > ARMOR_ARC_HALF || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ball.r + ARMOR_THICKNESS / 2) return null;
+  if (Math.abs(angleDelta) > arc || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ball.r + ARMOR_THICKNESS / 2) return null;
 
   const nx = dx / distance;
   const ny = dy / distance;
@@ -758,6 +785,40 @@ function updateBoss(world: World, dt: number): void {
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
   for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt;
+  if (boss.rank === 1) {
+    boss.specialTimer -= dt;
+    if (boss.specialTimer <= 0) {
+      boss.specialTimer = BOSS_SHOT_INTERVAL;
+      const targets = world.balls.filter((ball) => ball.role !== 'hostile');
+      if (targets.length) {
+        const target = targets[world.randomSeed++ % targets.length];
+        const angle = Math.atan2(target.y - boss.y, target.x - boss.x);
+        world.bullets.push({ x: boss.x + Math.cos(angle) * (boss.r + 4), y: boss.y + Math.sin(angle) * (boss.r + 4), vx: Math.cos(angle) * BOSS_SHOT_SPEED, vy: Math.sin(angle) * BOSS_SHOT_SPEED, r: 3, damage: 0, lifetime: 3, enemy: true });
+        world.sfx.push('gunShot');
+      }
+    }
+  }
+  if (boss.rank === 2) {
+    if (boss.warningTimer > 0) {
+      boss.warningTimer -= dt;
+      if (boss.warningTimer <= 0) {
+        world.balls = world.balls.filter((ball) => {
+          if (ball.role === 'hostile' || Math.hypot(ball.x - boss.x, ball.y - boss.y) > BOSS_BLAST_RADIUS) return true;
+          if (ball.role === 'core' && ball.stocked) world.coreBalls = Math.max(0, world.coreBalls - 1);
+          explodeBall(world, ball);
+          return false;
+        });
+        world.sfx.push('ballExplode');
+      }
+    } else {
+      boss.specialTimer -= dt;
+      if (boss.specialTimer <= 0) {
+        boss.specialTimer = BOSS_BLAST_INTERVAL;
+        boss.warningTimer = BOSS_BLAST_WARNING;
+        world.sfx.push('energyChime');
+      }
+    }
+  }
   if (boss.poisonDamage > 0) {
     boss.poisonTimer -= dt;
     if (boss.poisonTimer <= 0) {
@@ -776,7 +837,7 @@ function updateBoss(world: World, dt: number): void {
   const hostileCount = world.balls.filter((ball) => ball.role === 'hostile').length;
   if (!livingBosses || boss.spawnTimer > 0 || hostileCount >= livingBosses) return;
 
-  boss.spawnTimer = HOSTILE_SPAWN_INTERVAL / livingBosses;
+  boss.spawnTimer = BOSS_HOSTILE_INTERVALS[boss.rank] / livingBosses;
   const ball = createBall(world.nextBallId++, boss.x, boss.y + boss.r + 8, 'hostile');
   const angle = Math.PI / 2 + Math.sin(world.time * 1.7) * 0.45;
   ball.vx = Math.cos(angle) * HOSTILE_BALL_SPEED;
@@ -788,10 +849,30 @@ function updateBoss(world: World, dt: number): void {
 function checkOutcome(world: World): void {
   if (world.boss.hp <= 0) {
     addPoints(world, POINTS_BOSS_DEFEAT);
-    world.phase = 'win';
+    // Stocked cores are already included in coreBalls until they are lost.
+    // Only surviving echoes/clones become newly stored balls here.
+    world.coreBalls += world.balls.filter((ball) => ball.role !== 'hostile' && !ball.stocked).length;
+    world.balls = [];
+    world.bullets = [];
+    world.phase = world.boss.rank === 2 ? 'win' : 'transition';
+    world.transitionTimer = LEVEL_TRANSITION_TIME;
     world.sfx.push('ballExplode', 'win');
     world.fx.push({ kind: 'win', x: world.boss.x, y: world.boss.y });
   }
+}
+
+function startNextBoss(world: World): void {
+  const rank = world.boss.rank + 1;
+  let spot = { x: world.boss.homeX, y: world.boss.homeY, r: world.boss.r };
+  if (world.tableIndex >= 0) {
+    world.tableIndex = (world.tableIndex + 1) % LEVELS.length;
+    const level = LEVELS[world.tableIndex];
+    loadTable(world, level);
+    spot = level.boss;
+  }
+  world.boss = createBoss(spot, rank);
+  world.phase = 'launch';
+  world.restoreTimer = 0;
 }
 
 function checkAllBallsLost(world: World): void {
