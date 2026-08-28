@@ -49,15 +49,15 @@ export interface LevelData {
 
 // Flippers sit well above the true bottom of the field so a solid hit has
 // enough vertical room to reach the boss (see FLIPPER_BOOST_SPEED tuning).
-const FLIPPER_PIVOT_Y = FIELD_H - 180;
+const FLIPPER_PIVOT_Y = FIELD_H - 165;
 
 // The apron/floor line sits at (or just past) the flippers' own resting
 // droop, or it visibly floats above them instead of touching them. A
 // resting flipper droops length*sin(restAngle) below its own pivot.
 const FLOOR_Y = Math.round(FLIPPER_PIVOT_Y + FLIPPER_LENGTH * Math.sin(FLIPPER_REST_ANGLE)) + 3;
 
-const DRAIN_X0 = FIELD_W * 0.36;
-const DRAIN_X1 = FIELD_W * 0.64;
+const DRAIN_X0 = FIELD_W * 0.32;
+const DRAIN_X1 = FIELD_W * 0.68;
 
 const BOSS_X = FIELD_W * 0.5;
 const BOSS_Y = FIELD_H * 0.27;
@@ -119,10 +119,10 @@ export const CROSSFIRE: LevelData = {
   ...common,
   walls: [
     ...LEVEL.walls,
-    [{ x: 0, y: 390 }, { x: 66, y: 354 }, { x: 42, y: 306 }],
-    [{ x: FIELD_W, y: 390 }, { x: 294, y: 354 }, { x: 318, y: 306 }],
-    [{ x: 0, y: 236 }, { x: 72, y: 260 }, { x: 106, y: 226 }],
-    [{ x: FIELD_W, y: 236 }, { x: 288, y: 260 }, { x: 254, y: 226 }],
+    [{ x: 34, y: 396 }, { x: 106, y: 348 }],
+    [{ x: 326, y: 396 }, { x: 254, y: 348 }],
+    [{ x: 38, y: 244 }, { x: 108, y: 270 }],
+    [{ x: 322, y: 244 }, { x: 252, y: 270 }],
   ],
   pegs: [
     { x: 70, y: 150, r: 8 }, { x: 180, y: 116, r: 9 }, { x: 290, y: 150, r: 8 },
@@ -172,4 +172,6 @@ export const ORBIT: LevelData = {
   ],
 };
 
-export const LEVELS = [LEVEL, CROSSFIRE, ORBIT];
+// LEVEL remains the compact deterministic fixture used by tests and the
+// editor. Players rotate only between the two richer production tables.
+export const LEVELS = [CROSSFIRE, ORBIT];

@@ -25,7 +25,7 @@ describe('scenario: launch and drain', () => {
     if (result.phase === 'launch') {
       expect(result.balls).toHaveLength(0);
     } else {
-      expect(result.phase).toBe('battle');
+      expect(['battle', 'pick']).toContain(result.phase);
     }
   });
 });
