@@ -12,7 +12,7 @@ import { BG, CYAN, ORANGE } from './palette';
 import { ballColor, render } from './render';
 import { step } from './sim';
 import { playSfx } from './sound';
-import type { LevelData } from './level';
+import { LEVELS, type LevelData } from './level';
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 canvas.width = FIELD_W;
@@ -34,9 +34,12 @@ const controls = bindInput(canvas);
 // swapped for the draft without a rebuild. Storage key must match
 // leveleditor.ts's STORAGE_KEY. Harmless/inert for a normal play session.
 function loadLevelOverride(): LevelData | undefined {
-  if (new URLSearchParams(location.search).get('level') !== 'draft') return undefined;
-  const raw = localStorage.getItem('js13k-level-draft');
-  return raw ? JSON.parse(raw) : undefined;
+  const value = new URLSearchParams(location.search).get('level');
+  if (value === 'draft') {
+    const raw = localStorage.getItem('js13k-level-draft');
+    return raw ? JSON.parse(raw) : undefined;
+  }
+  return LEVELS[value === null ? Math.floor(Math.random() * LEVELS.length) : Number(value)];
 }
 
 const world = createWorld(loadLevelOverride());

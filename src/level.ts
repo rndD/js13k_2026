@@ -1,4 +1,4 @@
-// The single source of truth for WHERE everything on the table lives (walls,
+// The source of truth for WHERE everything on each table lives (walls,
 // pegs, bumpers, flippers, boss, launch point, launch pads). constants.ts
 // holds HOW things behave (speeds/damage/timings); this file holds the
 // table's actual layout.
@@ -104,3 +104,72 @@ export const LEVEL: LevelData = {
   boss: { x: BOSS_X, y: BOSS_Y, r: BOSS_RADIUS },
   launch: { x: FIELD_W - 20, y: FLIPPER_PIVOT_Y - 20 },
 };
+
+const common = {
+  fieldW: FIELD_W,
+  fieldH: FIELD_H,
+  flippers: LEVEL.flippers,
+  boss: LEVEL.boss,
+  launch: LEVEL.launch,
+};
+
+// Crossfire: opposing automatic pads keep changing lanes while the slanted
+// rails feed misses back toward the active middle of the table.
+export const CROSSFIRE: LevelData = {
+  ...common,
+  walls: [
+    ...LEVEL.walls,
+    [{ x: 0, y: 390 }, { x: 66, y: 354 }, { x: 42, y: 306 }],
+    [{ x: FIELD_W, y: 390 }, { x: 294, y: 354 }, { x: 318, y: 306 }],
+    [{ x: 0, y: 236 }, { x: 72, y: 260 }, { x: 106, y: 226 }],
+    [{ x: FIELD_W, y: 236 }, { x: 288, y: 260 }, { x: 254, y: 226 }],
+  ],
+  pegs: [
+    { x: 70, y: 150, r: 8 }, { x: 180, y: 116, r: 9 }, { x: 290, y: 150, r: 8 },
+    { x: 135, y: 330, r: 7 }, { x: 225, y: 330, r: 7 },
+  ],
+  bumpers: [
+    { x: 92, y: 286, r: 17, kind: 'paint' },
+    { x: 268, y: 286, r: 17, kind: 'energy' },
+    { x: 180, y: 382, r: 15, kind: 'paint' },
+  ],
+  launchPads: [
+    LEVEL.launchPads[0], LEVEL.launchPads[1],
+    { x: 70, y: 414, angle: angleTo({ x: 70, y: 414 }, { x: 270, y: 250 }) },
+    { x: 290, y: 414, angle: angleTo({ x: 290, y: 414 }, { x: 90, y: 250 }) },
+    { x: 180, y: 305, angle: -Math.PI / 2 },
+  ],
+};
+
+// Orbit: a loose ring of targets and diagonal kickers creates long automatic
+// circuits around the boss without enclosing the ball or adding new rules.
+export const ORBIT: LevelData = {
+  ...common,
+  walls: [
+    ...LEVEL.walls,
+    [{ x: 22, y: 270 }, { x: 72, y: 218 }, { x: 116, y: 244 }],
+    [{ x: 338, y: 270 }, { x: 288, y: 218 }, { x: 244, y: 244 }],
+    [{ x: 42, y: 412 }, { x: 102, y: 370 }],
+    [{ x: 318, y: 412 }, { x: 258, y: 370 }],
+  ],
+  pegs: [
+    { x: 62, y: 134, r: 8 }, { x: 122, y: 106, r: 7 },
+    { x: 238, y: 106, r: 7 }, { x: 298, y: 134, r: 8 },
+    { x: 105, y: 340, r: 8 }, { x: 255, y: 340, r: 8 },
+  ],
+  bumpers: [
+    { x: 74, y: 304, r: 16, kind: 'energy' },
+    { x: 286, y: 304, r: 16, kind: 'paint' },
+    { x: 130, y: 270, r: 15, kind: 'paint' },
+    { x: 230, y: 270, r: 15, kind: 'energy' },
+  ],
+  launchPads: [
+    LEVEL.launchPads[0], LEVEL.launchPads[1],
+    { x: 74, y: 365, angle: -0.72 },
+    { x: 286, y: 365, angle: Math.PI + 0.72 },
+    { x: 120, y: 190, angle: 0.3 },
+    { x: 240, y: 190, angle: Math.PI - 0.3 },
+  ],
+};
+
+export const LEVELS = [LEVEL, CROSSFIRE, ORBIT];
