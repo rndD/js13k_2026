@@ -8,7 +8,7 @@ import type { AbilityId } from '../src/types';
 
 function applyUpgrade(world: ReturnType<typeof createWorld>, id: AbilityId): void {
   world.phase = 'pick';
-  world.pick = { offers: [id], resumePhase: 'battle', armed: true, selected: 0 };
+  world.pick = { offers: [id], resumePhase: 'battle', timer: 0, armed: true, selected: 0 };
   step(world, NO_CONTROLS, FIXED_DT);
 }
 
@@ -229,8 +229,12 @@ describe('upgrade milestones', () => {
     expect(world.pick?.offers).toEqual(['extraCore', 'recruiter', 'poison']);
     const frozen = world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }));
 
-    step(world, NO_CONTROLS, FIXED_DT); // release/arm the choice screen
+    step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT); // accidental early click is ignored
+    for (let i = 0; i < 31; i++) step(world, NO_CONTROLS, FIXED_DT); // wait out the input guard and arm
     expect(world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }))).toEqual(frozen);
+    expect(world.pick?.selected).toBeNull();
+    step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
+    expect(world.pick?.selected).toBeNull(); // flipper/arrow controls never select cards
     step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT);
     expect(world.phase).toBe('pick'); // applies on release, so gameplay input cannot leak through
     step(world, NO_CONTROLS, FIXED_DT);
@@ -257,7 +261,7 @@ describe('upgrade milestones', () => {
     world.points = 0; // queued choices are earned permanently
 
     for (let i = 0; i < 3; i++) {
-      step(world, NO_CONTROLS, FIXED_DT);
+      for (let tick = 0; tick < 31; tick++) step(world, NO_CONTROLS, FIXED_DT);
       const safeIndex = world.pick!.offers.findIndex((id) => id !== 'sacrifice');
       step(world, { ...NO_CONTROLS, choice: safeIndex }, FIXED_DT);
       step(world, NO_CONTROLS, FIXED_DT);

@@ -104,7 +104,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   }
 
   if (world.phase === 'pick') {
-    updatePick(world, controls);
+    updatePick(world, controls, dt);
     return world;
   }
 
@@ -163,6 +163,7 @@ function beginPick(world: World, resumePhase = world.phase): void {
   world.pick = {
     offers,
     resumePhase: resumePhase as 'launch' | 'battle' | 'aim',
+    timer: 0.5,
     armed: false,
     selected: null,
   };
@@ -170,15 +171,17 @@ function beginPick(world: World, resumePhase = world.phase): void {
   world.sfx.push('upgradeOpen');
 }
 
-function updatePick(world: World, controls: ControlsState): void {
+function updatePick(world: World, controls: ControlsState, dt: number): void {
   const pick = world.pick;
   if (!pick) return;
-  const anyHeld = controls.left || controls.right || controls.launch || controls.choice !== null;
+  pick.timer -= dt;
+  if (pick.timer > 0) return;
+  const anyHeld = controls.choice !== null;
   if (!pick.armed) {
     if (!anyHeld) pick.armed = true;
     return;
   }
-  const index = controls.choice ?? (controls.left ? 0 : controls.launch ? 1 : controls.right ? 2 : -1);
+  const index = controls.choice ?? -1;
   if (pick.selected === null) {
     if (pick.offers[index]) pick.selected = index;
     return;

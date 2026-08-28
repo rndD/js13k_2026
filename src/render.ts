@@ -97,7 +97,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
 
   ctx.fillStyle = LIME;
-  ctx.fillText(`POINTS ${world.points} / ${world.nextUpgradeAt}`, pad, 40);
+  ctx.fillText(`POINTS ${Math.round(world.points)} / ${world.nextUpgradeAt}`, pad, 40);
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
   const regen = world.upgrades.ballRestore && world.coreBalls < world.coreCapacity ? ` +${Math.ceil(BALL_RESTORE_TIME - world.restoreTimer)}s` : '';

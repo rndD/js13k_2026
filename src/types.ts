@@ -135,6 +135,7 @@ export type Phase = 'launch' | 'battle' | 'aim' | 'pick' | 'win' | 'lose';
 export interface PickState {
   offers: AbilityId[];
   resumePhase: Exclude<Phase, 'pick' | 'win' | 'lose'>;
+  timer: number;
   armed: boolean;
   selected: number | null;
 }

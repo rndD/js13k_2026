@@ -85,7 +85,8 @@ export function updateFx(fx: FxState, world: World, dt: number): void {
     }
     else if (ev.kind !== 'win' && ev.kind !== 'lose') fx.flashes.set(ev.kind, FX_FLASH_DURATION);
     if (ev.amount !== undefined) {
-      fx.floaters.push({ x: ev.x, y: ev.y, text: ev.critical ? `CRIT ${ev.amount}` : String(ev.amount), color: ev.critical ? YELLOW : FLOATER_COLOR[ev.kind], age: 0 });
+      const amount = Math.round(ev.amount);
+      fx.floaters.push({ x: ev.x, y: ev.y, text: ev.critical ? `CRIT ${amount}` : String(amount), color: ev.critical ? YELLOW : FLOATER_COLOR[ev.kind], age: 0 });
     }
   }
 

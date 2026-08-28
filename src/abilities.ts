@@ -15,7 +15,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Recruiter
   { id: 'recruiter', description: ['Captured balls:', '+1x starting power', 'Survive 2 more hits'], rarity: 'uncommon', maxStacks: 3 },
   // Poison
-  { id: 'poison', description: ['Boss hits plant', 'delayed damage'], rarity: 'rare', maxStacks: 3 },
+  { id: 'poison', description: ['Poison'], rarity: 'rare', maxStacks: 3 },
   // Auto Gun
   { id: 'autoGun', description: ['Main balls fire', 'tiny boss shots'], rarity: 'rare', maxStacks: 4 },
   // Overcharge
