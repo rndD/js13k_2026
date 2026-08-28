@@ -20,8 +20,6 @@ export interface Ball {
   vx: number;
   vy: number;
   r: number;
-  /** direct damage dealt per boss pass-through, before multiplier */
-  damage: number;
   /** grows from paint-element hits, multiplies all damage this ball deals */
   multiplier: number;
   /** number of paint-bumper hits accumulated by this ball */

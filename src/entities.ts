@@ -49,7 +49,6 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
     vx: 0,
     vy: 0,
     r: BALL_RADIUS,
-    damage: 0,
     multiplier: 1,
     charge: 0,
     color: 'white',

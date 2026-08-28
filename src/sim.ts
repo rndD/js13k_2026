@@ -367,7 +367,7 @@ function updateBalls(world: World, dt: number): void {
 
   for (const ball of world.balls) {
     ball.r = ball.role === 'hostile' ? BALL_RADIUS : BALL_RADIUS * (1 + Math.max(0, ball.multiplier - 1) * BALL_SIZE_PER_MULT);
-    ball.roleFlash = Math.max(0, ball.roleFlash - dt);
+    ball.roleFlash -= dt;
     ball.wallSoundTicks = Math.max(0, ball.wallSoundTicks - 1);
     if (ball.role !== 'core') {
       ball.lifetime = Math.max(0, ball.lifetime - dt);
@@ -477,12 +477,8 @@ function updateBalls(world: World, dt: number): void {
       }
       if (expired) break;
 
-      if (ball.bossCooldown > 0) {
-        ball.bossCooldown = Math.max(0, ball.bossCooldown - subDt);
-      }
-      if (ball.armorCooldown > 0) {
-        ball.armorCooldown = Math.max(0, ball.armorCooldown - subDt);
-      }
+      ball.bossCooldown -= subDt;
+      ball.armorCooldown -= subDt;
 
       let hitArmor = false;
       for (const armor of world.boss.armor) {
@@ -513,7 +509,6 @@ function updateBalls(world: World, dt: number): void {
         const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier) * (critical ? 2 : 1);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
-        ball.damage = dmg;
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
         world.sfx.push('bossHitThud');
         world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg, critical });
@@ -602,7 +597,6 @@ function convertHostile(world: World, ball: Ball): void {
   ball.role = 'echo';
   ball.stability = ECHO_STABILITY + recruiter * 2;
   ball.lifetime = ECHO_LIFETIME;
-  ball.damage = 0;
   ball.multiplier = 1 + recruiter;
   ball.charge = recruiter;
   ball.color = 'white';
@@ -751,8 +745,8 @@ function applyEnergyHit(world: World, ball: Ball): void {
 }
 
 function updateCooldowns(world: World, dt: number): void {
-  for (const b of world.bumpers) b.cooldown = Math.max(0, b.cooldown - dt);
-  for (const p of world.launchPads) p.cooldown = Math.max(0, p.cooldown - dt);
+  for (const b of world.bumpers) b.cooldown -= dt;
+  for (const p of world.launchPads) p.cooldown -= dt;
 }
 
 function updateBoss(world: World, dt: number): void {

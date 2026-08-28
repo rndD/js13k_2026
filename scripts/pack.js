@@ -28,12 +28,15 @@ async function main() {
   const terserResult = await minify(rawJs, {
     module: true,
     compress: {
-      passes: 3,
+      passes: 5,
       unsafe: true,
       unsafe_arrows: true,
       unsafe_methods: true,
       unsafe_math: true,
       booleans_as_integers: true,
+      pure_getters: true,
+      hoist_funs: true,
+      hoist_vars: true,
     },
     mangle: {
       module: true,
@@ -48,9 +51,16 @@ async function main() {
 
   const packer = new Packer(
     [{ data: minified, type: 'js', action: 'eval' }],
-    { optimize: 1 },
+    {
+      allowFreeVars: true,
+      modelRecipBaseCount: 14,
+      dynamicModels: 0,
+      numAbbreviations: 22,
+      sparseSelectors: [0, 1, 2, 3, 6, 7, 13, 21, 42, 53, 170, 481],
+      precision: 14,
+      recipLearningRate: 1333,
+    },
   );
-  await packer.optimize(1);
   const { firstLine, secondLine } = packer.makeDecoder();
   const packedJs = firstLine + secondLine;
   console.log(`roadroller output: ${packedJs.length} bytes`);
@@ -58,7 +68,8 @@ async function main() {
   // Strip the dev module script tag Vite emitted, and any extra whitespace
   // between tags. Inline styles are left as-is (already tiny).
   let finalHtml = rawHtml
-    .replace(/<script[^>]*type="module"[^>]*><\/script>/, `<script>${packedJs}</script>`)
+    .replace(/<script[^>]*type="module"[^>]*><\/script>/, '')
+    .replace('</body>', `<script>${packedJs}</script></body>`)
     .replace(/>\s+</g, '><')
     .trim();
 
