@@ -11,8 +11,6 @@ import {
   BOSS_RADIUS,
   FIELD_H,
   FIELD_W,
-  FLIPPER_LENGTH,
-  FLIPPER_REST_ANGLE,
 } from './constants';
 import type { Vec2, Wall } from './types';
 
@@ -47,14 +45,10 @@ export interface LevelData {
   launch: Vec2;
 }
 
-// Flippers sit well above the true bottom of the field so a solid hit has
-// enough vertical room to reach the boss (see FLIPPER_BOOST_SPEED tuning).
-const FLIPPER_PIVOT_Y = FIELD_H - 165;
-
-// The apron/floor line sits at (or just past) the flippers' own resting
-// droop, or it visibly floats above them instead of touching them. A
-// resting flipper droops length*sin(restAngle) below its own pivot.
-const FLOOR_Y = Math.round(FLIPPER_PIVOT_Y + FLIPPER_LENGTH * Math.sin(FLIPPER_REST_ANGLE)) + 3;
+// The outer/top end of each resting flipper meets the apron line; the paddle
+// then slopes downward into the drain instead of floating above the floor.
+const FLOOR_Y = FIELD_H - 112;
+const FLIPPER_PIVOT_Y = FLOOR_Y + 4;
 
 const DRAIN_X0 = FIELD_W * 0.32;
 const DRAIN_X1 = FIELD_W * 0.68;
