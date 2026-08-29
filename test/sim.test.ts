@@ -474,6 +474,18 @@ describe('wild upgrades', () => {
     expect(world.damageLog).toHaveLength(0);
   });
 
+  it('animates toward damage-driven vibrancy instead of changing instantly', () => {
+    const world = createWorld();
+    world.phase = 'pick';
+    world.damageLog = [[0, 350]];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.vibrancy).toBeGreaterThan(0);
+    expect(world.vibrancy).toBeLessThan(1);
+    for (let i = 0; i < 180; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.vibrancy).toBeGreaterThan(0.99);
+  });
+
   it('splits every current player-owned ball but not boss balls', () => {
     const world = createWorld();
     world.phase = 'battle';

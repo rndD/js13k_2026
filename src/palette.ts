@@ -18,7 +18,7 @@ export const MAGENTA = '#e000ff';
 
 /** The fully-charged "rainbow" ball tier cycles through this sequence. */
 export const SPECTRUM = [RED, ORANGE, YELLOW, LIME, CYAN, VIOLET, MAGENTA];
-const NIGHT = ['#690025', '#6b2c00', '#665300', '#005b32', '#004f82', '#421197', '#790073'];
+const NIGHT = ['#a00038', '#a74700', '#9d8100', '#008f4d', '#0079c4', '#6520df', '#b500ac'];
 
 export function rainbowGradient(ctx: CanvasRenderingContext2D, x: number, y: number, dark = false, intensity = 1): CanvasGradient {
   const colors = dark ? NIGHT : SPECTRUM;

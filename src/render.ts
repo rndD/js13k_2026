@@ -80,10 +80,6 @@ function damage10(world: World): number {
   return Math.round(world.damageLog.reduce((sum, hit) => sum + hit[1], 0));
 }
 
-function damageIntensity(world: World): number {
-  return Math.min(1, damage10(world) / 200);
-}
-
 function drawDamageDebug(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.font = '8px monospace';
   ctx.textAlign = 'left';
@@ -104,7 +100,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   const w = FIELD_W - pad * 2;
   const barH = 6;
 
-  ctx.fillStyle = rainbowGradient(ctx, FIELD_W, 0, true, damageIntensity(world));
+  ctx.fillStyle = rainbowGradient(ctx, FIELD_W, 0, true, world.vibrancy);
   ctx.fillRect(0, 0, FIELD_W, HUD_HEIGHT);
 
   ctx.font = '9px monospace';
@@ -185,8 +181,8 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawFieldBorder(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, damageIntensity(world));
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy);
+  ctx.lineWidth = 2 + world.vibrancy * 2;
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.lineTo(0, FIELD_H);
@@ -201,8 +197,8 @@ function drawFieldBorder(ctx: CanvasRenderingContext2D, world: World): void {
  * else placed by the level - see level.ts). Gaps between/within walls are
  * where the ball can fall through (drains). */
 function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, damageIntensity(world));
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy);
+  ctx.lineWidth = 2 + world.vibrancy * 2;
   for (const wall of world.walls) {
     ctx.beginPath();
     for (let i = 0; i < wall.length; i++) {
@@ -215,8 +211,8 @@ function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, damageIntensity(world));
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy);
+  ctx.lineWidth = 2 + world.vibrancy * 2;
   for (const p of world.pegs) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);

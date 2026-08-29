@@ -116,6 +116,7 @@ export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
   return {
     time: 0,
     damageLog: [],
+    vibrancy: 0,
     phase: 'launch',
     tableIndex,
     transitionTimer: 0,

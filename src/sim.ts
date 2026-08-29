@@ -117,6 +117,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   world.time += dt;
   if (world.phase === 'pick') for (const hit of world.damageLog) hit[0] += dt;
   while (world.damageLog[0]?.[0] < world.time - 10) world.damageLog.shift();
+  updateVibrancy(world, dt);
 
   if (world.phase === 'transition') {
     world.transitionTimer -= dt;
@@ -162,6 +163,12 @@ function isFinished(world: World): boolean {
 
 function trackDamage(world: World, amount: number): void {
   world.damageLog.push([world.time, amount]);
+}
+
+function updateVibrancy(world: World, dt: number): void {
+  const damage = world.damageLog.reduce((sum, hit) => sum + hit[1], 0);
+  const target = Math.min(1, damage / 350);
+  world.vibrancy += (target - world.vibrancy) * Math.min(1, dt * 2);
 }
 
 function queueUpgradeMilestones(world: World): void {
