@@ -23,7 +23,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Split All
   { id: 'splitAll', description: ['Double all', 'your balls in play'], rarity: 'common', maxStacks: 2 },
   // Sacrifice
-  { id: 'sacrifice', description: ['Halve current boss HP', 'Lose all balls in play', 'Pick 2 more cards'], rarity: 'rare', maxStacks: 1 },
+  { id: 'sacrifice', description: ['Halve boss HP', 'Lose balls in play', 'Pick 2 more cards'], rarity: 'rare', maxStacks: 1 },
   // Boss Magnet
   { id: 'bossMagnet', description: ['Your balls curve', 'toward the boss'], rarity: 'uncommon', maxStacks: 3 },
   // Ball Regen
