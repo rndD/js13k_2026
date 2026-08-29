@@ -59,6 +59,7 @@ import {
   LAUNCH_PAD_TRIGGER_R,
   LEVEL_TRANSITION_TIME,
   MAX_SPEED,
+  OVERCHARGE_BONUSES,
   PAINT_MULTIPLIER_MAX,
   PAINT_MULTIPLIER_STEP,
   PEG_IMPULSE,
@@ -209,7 +210,9 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
     world.coreBalls += amount;
   }
   if (id === 'overcharge') {
-    for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier * 2);
+    const rank = world.upgrades.overcharge;
+    const bonus = OVERCHARGE_BONUSES[rank] - OVERCHARGE_BONUSES[rank - 1];
+    for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + bonus);
   }
   if (id === 'splitAll') {
     const originals = world.balls.filter((ball) => ball.role !== 'hostile');
@@ -295,6 +298,7 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
 function launchBall(world: World, power: number): void {
   const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
   const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
+  ball.multiplier += OVERCHARGE_BONUSES[world.upgrades.overcharge];
   ball.vx = -60;
   ball.vy = -speed;
   world.balls.push(ball);
@@ -627,7 +631,7 @@ function convertHostile(world: World, ball: Ball): void {
   ball.role = 'echo';
   ball.stability = ECHO_STABILITY + recruiter * 2;
   ball.lifetime = ECHO_LIFETIME;
-  ball.multiplier = 1 + recruiter;
+  ball.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades.overcharge];
   ball.charge = recruiter;
   ball.color = 'white';
   ball.accent = false;

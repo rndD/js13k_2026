@@ -19,7 +19,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Auto Gun
   { id: 'autoGun', description: ['Main balls fire', 'tiny boss shots'], rarity: 'rare', maxStacks: 4 },
   // Overcharge
-  { id: 'overcharge', description: ['Double power of', 'your live balls'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 'overcharge', description: ['Raise base power', 'of all your balls'], rarity: 'uncommon', maxStacks: 3 },
   // Split All
   { id: 'splitAll', description: ['Clone every one', 'of your live balls'], rarity: 'rare', maxStacks: 2 },
   // Sacrifice
@@ -38,6 +38,7 @@ export function abilityById(id: AbilityId): AbilityDefinition {
 
 export function abilityDescription(ability: AbilityDefinition, rank: number): string[] {
   if (ability.id === 'extraCore') return [`Add ${rank + 2} balls`, 'to your stock'];
+  if (ability.id === 'overcharge') return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];
 }

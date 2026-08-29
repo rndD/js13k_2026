@@ -390,17 +390,26 @@ describe('wild upgrades', () => {
     expect(world.sfx).toContain('gunShot');
   });
 
-  it('overcharges only player-owned balls currently on the field', () => {
+  it('raises base power of current player balls by 0.5, 1, then 2.5', () => {
     const world = createWorld();
     world.phase = 'battle';
     const mine = createBall(1, 80, 300);
     const bossBall = createBall(2, 160, 300, 'hostile');
     world.balls = [mine, bossBall];
+    world.nextBallId = 3;
 
     applyUpgrade(world, 'overcharge');
+    expect(mine.multiplier).toBe(1.5);
+    applyUpgrade(world, 'overcharge');
+    expect(mine.multiplier).toBe(2.5);
+    applyUpgrade(world, 'overcharge');
 
-    expect(mine.multiplier).toBe(2);
+    expect(mine.multiplier).toBe(5);
     expect(bossBall.multiplier).toBe(1);
+
+    step(world, { ...NO_CONTROLS, launch: true }, FIXED_DT);
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.balls.find((ball) => ball.id === 3)!.multiplier).toBe(5);
   });
 
   it('splits every current player-owned ball but not boss balls', () => {
@@ -771,13 +780,14 @@ describe('ball roles', () => {
   it('makes captured echoes stronger with Recruiter ranks', () => {
     const world = ballOnFlipper('hostile');
     world.upgrades.recruiter = 2;
+    world.upgrades.overcharge = 2;
 
     step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
 
     const echo = world.balls.find((ball) => ball.id === 1)!;
     expect(echo.role).toBe('echo');
     expect(echo.charge).toBe(2);
-    expect(echo.multiplier).toBe(3);
+    expect(echo.multiplier).toBe(4.5);
     expect(echo.stability).toBe(9);
     expect(abilityById('recruiter').description).toEqual([
       'Captured balls:',

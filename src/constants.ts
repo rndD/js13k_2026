@@ -42,6 +42,8 @@ export const LAUNCH_PAD_COOLDOWN = 0.3; // s, re-trigger cooldown per pad
 // Ball build growth
 export const PAINT_MULTIPLIER_STEP = 0.5;
 export const PAINT_MULTIPLIER_MAX = 8;
+/** cumulative base-power bonus after 0/1/2/3 Overcharge picks */
+export const OVERCHARGE_BONUSES = [0, 0.5, 1.5, 4];
 export const DIRECT_DAMAGE_BASE = 10;
 export const ENERGY_TARGET_MULT_BONUS = 0.2;
 
