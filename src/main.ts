@@ -44,6 +44,16 @@ function loadLevelOverride(): [LevelData | undefined, number] {
 }
 
 const world = createWorld(...loadLevelOverride());
+let started = false;
+let waitForRelease = false;
+function start(): void {
+  if (!started) {
+    started = true;
+    waitForRelease = true;
+  }
+}
+canvas.addEventListener('pointerdown', start);
+window.addEventListener('keydown', start);
 
 // Short tapered neon line per ball (dis_doc.md's trail/juice suggestion),
 // tracked by ball id so a ball's own trail cleanly disappears once it drains
@@ -107,7 +117,8 @@ function frame(now: number): void {
   last = now;
 
   while (acc >= FIXED_DT) {
-    step(world, controls, FIXED_DT);
+    if (started && !waitForRelease) step(world, controls, FIXED_DT);
+    if (waitForRelease && !controls.left && !controls.right && !controls.launch && controls.choice === null) waitForRelease = false;
     // sim.ts pushes sound-event tags onto world.sfx at the exact point each
     // event actually happens (see types.ts's SfxEvent) instead of us trying
     // to infer transient contacts by diffing stats before/after.
@@ -144,7 +155,7 @@ function frame(now: number): void {
   ctx.translate(shake.x, shake.y);
   drawBgFx(ctx, bgFx, world);
   drawTrails();
-  render(ctx, world);
+  render(ctx, world, !started);
   drawFx(ctx, fx, world);
   ctx.restore();
 

@@ -47,7 +47,7 @@ function drawImpactPulse(ctx: CanvasRenderingContext2D, x: number, y: number, ba
   });
 }
 
-export function render(ctx: CanvasRenderingContext2D, world: World): void {
+export function render(ctx: CanvasRenderingContext2D, world: World, menu = false): void {
   drawHudBar(ctx, world);
 
   ctx.save();
@@ -70,6 +70,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World): void {
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
   drawFieldOverlay(ctx, world);
+  if (menu) drawMenu(ctx);
   drawPickCards(ctx, world);
   ctx.restore();
 }
@@ -576,12 +577,42 @@ function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.font = '24px monospace';
     ctx.fillText(`LEVEL ${world.boss.rank + 1} CLEAR`, FIELD_W / 2, FIELD_H / 2);
   } else if (world.phase === 'win') {
+    ctx.fillStyle = withAlpha(BG, 0.8);
+    ctx.fillRect(0, 0, FIELD_W, FIELD_H);
     ctx.textAlign = 'center';
     ctx.font = '24px monospace';
-    ctx.fillText('BOSS DOWN', FIELD_W / 2, FIELD_H / 2);
+    ctx.fillStyle = LIME;
+    ctx.fillText('VICTORY', FIELD_W / 2, FIELD_H / 2 - 45);
+    drawResults(ctx, world);
   } else if (world.phase === 'lose') {
+    ctx.fillStyle = withAlpha(BG, 0.8);
+    ctx.fillRect(0, 0, FIELD_W, FIELD_H);
     ctx.textAlign = 'center';
     ctx.font = '24px monospace';
-    ctx.fillText('GAME OVER', FIELD_W / 2, FIELD_H / 2);
+    ctx.fillStyle = RED;
+    ctx.fillText('GAME OVER', FIELD_W / 2, FIELD_H / 2 - 45);
+    drawResults(ctx, world);
   }
+}
+
+function drawResults(ctx: CanvasRenderingContext2D, world: World): void {
+  const seconds = Math.floor(world.time);
+  ctx.fillStyle = WHITE;
+  ctx.font = '14px monospace';
+  ctx.fillText(`POINTS ${Math.round(world.points)}`, FIELD_W / 2, FIELD_H / 2);
+  ctx.fillText(`TIME ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W / 2, FIELD_H / 2 + 28);
+}
+
+function drawMenu(ctx: CanvasRenderingContext2D): void {
+  ctx.fillStyle = withAlpha(BG, 0.9);
+  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = RED;
+  ctx.font = 'bold 27px monospace';
+  ctx.fillText('PINBALL DEFENSE', FIELD_W / 2, 250);
+  ctx.fillStyle = WHITE;
+  ctx.font = '13px monospace';
+  ctx.fillText('CLICK OR PRESS A KEY', FIELD_W / 2, 325);
+  ctx.fillStyle = STRUCTURE;
+  ctx.fillText('A/D FLIPPERS  W LAUNCH', FIELD_W / 2, 365);
 }
