@@ -115,6 +115,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   }
 
   world.time += dt;
+  if (world.phase === 'pick') for (const hit of world.damageLog) hit[0] += dt;
   while (world.damageLog[0]?.[0] < world.time - 10) world.damageLog.shift();
 
   if (world.phase === 'transition') {

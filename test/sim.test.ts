@@ -466,6 +466,11 @@ describe('wild upgrades', () => {
     world.phase = 'pick';
     world.pick = null;
     for (let i = 0; i < 601; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.damageLog).toHaveLength(1);
+
+    world.phase = 'transition';
+    world.transitionTimer = 20;
+    for (let i = 0; i < 601; i++) step(world, NO_CONTROLS, FIXED_DT);
     expect(world.damageLog).toHaveLength(0);
   });
 

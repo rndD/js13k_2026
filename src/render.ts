@@ -72,7 +72,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawFieldOverlay(ctx, world);
   if (menu) drawMenu(ctx);
   drawPickCards(ctx, world);
-  if (import.meta.env.DEV) drawDamageDebug(ctx, world);
+  if ((import.meta as any).env.DEV) drawDamageDebug(ctx, world);
   ctx.restore();
 }
 
@@ -81,7 +81,7 @@ function damage10(world: World): number {
 }
 
 function damageIntensity(world: World): number {
-  return Math.min(1, damage10(world) / 500);
+  return Math.min(1, damage10(world) / 200);
 }
 
 function drawDamageDebug(ctx: CanvasRenderingContext2D, world: World): void {
