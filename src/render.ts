@@ -106,7 +106,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
   const stored = world.coreBalls - world.balls.filter((ball) => ball.role === 'core' && ball.stocked).length;
-  const regen = world.upgrades.ballRestore && stored < 4 ? ` +${Math.ceil(BALL_RESTORE_TIME - world.restoreTimer)}s` : '';
+  const regen = world.upgrades.ballRestore && stored < 4 ? ` R:${Math.ceil(BALL_RESTORE_TIME - world.restoreTimer)}s` : '';
   ctx.fillText(`BALLS ${world.coreBalls}${regen}`, FIELD_W - pad, 40);
 
   ctx.strokeStyle = STRUCTURE;

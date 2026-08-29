@@ -937,6 +937,7 @@ describe('ball roles', () => {
     targetWorld.balls = [hostile, createBall(2, 30, 300)];
     step(targetWorld, NO_CONTROLS, FIXED_DT);
     expect(targetWorld.balls[0].charge).toBe(0);
+    expect(targetWorld.balls[0].vx).toBe(-10);
     expect(targetWorld.points).toBe(0);
 
     const bossWorld = createWorld();
@@ -946,6 +947,23 @@ describe('ball roles', () => {
     const hp = bossWorld.boss.hp;
     step(bossWorld, NO_CONTROLS, FIXED_DT);
     expect(bossWorld.boss.hp).toBe(hp);
+  });
+
+  it('lets hostile balls pass through launch pads', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.walls = [];
+    world.pegs = [];
+    world.bumpers = [];
+    world.launchPads = [{ x: 180, y: 300, angle: 0, cooldown: 0 }];
+    const hostile = createBall(1, 180, 300, 'hostile');
+    hostile.vx = -10;
+    world.balls = [hostile];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(hostile.vx).toBe(-10);
+    expect(world.sfx).not.toContain('padBoost');
   });
 
   it('gives echoes half build growth and spends stability only after a useful hit', () => {

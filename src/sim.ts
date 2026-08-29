@@ -512,7 +512,7 @@ function updateBalls(world: World, dt: number): void {
         }
       }
 
-      for (const pad of world.launchPads) {
+      if (ball.role !== 'hostile') for (const pad of world.launchPads) {
         if (pad.cooldown <= 0 && resolveLaunchPad(ball, pad, LAUNCH_PAD_TRIGGER_R, LAUNCH_PAD_BOOST)) {
           pad.cooldown = LAUNCH_PAD_COOLDOWN;
           world.sfx.push('padBoost');
@@ -520,10 +520,10 @@ function updateBalls(world: World, dt: number): void {
         }
       }
 
-      for (const bumper of world.bumpers) {
+      if (ball.role !== 'hostile') for (const bumper of world.bumpers) {
         if (resolveBumper(ball, bumper, BUMPER_IMPULSE)) {
           world.contacts.push({ kind: bumper.kind, x: ball.x, y: ball.y });
-          if (ball.role !== 'hostile' && bumper.cooldown <= 0) {
+          if (bumper.cooldown <= 0) {
             if (bumper.kind === 'paint') applyPaintHit(world, ball, bumper);
             else applyEnergyHit(world, ball);
             bumper.cooldown = BUMPER_COOLDOWN;
