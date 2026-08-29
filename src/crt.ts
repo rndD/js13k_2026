@@ -1,4 +1,4 @@
-// Cheap, toggleable CRT/TV-style overlay: scanlines + a vignette + a faint
+// Cheap CRT/TV-style overlay: scanlines + a vignette + a faint
 // flicker + a soft corner highlight, drawn as a post-process pass over the
 // already-rendered frame. A geometric "bulging glass" warp (strip-scaled
 // drawImage passes) was tried and reverted - it never looked convincing
@@ -21,7 +21,6 @@ import {
 import { BG, WHITE, withAlpha } from './palette';
 
 export interface CrtState {
-  on: boolean;
   scanlines: CanvasPattern;
   vignette: CanvasGradient;
   highlight: CanvasGradient;
@@ -58,18 +57,14 @@ function buildHighlight(ctx: CanvasRenderingContext2D): CanvasGradient {
 
 export function createCrtState(ctx: CanvasRenderingContext2D): CrtState {
   return {
-    on: false,
     scanlines: buildScanlinePattern(ctx),
     vignette: buildVignette(ctx),
     highlight: buildHighlight(ctx),
   };
 }
 
-/** Call once per frame, after the rest of the game has finished drawing
- * this frame's scene onto `ctx`. No-op (besides the flicker) when off. */
+/** Call once per frame after the scene has finished drawing onto `ctx`. */
 export function drawCrtFrame(ctx: CanvasRenderingContext2D, crt: CrtState, time: number): void {
-  if (!crt.on) return;
-
   const flicker = 1 + Math.sin(time * 37) * CRT_FLICKER_AMOUNT;
   ctx.globalAlpha = Math.max(0, Math.min(1, flicker));
   ctx.fillStyle = crt.scanlines;

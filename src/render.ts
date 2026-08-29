@@ -69,7 +69,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawBullets(ctx, world);
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
-  drawFieldOverlay(ctx, world);
+  if (!menu) drawFieldOverlay(ctx, world);
   if (menu) drawMenu(ctx);
   drawPickCards(ctx, world);
   if ((import.meta as any).env.DEV) drawDamageDebug(ctx, world);
@@ -635,7 +635,8 @@ function drawMenu(ctx: CanvasRenderingContext2D): void {
   ctx.fillText('ROLL THE RAINBOW!', FIELD_W / 2, 250);
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
-  ctx.fillText('CLICK OR PRESS A KEY', FIELD_W / 2, 325);
+  ctx.fillText('TAP OR PRESS A KEY', FIELD_W / 2, 325);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText('A/D FLIPPERS  W LAUNCH', FIELD_W / 2, 365);
+  ctx.fillText('BOTTOM CORNERS: FLIPPERS', FIELD_W / 2, 355);
+  ctx.fillText('UPPER RIGHT: LAUNCH', FIELD_W / 2, 375);
 }

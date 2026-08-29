@@ -117,12 +117,6 @@ function restart(): void {
 canvas.addEventListener('pointerdown', restart);
 window.addEventListener('keydown', restart);
 
-// Toggle button (see index.html) - kept as a plain DOM element rather than
-// a canvas hit-zone so it never competes with the gameplay touch zones.
-document.getElementById('crtBtn')?.addEventListener('click', () => {
-  crt.on = !crt.on;
-});
-
 let acc = 0;
 let last = performance.now();
 
