@@ -20,10 +20,10 @@ export const MAGENTA = '#e000ff';
 export const SPECTRUM = [RED, ORANGE, YELLOW, LIME, CYAN, VIOLET, MAGENTA];
 const NIGHT = ['#690025', '#6b2c00', '#665300', '#005b32', '#004f82', '#421197', '#790073'];
 
-export function rainbowGradient(ctx: CanvasRenderingContext2D, x: number, y: number, dark = false): CanvasGradient {
+export function rainbowGradient(ctx: CanvasRenderingContext2D, x: number, y: number, dark = false, intensity = 1): CanvasGradient {
   const colors = dark ? NIGHT : SPECTRUM;
   const g = ctx.createLinearGradient(0, 0, x, y);
-  colors.forEach((color, i) => g.addColorStop(i / (colors.length - 1), color));
+  colors.forEach((color, i) => g.addColorStop(i / (colors.length - 1), lerpHex(dark ? '#292533' : '#c8c0d6', color, intensity)));
   return g;
 }
 

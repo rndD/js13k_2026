@@ -52,7 +52,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
 
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
-  drawFieldBorder(ctx);
+  drawFieldBorder(ctx, world);
   drawWalls(ctx, world);
   drawPegs(ctx, world);
   drawLaunchPads(ctx, world);
@@ -72,7 +72,23 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawFieldOverlay(ctx, world);
   if (menu) drawMenu(ctx);
   drawPickCards(ctx, world);
+  if (import.meta.env.DEV) drawDamageDebug(ctx, world);
   ctx.restore();
+}
+
+function damage10(world: World): number {
+  return Math.round(world.damageLog.reduce((sum, hit) => sum + hit[1], 0));
+}
+
+function damageIntensity(world: World): number {
+  return Math.min(1, damage10(world) / 500);
+}
+
+function drawDamageDebug(ctx: CanvasRenderingContext2D, world: World): void {
+  ctx.font = '8px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = STRUCTURE;
+  ctx.fillText(`DPS ${damage10(world)}/10s`, 8, FIELD_H - 8);
 }
 
 function drawBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, frac: number, color: string): void {
@@ -88,7 +104,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   const w = FIELD_W - pad * 2;
   const barH = 6;
 
-  ctx.fillStyle = rainbowGradient(ctx, FIELD_W, 0, true);
+  ctx.fillStyle = rainbowGradient(ctx, FIELD_W, 0, true, damageIntensity(world));
   ctx.fillRect(0, 0, FIELD_W, HUD_HEIGHT);
 
   ctx.font = '9px monospace';
@@ -168,8 +184,8 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
   });
 }
 
-function drawFieldBorder(ctx: CanvasRenderingContext2D): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H);
+function drawFieldBorder(ctx: CanvasRenderingContext2D, world: World): void {
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, damageIntensity(world));
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, 0);
@@ -185,7 +201,7 @@ function drawFieldBorder(ctx: CanvasRenderingContext2D): void {
  * else placed by the level - see level.ts). Gaps between/within walls are
  * where the ball can fall through (drains). */
 function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H);
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, damageIntensity(world));
   ctx.lineWidth = 3;
   for (const wall of world.walls) {
     ctx.beginPath();
@@ -199,7 +215,7 @@ function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H);
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, damageIntensity(world));
   ctx.lineWidth = 3;
   for (const p of world.pegs) {
     ctx.beginPath();

@@ -454,6 +454,21 @@ describe('wild upgrades', () => {
     expect(ball.multiplier).toBe(5);
   });
 
+  it('tracks damage dealt during the latest ten seconds', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    for (const armor of world.boss.armor) armor.hp = 0;
+    world.balls = [createBall(1, world.boss.x, world.boss.y)];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.damageLog.reduce((sum, hit) => sum + hit[1], 0)).toBe(10);
+
+    world.phase = 'pick';
+    world.pick = null;
+    for (let i = 0; i < 601; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.damageLog).toHaveLength(0);
+  });
+
   it('splits every current player-owned ball but not boss balls', () => {
     const world = createWorld();
     world.phase = 'battle';

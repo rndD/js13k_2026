@@ -115,6 +115,7 @@ export function loadTable(world: World, level: LevelData): void {
 export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
   return {
     time: 0,
+    damageLog: [],
     phase: 'launch',
     tableIndex,
     transitionTimer: 0,

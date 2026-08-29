@@ -243,6 +243,7 @@ export interface AimState {
 
 export interface World {
   time: number;
+  damageLog: [number, number][];
   phase: Phase;
   tableIndex: number;
   transitionTimer: number;

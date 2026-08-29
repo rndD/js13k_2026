@@ -115,6 +115,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   }
 
   world.time += dt;
+  while (world.damageLog[0]?.[0] < world.time - 10) world.damageLog.shift();
 
   if (world.phase === 'transition') {
     world.transitionTimer -= dt;
@@ -156,6 +157,10 @@ export function step(world: World, controls: ControlsState, dt: number): World {
 
 function isFinished(world: World): boolean {
   return world.phase === 'win' || world.phase === 'lose' || world.phase === 'transition';
+}
+
+function trackDamage(world: World, amount: number): void {
+  world.damageLog.push([world.time, amount]);
 }
 
 function queueUpgradeMilestones(world: World): void {
@@ -235,6 +240,7 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
     }
   }
   if (id === 'sacrifice') {
+    trackDamage(world, world.boss.hp - Math.ceil(world.boss.hp / 2));
     world.boss.hp = Math.ceil(world.boss.hp / 2);
     for (const ball of world.balls) {
       if (ball.role === 'core' && ball.stocked) world.coreBalls = Math.max(0, world.coreBalls - 1);
@@ -398,6 +404,7 @@ function updateBullets(world: World, dt: number): void {
       for (const armor of world.boss.armor) {
         const angleDelta = Math.atan2(Math.sin(angle - armor.angle), Math.cos(angle - armor.angle));
         if (armor.hp <= 0 || Math.abs(angleDelta) > world.boss.armorArc || Math.abs(distance - armorRadius(armor.ring)) > ARMOR_THICKNESS / 2 + bullet.r) continue;
+        trackDamage(world, Math.min(armor.hp, bullet.damage));
         armor.hp = Math.max(0, armor.hp - bullet.damage);
         addPoints(world, bullet.damage);
         world.fx.push({ kind: 'armor', x: bullet.x, y: bullet.y, amount: bullet.damage });
@@ -405,6 +412,7 @@ function updateBullets(world: World, dt: number): void {
         break;
       }
       if (!hit && distance < world.boss.r + bullet.r) {
+        trackDamage(world, Math.min(world.boss.hp, bullet.damage));
         world.boss.hp = Math.max(0, world.boss.hp - bullet.damage);
         addPoints(world, bullet.damage);
         world.fx.push({ kind: 'boss', x: bullet.x, y: bullet.y, amount: bullet.damage });
@@ -554,6 +562,7 @@ function updateBalls(world: World, dt: number): void {
         if (ball.role !== 'hostile' && ball.armorCooldown <= 0) {
           const critical = rollCritical(world);
           const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1) * (ball.color === 'rainbow' ? 1.25 : 1)) * (critical ? 2 : 1);
+          trackDamage(world, Math.min(armor.hp, damage));
           armor.hp = Math.max(0, armor.hp - damage);
           ball.armorCooldown = ARMOR_HIT_COOLDOWN;
           addPoints(world, damage + (armor.hp === 0 ? POINTS_ARMOR_BREAK : 0));
@@ -570,6 +579,7 @@ function updateBalls(world: World, dt: number): void {
       if (!hitArmor && !blockedBossThisTick && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
         const critical = rollCritical(world);
         const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier * (ball.color === 'rainbow' ? 1.25 : 1)) * (critical ? 2 : 1);
+        trackDamage(world, Math.min(world.boss.hp, dmg));
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
@@ -899,6 +909,7 @@ function updateBoss(world: World, dt: number): void {
     boss.poisonTimer -= dt;
     if (boss.poisonTimer <= 0) {
       const damage = Math.min(boss.hp, boss.poisonDamage);
+      trackDamage(world, damage);
       boss.hp -= damage;
       addPoints(world, damage);
       world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount: damage });
