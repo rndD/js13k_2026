@@ -112,7 +112,8 @@ const common = {
 export const CROSSFIRE: LevelData = {
   ...common,
   walls: [
-    ...LEVEL.walls,
+    [{ x: 0, y: FLOOR_Y }, { x: 104.14, y: FLOOR_Y }],
+    [{ x: 254.98, y: FLOOR_Y }, { x: FIELD_W, y: FLOOR_Y }],
     [{ x: 34, y: 396 }, { x: 106, y: 348 }],
     [{ x: 326, y: 396 }, { x: 254, y: 348 }],
     [{ x: 38, y: 244 }, { x: 108, y: 270 }],
@@ -126,6 +127,9 @@ export const CROSSFIRE: LevelData = {
     { x: 92, y: 286, r: 17, kind: 'paint' },
     { x: 268, y: 286, r: 17, kind: 'energy' },
     { x: 180, y: 382, r: 15, kind: 'paint' },
+    { x: 267, y: 60.08, r: 18, kind: 'paint' },
+    { x: 92.29, y: 60.84, r: 18, kind: 'paint' },
+    { x: 181.34, y: 39.68, r: 18, kind: 'energy' },
   ],
   launchPads: [
     LEVEL.launchPads[0], LEVEL.launchPads[1],
