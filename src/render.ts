@@ -291,14 +291,12 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const r = boss.r;
   const exposed = boss.armor.every((armor) => armor.hp <= 0);
 
-  if (boss.rank >= 3) {
-    ctx.fillStyle = rainbowColor(world.time);
-    ctx.beginPath();
-    ctx.moveTo(boss.x - 5, boss.y - r + 2);
-    ctx.lineTo(boss.x, boss.y - r - 25);
-    ctx.lineTo(boss.x + 5, boss.y - r + 2);
-    ctx.fill();
-  }
+  ctx.fillStyle = rainbowColor(world.time);
+  ctx.beginPath();
+  ctx.moveTo(boss.x - 5, boss.y - r + 2);
+  ctx.lineTo(boss.x, boss.y - r - 25);
+  ctx.lineTo(boss.x + 5, boss.y - r + 2);
+  ctx.fill();
 
   for (const armor of boss.armor) {
     if (armor.hp <= 0) continue;
