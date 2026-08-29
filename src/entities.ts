@@ -83,16 +83,21 @@ export function createBoss(spot: LevelData['boss'], rank: number): Boss {
     hp: BOSS_HPS[rank],
     maxHp: BOSS_HPS[rank],
     spawnTimer: BOSS_HOSTILE_INTERVALS[rank],
-    specialTimer: rank === 1 ? BOSS_SHOT_INTERVAL : BOSS_BLAST_INTERVAL,
+    specialTimer: BOSS_BLAST_INTERVAL,
+    shotTimer: BOSS_SHOT_INTERVAL,
     warningTimer: 0,
     armorArc: BOSS_ARMOR_ARCS[rank],
     poisonDamage: 0,
     poisonTimer: 0,
-    armor: Array.from({ length: count }, (_, i) => ({
-      angle: i * Math.PI * 2 / count,
+    armor: Array.from({ length: count }, (_, i) => {
+      const perRing = rank === 3 ? count / 2 : count;
+      const ring = +(rank === 3 && i < perRing);
+      return {
+      angle: i % perRing * Math.PI * 2 / perRing + ring * Math.PI / perRing,
       hp: armorHp,
       maxHp: armorHp,
-    })),
+      ring,
+    }}),
   };
 }
 
@@ -116,7 +121,7 @@ export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
     restoreTimer: 0,
     randomSeed: 1,
     points: 0,
-    upgrades: { extraCore: 0, recruiter: 0, poison: 0, autoGun: 0, overcharge: 0, splitAll: 0, sacrifice: 0, bossMagnet: 0, ballRestore: 0, critical: 0 },
+    upgrades: { extraCore: 0, recruiter: 0, poison: 0, autoGun: 0, overcharge: 0, splitAll: 0, sacrifice: 0, bossMagnet: 0, ballRestore: 0, critical: 0, paintShot: 0, energyEcho: 0 },
     previousUpgradeGap: 50,
     upgradeGap: 100,
     nextUpgradeAt: 100,

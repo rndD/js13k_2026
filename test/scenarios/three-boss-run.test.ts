@@ -5,17 +5,17 @@ import { LEVELS } from '../../src/level';
 import { step } from '../../src/sim';
 import { NO_CONTROLS } from '../../src/types';
 
-describe('scenario: three-boss run', () => {
-  it('changes table and boss twice, then ends in victory', () => {
+describe('scenario: four-boss run', () => {
+  it('changes table and boss three times, then ends in victory', () => {
     const world = createWorld(LEVELS[0], 0);
 
-    for (let rank = 0; rank < 3; rank++) {
+    for (let rank = 0; rank < 4; rank++) {
       const ballsBefore = world.coreBalls;
       world.phase = 'battle';
       world.boss.hp = 0;
       step(world, NO_CONTROLS, FIXED_DT);
 
-      if (rank === 2) break;
+      if (rank === 3) break;
       expect(world.phase).toBe('transition');
       expect(world.coreBalls).toBe(ballsBefore + 1);
       for (let tick = 0; tick < 121; tick++) step(world, NO_CONTROLS, FIXED_DT);
@@ -25,6 +25,6 @@ describe('scenario: three-boss run', () => {
     }
 
     expect(world.phase).toBe('win');
-    expect(world.boss.rank).toBe(2);
+    expect(world.boss.rank).toBe(3);
   });
 });

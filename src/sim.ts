@@ -16,6 +16,7 @@ import {
   ARMOR_DEFLECT_SPEED,
   ARMOR_HIT_COOLDOWN,
   ARMOR_ORBIT_RADIUS,
+  ARMOR_RING_GAP,
   ARMOR_ROTATION_SPEED,
   ARMOR_THICKNESS,
   AUTO_LAUNCH_DELAY,
@@ -31,6 +32,7 @@ import {
   BOSS_BLAST_RADIUS,
   BOSS_BLAST_WARNING,
   BOSS_HOSTILE_INTERVALS,
+  BOSS_HPS,
   BOSS_MOVE_SPEED,
   BOSS_MOVE_X,
   BOSS_MOVE_Y,
@@ -42,6 +44,7 @@ import {
   CRITICAL_CHANCE,
   DIRECT_DAMAGE_BASE,
   ENERGY_TARGET_MULT_BONUS,
+  ENERGY_ECHO_CHANCES,
   FIELD_H,
   FIELD_W,
   FLIPPER_ANGULAR_SPEED,
@@ -60,6 +63,7 @@ import {
   OVERCHARGE_BONUSES,
   PAINT_MULTIPLIER_MAX,
   PAINT_MULTIPLIER_STEP,
+  PAINT_SHOT_DAMAGES,
   PEG_IMPULSE,
   POINTS_BOSS_DEFEAT,
   POINTS_ARMOR_BREAK,
@@ -93,7 +97,7 @@ import {
   resolveWall,
   resolveWalls,
 } from './physics';
-import type { AimState, Ball, Bullet, ControlsState, Flipper, World } from './types';
+import type { AimState, Ball, Bullet, Bumper, ControlsState, Flipper, World } from './types';
 
 /** Advance the world by one fixed timestep. Mutates and returns `world`. */
 export function step(world: World, controls: ControlsState, dt: number): World {
@@ -110,6 +114,8 @@ export function step(world: World, controls: ControlsState, dt: number): World {
     return world;
   }
 
+  world.time += dt;
+
   if (world.phase === 'transition') {
     world.transitionTimer -= dt;
     if (world.transitionTimer <= 0) startNextBoss(world);
@@ -120,8 +126,6 @@ export function step(world: World, controls: ControlsState, dt: number): World {
     updatePick(world, controls, dt);
     return world;
   }
-
-  world.time += dt;
 
   updateBallRestore(world, dt);
 
@@ -274,9 +278,12 @@ function updateBallRestore(world: World, dt: number): void {
 }
 
 function rollCritical(world: World): boolean {
-  if (!world.upgrades.critical) return false;
+  return world.upgrades.critical > 0 && rollChance(world, CRITICAL_CHANCE * world.upgrades.critical);
+}
+
+function rollChance(world: World, chance: number): boolean {
   world.randomSeed = (world.randomSeed * 1664525 + 1013904223) >>> 0;
-  return world.randomSeed / 4294967296 < CRITICAL_CHANCE * world.upgrades.critical;
+  return world.randomSeed / 4294967296 < chance;
 }
 
 function updateLaunch(world: World, controls: ControlsState, dt: number): void {
@@ -347,6 +354,11 @@ function updateBullets(world: World, dt: number): void {
     bullet.lifetime -= dt;
     let hit = false;
     for (let step = 0; step < BALL_SUBSTEPS && !hit; step++) {
+      if (bullet.paint) {
+        const angle = Math.atan2(world.boss.y - bullet.y, world.boss.x - bullet.x);
+        bullet.vx = Math.cos(angle) * BULLET_SPEED;
+        bullet.vy = Math.sin(angle) * BULLET_SPEED;
+      }
       bullet.x += bullet.vx * dt / BALL_SUBSTEPS;
       bullet.y += bullet.vy * dt / BALL_SUBSTEPS;
       if (bullet.enemy) {
@@ -362,12 +374,14 @@ function updateBullets(world: World, dt: number): void {
         }
       }
       if (hit) break;
-      hit = resolveWalls(bullet, FIELD_W, FIELD_H) !== 'none';
-      for (const wall of world.walls) if (resolveWall(bullet, wall, WALL_THICKNESS)) hit = true;
-      for (const peg of world.pegs) if (resolveBumper(bullet, peg, PEG_IMPULSE)) hit = true;
-      for (const bumper of world.bumpers) if (resolveBumper(bullet, bumper, 0)) hit = true;
-      for (const flipper of world.flippers) if (resolveFlipper(bullet, flipper, 0, FLIPPER_THICKNESS)) hit = true;
-      for (const pad of world.launchPads) if (resolveLaunchPad(bullet, pad, LAUNCH_PAD_TRIGGER_R, 0)) hit = true;
+      if (!bullet.paint) {
+        hit = resolveWalls(bullet, FIELD_W, FIELD_H) !== 'none';
+        for (const wall of world.walls) if (resolveWall(bullet, wall, WALL_THICKNESS)) hit = true;
+        for (const peg of world.pegs) if (resolveBumper(bullet, peg, PEG_IMPULSE)) hit = true;
+        for (const bumper of world.bumpers) if (resolveBumper(bullet, bumper, 0)) hit = true;
+        for (const flipper of world.flippers) if (resolveFlipper(bullet, flipper, 0, FLIPPER_THICKNESS)) hit = true;
+        for (const pad of world.launchPads) if (resolveLaunchPad(bullet, pad, LAUNCH_PAD_TRIGGER_R, 0)) hit = true;
+      }
       if (hit) break;
 
       if (bullet.enemy) continue;
@@ -377,7 +391,7 @@ function updateBullets(world: World, dt: number): void {
       const angle = Math.atan2(dy, dx);
       for (const armor of world.boss.armor) {
         const angleDelta = Math.atan2(Math.sin(angle - armor.angle), Math.cos(angle - armor.angle));
-        if (armor.hp <= 0 || Math.abs(angleDelta) > world.boss.armorArc || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ARMOR_THICKNESS / 2 + bullet.r) continue;
+        if (armor.hp <= 0 || Math.abs(angleDelta) > world.boss.armorArc || Math.abs(distance - armorRadius(armor.ring)) > ARMOR_THICKNESS / 2 + bullet.r) continue;
         armor.hp = Math.max(0, armor.hp - bullet.damage);
         addPoints(world, bullet.damage);
         world.fx.push({ kind: 'armor', x: bullet.x, y: bullet.y, amount: bullet.damage });
@@ -510,7 +524,7 @@ function updateBalls(world: World, dt: number): void {
         if (resolveBumper(ball, bumper, BUMPER_IMPULSE)) {
           world.contacts.push({ kind: bumper.kind, x: ball.x, y: ball.y });
           if (ball.role !== 'hostile' && bumper.cooldown <= 0) {
-            if (bumper.kind === 'paint') applyPaintHit(world, ball);
+            if (bumper.kind === 'paint') applyPaintHit(world, ball, bumper);
             else applyEnergyHit(world, ball);
             bumper.cooldown = BUMPER_COOLDOWN;
             expired = spendEchoStability(ball);
@@ -526,7 +540,7 @@ function updateBalls(world: World, dt: number): void {
       let hitArmor = false;
       for (const armor of world.boss.armor) {
         if (armor.hp <= 0) continue;
-        const hit = resolveArmorArc(ball, world.boss.x, world.boss.y, armor.angle, world.boss.armorArc);
+        const hit = resolveArmorArc(ball, world.boss.x, world.boss.y, armor.angle, world.boss.armorArc, armorRadius(armor.ring));
         if (!hit) continue;
         hitArmor = true;
         blockedBossThisTick = true;
@@ -596,25 +610,29 @@ function updateBalls(world: World, dt: number): void {
   world.balls = remaining;
 }
 
-function resolveArmorArc(ball: Ball, cx: number, cy: number, angle: number, arc: number): { x: number; y: number } | null {
+function armorRadius(ring: number): number {
+  return ARMOR_ORBIT_RADIUS + ring * ARMOR_RING_GAP;
+}
+
+function resolveArmorArc(ball: Ball, cx: number, cy: number, angle: number, arc: number, radius: number): { x: number; y: number } | null {
   const dx = ball.x - cx;
   const dy = ball.y - cy;
   const distance = Math.hypot(dx, dy) || 0.0001;
   const ballAngle = Math.atan2(dy, dx);
   const angleDelta = Math.atan2(Math.sin(ballAngle - angle), Math.cos(ballAngle - angle));
-  if (Math.abs(angleDelta) > arc || Math.abs(distance - ARMOR_ORBIT_RADIUS) > ball.r + ARMOR_THICKNESS / 2) return null;
+  if (Math.abs(angleDelta) > arc || Math.abs(distance - radius) > ball.r + ARMOR_THICKNESS / 2) return null;
 
   const nx = dx / distance;
   const ny = dy / distance;
-  const outside = distance >= ARMOR_ORBIT_RADIUS;
-  const targetDistance = ARMOR_ORBIT_RADIUS + (outside ? 1 : -1) * (ball.r + ARMOR_THICKNESS / 2);
+  const outside = distance >= radius;
+  const targetDistance = radius + (outside ? 1 : -1) * (ball.r + ARMOR_THICKNESS / 2);
   ball.x = cx + nx * targetDistance;
   ball.y = cy + ny * targetDistance;
   const speed = Math.max(ARMOR_DEFLECT_SPEED, Math.hypot(ball.vx, ball.vy));
   const direction = outside ? 1 : -1;
   ball.vx = nx * speed * direction;
   ball.vy = ny * speed * direction;
-  return { x: cx + nx * ARMOR_ORBIT_RADIUS, y: cy + ny * ARMOR_ORBIT_RADIUS };
+  return { x: cx + nx * radius, y: cy + ny * radius };
 }
 
 function consumeDrainedBall(world: World, ball: Ball): void {
@@ -788,12 +806,20 @@ function fireAimedBall(world: World, aim: AimState): void {
   world.phase = 'battle';
 }
 
-function applyPaintHit(world: World, ball: Ball): void {
+function applyPaintHit(world: World, ball: Ball, bumper: Bumper): void {
   const growth = ball.role === 'echo' ? 0.5 : 1;
   ball.charge += growth;
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + PAINT_MULTIPLIER_STEP * growth);
   addPoints(world, POINTS_PAINT_TARGET);
   world.sfx.push('paintHit');
+  const rank = world.upgrades.paintShot;
+  if (rank) {
+    const angle = Math.atan2(world.boss.y - bumper.y, world.boss.x - bumper.x);
+    const gun = world.upgrades.autoGun;
+    const damage = (PAINT_SHOT_DAMAGES[rank - 1] + (gun ? BULLET_DAMAGES[gun - 1] : 0)) * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier);
+    world.bullets.push({ x: bumper.x, y: bumper.y, vx: Math.cos(angle) * BULLET_SPEED, vy: Math.sin(angle) * BULLET_SPEED, r: 4, damage, lifetime: 2, paint: true });
+    world.sfx.push('gunShot');
+  }
 }
 
 function applyEnergyHit(world: World, ball: Ball): void {
@@ -802,6 +828,20 @@ function applyEnergyHit(world: World, ball: Ball): void {
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS * growth);
   addPoints(world, POINTS_CHARGE_TARGET);
   world.sfx.push('energyChime');
+  const rank = world.upgrades.energyEcho;
+  if (rank && rollChance(world, ENERGY_ECHO_CHANCES[rank - 1])) {
+    const echo = createBall(world.nextBallId++, world.boss.x, world.boss.y - ARMOR_ORBIT_RADIUS - ARMOR_RING_GAP - 14, 'echo');
+    const recruiter = world.upgrades.recruiter;
+    echo.stocked = false;
+    echo.stability = RECRUITER_STABILITIES[recruiter];
+    echo.lifetime = RECRUITER_LIFETIMES[recruiter];
+    echo.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades.overcharge];
+    echo.charge = recruiter;
+    echo.vx = world.randomSeed % 121 - 60;
+    echo.vy = -HOSTILE_BALL_SPEED;
+    world.balls.push(echo);
+    world.sfx.push('echoCapture');
+  }
 }
 
 function updateCooldowns(world: World, dt: number): void {
@@ -814,11 +854,11 @@ function updateBoss(world: World, dt: number): void {
   const boss = world.boss;
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
-  for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt;
-  if (boss.rank === 1) {
-    boss.specialTimer -= dt;
-    if (boss.specialTimer <= 0) {
-      boss.specialTimer = BOSS_SHOT_INTERVAL;
+  for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt * (armor.ring ? -1 : 1);
+  if (boss.rank === 1 || boss.rank === 3) {
+    boss.shotTimer -= dt;
+    if (boss.shotTimer <= 0) {
+      boss.shotTimer = BOSS_SHOT_INTERVAL;
       const targets = world.balls.filter((ball) => ball.role !== 'hostile');
       if (targets.length) {
         const target = targets[world.randomSeed++ % targets.length];
@@ -828,7 +868,7 @@ function updateBoss(world: World, dt: number): void {
       }
     }
   }
-  if (boss.rank === 2) {
+  if (boss.rank >= 2) {
     if (boss.warningTimer > 0) {
       boss.warningTimer -= dt;
       if (boss.warningTimer <= 0) {
@@ -884,7 +924,7 @@ function checkOutcome(world: World): void {
     world.coreBalls += world.balls.filter((ball) => ball.role !== 'hostile' && !ball.stocked).length;
     world.balls = [];
     world.bullets = [];
-    const finished = world.boss.rank === 2;
+    const finished = world.boss.rank === BOSS_HPS.length - 1;
     if (!finished) world.coreBalls += 1;
     world.phase = finished ? 'win' : 'transition';
     world.transitionTimer = LEVEL_TRANSITION_TIME;

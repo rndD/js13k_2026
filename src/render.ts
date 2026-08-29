@@ -6,7 +6,7 @@
 // drawn in untransformed canvas space. Everything else (the actual table) is
 // drawn translated down by HUD_HEIGHT, so World's own 0..FIELD_H coordinate
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
-import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIME, BOSS_BLAST_RADIUS, BOSS_BLAST_WARNING, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
+import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIME, BOSS_BLAST_RADIUS, BOSS_BLAST_WARNING, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
 import { abilityById, abilityDescription, type AbilityRarity } from './abilities';
 import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
@@ -94,6 +94,9 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.textAlign = 'left';
   ctx.fillStyle = STRUCTURE;
   ctx.fillText(`BOSS ${boss.rank + 1}`, pad, 14);
+  const seconds = Math.floor(world.time);
+  ctx.textAlign = 'right';
+  ctx.fillText(`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W - pad, 14);
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
 
   ctx.fillStyle = LIME;
@@ -275,21 +278,23 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
 
   for (const armor of boss.armor) {
     if (armor.hp <= 0) continue;
-    withGlow(ctx, CYAN, 8, () => {
+    const color = armor.ring ? VIOLET : CYAN;
+    const radius = ARMOR_ORBIT_RADIUS + armor.ring * ARMOR_RING_GAP;
+    withGlow(ctx, color, 8, () => {
       ctx.lineCap = 'round';
-      ctx.strokeStyle = withAlpha(CYAN, 0.2);
+      ctx.strokeStyle = withAlpha(color, 0.2);
       ctx.lineWidth = ARMOR_THICKNESS;
       ctx.beginPath();
-      ctx.arc(boss.x, boss.y, ARMOR_ORBIT_RADIUS, armor.angle - boss.armorArc, armor.angle + boss.armorArc);
+      ctx.arc(boss.x, boss.y, radius, armor.angle - boss.armorArc, armor.angle + boss.armorArc);
       ctx.stroke();
 
-      ctx.strokeStyle = CYAN;
+      ctx.strokeStyle = color;
       ctx.lineWidth = ARMOR_THICKNESS - 2;
       ctx.beginPath();
       ctx.arc(
         boss.x,
         boss.y,
-        ARMOR_ORBIT_RADIUS,
+        radius,
         armor.angle - boss.armorArc,
         armor.angle - boss.armorArc + armor.hp / armor.maxHp * boss.armorArc * 2,
       );
@@ -393,9 +398,17 @@ function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
 
 function drawBullets(ctx: CanvasRenderingContext2D, world: World): void {
   for (const bullet of world.bullets) {
-    const color = bullet.enemy ? RED : YELLOW;
-    withGlow(ctx, color, 7, () => {
+    const color = bullet.enemy ? RED : bullet.paint ? ORANGE : YELLOW;
+    withGlow(ctx, color, bullet.paint ? 12 : 7, () => {
       ctx.fillStyle = color;
+      if (bullet.paint) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(bullet.x, bullet.y);
+        ctx.lineTo(bullet.x - bullet.vx * 0.04, bullet.y - bullet.vy * 0.04);
+        ctx.stroke();
+      }
       ctx.beginPath();
       ctx.arc(bullet.x, bullet.y, bullet.r, 0, Math.PI * 2);
       ctx.fill();

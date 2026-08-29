@@ -30,6 +30,10 @@ export const ABILITIES: AbilityDefinition[] = [
   { id: 'ballRestore', description: ['Restore lost ball', 'every 30 seconds'], rarity: 'uncommon', maxStacks: 1 },
   // Critical
   { id: 'critical', description: ['Balls gain 15%', 'double hit chance'], rarity: 'uncommon', maxStacks: 3 },
+  // Paint Cannon
+  { id: 'paintShot', description: ['Red bumpers shoot', 'through the table'], rarity: 'rare', maxStacks: 3 },
+  // Echo Spark
+  { id: 'energyEcho', description: ['Blue bumpers may', 'spawn an echo'], rarity: 'rare', maxStacks: 3 },
 ];
 
 export function abilityById(id: AbilityId): AbilityDefinition {
@@ -40,6 +44,8 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 'extraCore') return [`Add ${rank + 2} balls`, 'to your stock'];
   if (ability.id === 'recruiter') return [`Echoes: +1x power`, `${[10, 20, 40][rank]} hits / ${[30, 60, 120][rank]} sec`];
   if (ability.id === 'overcharge') return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
+  if (ability.id === 'paintShot') return [`Red bumper shot`, `${[8, 14, 22][rank]} base damage`];
+  if (ability.id === 'energyEcho') return [`Blue bumper:`, `${[12, 25, 40][rank]}% echo chance`];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARMOR_ORBIT_RADIUS, AUTO_LAUNCH_DELAY, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
+import { ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, AUTO_LAUNCH_DELAY, BOSS_HPS, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createBoss, createWorld } from '../src/entities';
 import { abilityById, abilityDescription } from '../src/abilities';
 import { LEVEL, LEVELS } from '../src/level';
@@ -486,7 +486,7 @@ describe('combat model', () => {
 });
 
 describe('outcomes', () => {
-  it('advances after the first boss and wins after the third', () => {
+  it('advances after the first boss and wins after the fourth', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss.hp = 5;
@@ -509,7 +509,7 @@ describe('outcomes', () => {
     expect(world.boss.armor).toHaveLength(9);
 
     world.phase = 'battle';
-    world.boss.rank = 2;
+    world.boss.rank = 3;
     world.boss.hp = 0;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.phase).toBe('win');
@@ -558,7 +558,7 @@ describe('outcomes', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 1);
-    world.boss.specialTimer = 0;
+    world.boss.shotTimer = 0;
     world.balls = [createBall(1, 180, 500)];
 
     step(world, NO_CONTROLS, FIXED_DT);
@@ -593,6 +593,80 @@ describe('outcomes', () => {
 
     expect(world.boss.warningTimer).toBeGreaterThan(0);
     expect(world.balls).toContain(core);
+  });
+
+  it('gives boss four two counter-rotating armor rings and every attack', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 3);
+    world.boss.shotTimer = 0;
+    world.boss.specialTimer = 0;
+    world.boss.spawnTimer = 0;
+    world.balls = [createBall(1, 180, 500)];
+    const inner = world.boss.armor.find((armor) => armor.ring === 0)!;
+    const outer = world.boss.armor.find((armor) => armor.ring === 1)!;
+    const innerAngle = inner.angle;
+    const outerAngle = outer.angle;
+
+    expect(world.boss.hp).toBe(BOSS_HPS[3]);
+    expect(world.boss.armor.filter((armor) => armor.ring === 0)).toHaveLength(9);
+    expect(world.boss.armor.filter((armor) => armor.ring === 1)).toHaveLength(9);
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(inner.angle).toBeGreaterThan(innerAngle);
+    expect(outer.angle).toBeLessThan(outerAngle);
+    expect(world.bullets.some((bullet) => bullet.enemy)).toBe(true);
+    expect(world.boss.warningTimer).toBeGreaterThan(0);
+    expect(world.balls.some((ball) => ball.role === 'hostile')).toBe(true);
+    expect(ARMOR_ORBIT_RADIUS + ARMOR_RING_GAP).toBe(56);
+  });
+
+  it('fires a geometry-piercing paint shot with Auto Gun bonus damage', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.paintShot = 1;
+    world.upgrades.autoGun = 3;
+    const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
+    const ball = createBall(1, target.x + target.r + 3, target.y);
+    ball.vx = -10;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    const shot = world.bullets.find((bullet) => bullet.paint)!;
+    expect(shot).toBeDefined();
+    expect(shot.damage).toBe(24);
+  });
+
+  it('can spawn an echo above the boss from an energy bumper', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.energyEcho = 3;
+    world.randomSeed = 0;
+    const target = world.bumpers.find((bumper) => bumper.kind === 'energy')!;
+    const ball = createBall(1, target.x + target.r + 3, target.y);
+    ball.vx = -10;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    const echo = world.balls.find((candidate) => candidate.role === 'echo')!;
+    expect(echo).toBeDefined();
+    expect(Math.abs(echo.x - world.boss.x)).toBeLessThan(2);
+    expect(echo.y).toBeLessThan(world.boss.y);
+    expect(echo.stocked).toBe(false);
+  });
+
+  it('counts card choices and transitions in the run timer', () => {
+    const world = createWorld();
+    world.phase = 'pick';
+    world.pick = { offers: ['poison'], resumePhase: 'battle', timer: 1, armed: false, selected: null };
+    step(world, NO_CONTROLS, 1);
+    expect(world.time).toBe(1);
+    world.phase = 'transition';
+    world.transitionTimer = 2;
+    step(world, NO_CONTROLS, 1);
+    expect(world.time).toBe(2);
   });
 
   it('freezes the world once a win/lose outcome is reached', () => {

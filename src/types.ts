@@ -8,7 +8,7 @@ export interface Vec2 {
 }
 
 export type BallRole = 'core' | 'hostile' | 'echo';
-export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet' | 'ballRestore' | 'critical';
+export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet' | 'ballRestore' | 'critical' | 'paintShot' | 'energyEcho';
 
 export interface Ball {
   id: number;
@@ -57,6 +57,7 @@ export interface Bullet {
   damage: number;
   lifetime: number;
   enemy?: boolean;
+  paint?: boolean;
 }
 
 export type FlipperSide = 'left' | 'right';
@@ -83,6 +84,7 @@ export interface Boss {
   maxHp: number;
   spawnTimer: number;
   specialTimer: number;
+  shotTimer: number;
   warningTimer: number;
   armorArc: number;
   poisonDamage: number;
@@ -94,6 +96,7 @@ export interface ArmorNode {
   angle: number;
   hp: number;
   maxHp: number;
+  ring: number;
 }
 
 export interface Bumper {

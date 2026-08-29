@@ -78,11 +78,11 @@ export const AIM_SPEED_PER_MULT = 35; // extra px/s per point of ball.multiplier
 
 // Boss
 export const BOSS_RADIUS = 22;
-export const BOSS_HPS = [1000, 1400, 1800];
-export const BOSS_ARMOR_COUNTS = [3, 9, 9];
-export const BOSS_ARMOR_HPS = [120, 80, 100];
-export const BOSS_ARMOR_ARCS = [0.72, 0.25, 0.25];
-export const BOSS_HOSTILE_INTERVALS = [15, 11, 8];
+export const BOSS_HPS = [1000, 1400, 1800, 3000];
+export const BOSS_ARMOR_COUNTS = [3, 9, 9, 18];
+export const BOSS_ARMOR_HPS = [120, 80, 100, 120];
+export const BOSS_ARMOR_ARCS = [0.72, 0.25, 0.25, 0.25];
+export const BOSS_HOSTILE_INTERVALS = [15, 11, 8, 6];
 export const BOSS_HIT_COOLDOWN = 0.25; // s, per-ball direct-damage cooldown while inside boss
 export const BOSS_MOVE_X = 55;
 export const BOSS_MOVE_Y = 12;
@@ -95,6 +95,7 @@ export const RECRUITER_STABILITIES = [5, 10, 20, 40];
 export const RECRUITER_LIFETIMES = [20, 30, 60, 120];
 export const ROLE_FLASH_DURATION = 0.25;
 export const ARMOR_ORBIT_RADIUS = 38;
+export const ARMOR_RING_GAP = 18;
 export const ARMOR_THICKNESS = 8;
 export const ARMOR_ROTATION_SPEED = 0.7;
 export const ARMOR_DEFLECT_SPEED = 360;
@@ -140,6 +141,8 @@ export const BULLET_SPEED = 420;
 export const BULLET_LIFETIME = 1.5;
 export const BULLET_INTERVALS = [0.9, 0.6, 0.6, 0.4];
 export const BULLET_DAMAGES = [4, 4, 8, 8];
+export const PAINT_SHOT_DAMAGES = [8, 14, 22];
+export const ENERGY_ECHO_CHANCES = [0.12, 0.25, 0.4];
 
 // Visual-only feedback (fx.ts): hit-flash, screen shake, floating damage
 // numbers. Purely cosmetic/render-side state, not simulation state - see
