@@ -59,6 +59,20 @@ describe('launch', () => {
     expect(world.coreBalls).toBe(3);
   });
 
+  it('temporary core clones do not consume or block reserve balls', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const clone = createBall(1, 120, 300);
+    clone.stocked = false;
+    world.balls = [clone];
+
+    step(world, { ...NO_CONTROLS, launch: true }, FIXED_DT);
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls.filter((ball) => ball.stocked)).toHaveLength(1);
+    expect(world.coreBalls).toBe(3);
+  });
+
   it('automatically launches after ten seconds without a player ball', () => {
     const world = createWorld();
 

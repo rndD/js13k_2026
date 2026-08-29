@@ -298,7 +298,7 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
 function updateBallRestore(world: World, dt: number): void {
   const rank = world.upgrades.ballRestore;
   if (!rank || (world.phase !== 'launch' && world.phase !== 'battle')) return;
-  const stored = world.coreBalls - world.balls.filter((ball) => ball.role === 'core' && ball.stocked).length;
+  const stored = world.coreBalls - world.balls.filter((ball) => ball.stocked).length;
   if (stored >= 4) return;
   const interval = BALL_RESTORE_TIMES[rank - 1];
   world.restoreTimer = Math.min(interval, world.restoreTimer + dt);
@@ -327,7 +327,7 @@ function baseMultiplier(world: World): number {
 }
 
 function updateLaunch(world: World, controls: ControlsState, dt: number): void {
-  const activeCores = world.balls.filter((ball) => ball.role === 'core').length;
+  const activeCores = world.balls.filter((ball) => ball.stocked).length;
   const canLaunch = world.phase === 'launch' || (world.phase === 'battle' && activeCores < world.coreBalls);
   if (!canLaunch) return;
 

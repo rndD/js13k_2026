@@ -70,7 +70,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
   if (!menu) drawFieldOverlay(ctx, world);
-  if (!menu && touch) drawTouchGuide(ctx, world);
+  if (!menu) drawControlGuide(ctx, world, touch);
   if (menu) drawMenu(ctx, touch);
   drawPickCards(ctx, world);
   ctx.restore();
@@ -107,9 +107,9 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillText(`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W / 2, 40);
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
-  const stored = world.coreBalls - world.balls.filter((ball) => ball.role === 'core' && ball.stocked).length;
+  const stored = world.coreBalls - world.balls.filter((ball) => ball.stocked).length;
   const regen = world.upgrades.ballRestore && stored < 4 ? ` +1 ${Math.ceil(BALL_RESTORE_TIMES[world.upgrades.ballRestore - 1] - world.restoreTimer)}s` : '';
-  ctx.fillText(`BALLS ${world.coreBalls}${regen}`, FIELD_W - pad, 40);
+  ctx.fillText(`BALLS ${stored}${regen}`, FIELD_W - pad, 40);
 
   ctx.strokeStyle = STRUCTURE;
   ctx.beginPath();
@@ -237,15 +237,17 @@ function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
  * here" before the first ball exists. Only relevant during the 'launch'
  * phase - once a real ball is in play it's drawn by drawBalls() instead. */
 function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World, touch: boolean): void {
-  const activeCores = world.balls.filter((ball) => ball.role === 'core').length;
+  const activeCores = world.balls.filter((ball) => ball.stocked).length;
   if (world.phase !== 'launch' && (world.phase !== 'battle' || activeCores >= world.coreBalls)) return;
   const { x, y } = world.launch;
   const power = world.launch.power;
 
   ctx.save();
   ctx.globalAlpha = activeCores && !world.launch.charging ? 0.35 : 1;
-  ctx.fillStyle = withAlpha(YELLOW, world.launch.charging ? 0.14 : 0.05);
-  ctx.fillRect(FIELD_W * 0.72, 0, FIELD_W * 0.28, FIELD_H * 0.42);
+  if (touch) {
+    ctx.fillStyle = withAlpha(YELLOW, world.launch.charging ? 0.14 : 0.05);
+    ctx.fillRect(FIELD_W * 0.72, 0, FIELD_W * 0.28, FIELD_H * 0.42);
+  }
   ctx.fillStyle = world.launch.charging ? YELLOW : STRUCTURE;
   ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
@@ -285,20 +287,22 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World, touch: bool
   ctx.restore();
 }
 
-function drawTouchGuide(ctx: CanvasRenderingContext2D, world: World): void {
+function drawControlGuide(ctx: CanvasRenderingContext2D, world: World, touch: boolean): void {
   if (world.time > 12) return;
   ctx.save();
   ctx.globalAlpha = Math.min(1, (12 - world.time) / 4);
-  ctx.fillStyle = withAlpha(CYAN, 0.08);
-  ctx.fillRect(0, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
-  ctx.fillRect(FIELD_W * 0.67, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
+  if (touch) {
+    ctx.fillStyle = withAlpha(CYAN, 0.08);
+    ctx.fillRect(0, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
+    ctx.fillRect(FIELD_W * 0.67, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
+  }
   ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = WHITE;
-  ctx.fillText('LEFT', FIELD_W * 0.16, FIELD_H - 24);
-  ctx.fillText('RIGHT', FIELD_W * 0.84, FIELD_H - 24);
-  ctx.fillText('HOLD TO CATCH MAIN BALL', FIELD_W / 2, FIELD_H * 0.67);
-  ctx.fillText('RELEASE TO AIM', FIELD_W / 2, FIELD_H * 0.67 + 14);
+  ctx.fillText(touch ? 'LEFT' : '←', FIELD_W * 0.16, FIELD_H - 24);
+  ctx.fillText(touch ? 'RIGHT' : '→', FIELD_W * 0.84, FIELD_H - 24);
+  ctx.fillText(touch ? 'HOLD TO CATCH MAIN BALL' : 'HOLD TO AIM', FIELD_W / 2, FIELD_H * 0.67);
+  if (touch) ctx.fillText('RELEASE TO AIM', FIELD_W / 2, FIELD_H * 0.67 + 14);
   ctx.restore();
 }
 
