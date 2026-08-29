@@ -144,7 +144,8 @@ export const CROSSFIRE: LevelData = {
 export const ORBIT: LevelData = {
   ...common,
   walls: [
-    ...LEVEL.walls,
+    [{ x: 0, y: FLOOR_Y }, { x: 106.6, y: FLOOR_Y }],
+    [{ x: 254.53, y: FLOOR_Y }, { x: FIELD_W, y: FLOOR_Y }],
     [{ x: 22, y: 270 }, { x: 72, y: 218 }, { x: 116, y: 244 }],
     [{ x: 338, y: 270 }, { x: 288, y: 218 }, { x: 244, y: 244 }],
     [{ x: 42, y: 412 }, { x: 102, y: 370 }],
@@ -160,9 +161,12 @@ export const ORBIT: LevelData = {
     { x: 286, y: 304, r: 16, kind: 'paint' },
     { x: 130, y: 270, r: 15, kind: 'paint' },
     { x: 230, y: 270, r: 15, kind: 'energy' },
+    { x: 62.97, y: 59.2, r: 18, kind: 'energy' },
+    { x: 298.66, y: 59.67, r: 18, kind: 'paint' },
   ],
   launchPads: [
-    LEVEL.launchPads[0], LEVEL.launchPads[1],
+    { x: 2.55, y: 526.63, angle: -1.127 },
+    { x: 357.88, y: 527.84, angle: -2.015 },
     { x: 74, y: 365, angle: -0.72 },
     { x: 286, y: 365, angle: Math.PI + 0.72 },
     { x: 120, y: 190, angle: 0.3 },
