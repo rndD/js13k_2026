@@ -439,6 +439,21 @@ describe('wild upgrades', () => {
     expect(world.balls.find((ball) => ball.id === 3)!.multiplier).toBe(5);
   });
 
+  it('never drains player balls below their upgraded base power', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades.overcharge = 3;
+    for (const armor of world.boss.armor) armor.hp = 0;
+    const ball = createBall(1, world.boss.x, world.boss.y);
+    ball.multiplier = 5;
+    world.balls = [ball];
+    world.bullets = [{ x: ball.x, y: ball.y, vx: 0, vy: 0, r: 3, damage: 0, lifetime: 1, enemy: true }];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(ball.multiplier).toBe(5);
+  });
+
   it('splits every current player-owned ball but not boss balls', () => {
     const world = createWorld();
     world.phase = 'battle';

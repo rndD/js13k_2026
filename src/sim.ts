@@ -288,6 +288,10 @@ function rollChance(world: World, chance: number): boolean {
   return world.randomSeed / 4294967296 < chance;
 }
 
+function baseMultiplier(world: World): number {
+  return 1 + OVERCHARGE_BONUSES[world.upgrades.overcharge];
+}
+
 function updateLaunch(world: World, controls: ControlsState, dt: number): void {
   const activeCores = world.balls.filter((ball) => ball.role === 'core').length;
   const canLaunch = world.phase === 'launch' || (world.phase === 'battle' && activeCores < world.coreBalls);
@@ -315,7 +319,7 @@ function updateLaunch(world: World, controls: ControlsState, dt: number): void {
 function launchBall(world: World, power: number): void {
   const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
   const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
-  ball.multiplier += OVERCHARGE_BONUSES[world.upgrades.overcharge];
+  ball.multiplier = baseMultiplier(world);
   ball.vx = -60;
   ball.vy = -speed;
   world.balls.push(ball);
@@ -370,7 +374,7 @@ function updateBullets(world: World, dt: number): void {
           if (ball.role === 'echo' || !ball.stocked) {
             explodeBall(world, ball);
             world.balls.splice(index, 1);
-          } else ball.multiplier = Math.max(1, ball.multiplier - 0.5);
+          } else ball.multiplier = Math.max(baseMultiplier(world), ball.multiplier - 0.5);
           world.sfx.push('armorHit');
           hit = true;
         }
@@ -556,7 +560,7 @@ function updateBalls(world: World, dt: number): void {
           world.sfx.push(armor.hp === 0 ? 'armorBreak' : 'armorHit');
           world.fx.push({ kind: 'armor', x: hit.x, y: hit.y, amount: damage, critical });
           if (critical) world.sfx.push('energyChime');
-          ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
+          ball.multiplier = Math.max(baseMultiplier(world), ball.multiplier - HIT_MULTIPLIER_COST);
           expired = spendEchoStability(ball);
         }
         break;
@@ -572,7 +576,7 @@ function updateBalls(world: World, dt: number): void {
         world.sfx.push('bossHitThud');
         world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg, critical });
         if (critical) world.sfx.push('energyChime');
-        ball.multiplier = Math.max(1, ball.multiplier - HIT_MULTIPLIER_COST);
+        ball.multiplier = Math.max(baseMultiplier(world), ball.multiplier - HIT_MULTIPLIER_COST);
         if (world.upgrades.poison > 0) {
           world.boss.poisonDamage += POISON_DAMAGE * world.upgrades.poison;
           world.boss.poisonTimer = POISON_DELAY;
