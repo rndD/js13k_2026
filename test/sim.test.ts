@@ -940,6 +940,20 @@ describe('contact sound limiting', () => {
 });
 
 describe('ball roles', () => {
+  it('enables automatic flippers by default and aims a nearby core ball', () => {
+    const world = ballOnFlipper('core');
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.upgrades.autoFlippers).toBe(1);
+    expect(world.flippers[0].active).toBe(true);
+    expect(world.phase).toBe('aim');
+    expect(world.aim?.sweepT).toBe(0.5);
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.phase).toBe('battle');
+    expect(world.balls[0].vy).toBeLessThan(0);
+  });
+
   it('removes non-core balls when their lifetime runs out but never times out cores', () => {
     const world = createWorld();
     world.phase = 'battle';
@@ -1061,6 +1075,7 @@ describe('ball roles', () => {
 
   it('does not convert a hostile on passive flipper contact', () => {
     const world = ballOnFlipper('hostile');
+    world.upgrades.autoFlippers = 0;
     world.balls.push(createBall(2, 30, 300));
 
     step(world, NO_CONTROLS, FIXED_DT);

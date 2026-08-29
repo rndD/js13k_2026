@@ -281,7 +281,9 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
 function updateFlippers(world: World, controls: ControlsState, dt: number): void {
   for (const f of world.flippers) {
     const wasActive = f.active;
-    f.active = f.side === 'left' ? controls.left : controls.right;
+    const held = f.side === 'left' ? controls.left : controls.right;
+    const auto = world.upgrades.autoFlippers && world.balls.some((ball) => Math.hypot(ball.x - f.pivot.x, ball.y - f.pivot.y) < 100);
+    f.active = !!(held || auto);
     if (f.active && !wasActive) world.sfx.push('flipperClick');
     const target = f.active ? f.activeAngle : f.restAngle;
     const maxStep = FLIPPER_ANGULAR_SPEED * dt;
@@ -531,7 +533,7 @@ function updateBalls(world: World, dt: number): void {
             side: f.side,
             centerAngle: aimCenterAngle(ball.x, ball.y, world.boss.x, world.boss.y),
             cone: aimConeForMultiplier(ball.multiplier),
-            sweepT: 0,
+            sweepT: world.upgrades.autoFlippers ? 0.5 : 0,
             dir: 1,
             timer: AIM_TIMEOUT,
           };
