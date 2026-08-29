@@ -56,3 +56,4 @@ Thanks:
 
 * [js13kGames](https://js13kgames.com/) for the competition
 * [Frank Force](https://github.com/KilledByAPixel) for [ZzFX](https://github.com/KilledByAPixel/ZzFX)
+* [Xem](https://github.com/xem) — custom physics inspired by [mini2Dphysics](https://github.com/xem/mini2Dphysics)
