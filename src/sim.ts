@@ -255,8 +255,10 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
     const originals = world.balls.filter((ball) => ball.role !== 'hostile');
     world.nextBallId = Math.max(world.nextBallId, ...world.balls.map((ball) => ball.id + 1));
     for (const ball of originals) {
-      const sign = ball.id % 2 ? 1 : -1;
-      world.balls.push({ ...ball, id: world.nextBallId++, stocked: false, x: ball.x + sign * ball.r, vx: ball.vx + sign * 90, gunTimer: 0 });
+      for (let copy = 1; copy < (world.upgrades.splitAll === 2 ? 4 : 2); copy++) {
+        const sign = copy % 2 ? 1 : -1;
+        world.balls.push({ ...ball, id: world.nextBallId++, stocked: false, x: ball.x + sign * ball.r * copy, vx: ball.vx + sign * 90, gunTimer: 0 });
+      }
     }
   }
   if (id === 'sacrifice') {

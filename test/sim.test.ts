@@ -305,9 +305,9 @@ describe('upgrade milestones', () => {
 describe('wild upgrades', () => {
   it('explains every sacrifice consequence on the card', () => {
     expect(abilityById('sacrifice').description).toEqual([
-      'Halve boss HP',
-      'Destroy all balls',
-      'Gain 2 more picks',
+      'Halve current boss HP',
+      'Lose all balls in play',
+      'Pick 2 more cards',
     ]);
   });
 
@@ -539,6 +539,12 @@ describe('wild upgrades', () => {
     expect(world.balls.filter((ball) => ball.role !== 'hostile')).toHaveLength(4);
     expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
     expect(new Set(world.balls.map((ball) => ball.id)).size).toBe(world.balls.length);
+
+    applyUpgrade(world, 'splitAll');
+
+    expect(world.balls.filter((ball) => ball.role !== 'hostile')).toHaveLength(16);
+    expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
+    expect(abilityDescription(abilityById('splitAll'), 1)).toEqual(['Quadruple all', 'your balls in play']);
   });
 
   it('sacrifice halves boss life, bursts every ball, and grants two choices', () => {
@@ -796,10 +802,10 @@ describe('outcomes', () => {
   });
 
   it('shows the stronger Blue Bumper temporary-ball chances', () => {
-    expect([0, 1, 2].map((rank) => abilityDescription(abilityById('energyEcho'), rank)[1])).toEqual([
-      '18% chance for',
-      '38% chance for',
-      '60% chance for',
+    expect([0, 1, 2].map((rank) => abilityDescription(abilityById('energyEcho'), rank)[0])).toEqual([
+      'Blue bumper: 18%',
+      'Blue bumper: 38%',
+      'Blue bumper: 60%',
     ]);
   });
 
@@ -1028,10 +1034,7 @@ describe('ball roles', () => {
     expect(echo.multiplier).toBe(4.5);
     expect(echo.stability).toBe(20);
     expect(echo.lifetime).toBe(60);
-    expect(abilityDescription(abilityById('recruiter'), 2)).toEqual([
-      'Temporary balls +1x',
-      '40 hits / 120 sec',
-    ]);
+    expect(abilityDescription(abilityById('recruiter'), 2)).toEqual(['Temporary balls', 'hit harder &', 'last longer']);
   });
 
   it('upgrades current echoes to 10, 20, then 40 useful hits', () => {
