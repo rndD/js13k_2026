@@ -8,7 +8,7 @@ import { createBgFx, drawBgFx, spawnBgFx, updateBgFx } from './bgfx';
 import { createCrtState, drawCrtFrame } from './crt';
 import { createFxState, drawFx, shakeOffset, updateFx } from './fx';
 import { bindInput } from './input';
-import { CYAN, ORANGE, rainbowGradient } from './palette';
+import { BG, CYAN, ORANGE } from './palette';
 import { ballColor, render } from './render';
 import { step } from './sim';
 import { playSfx } from './sound';
@@ -27,7 +27,6 @@ window.addEventListener('resize', resize);
 resize();
 
 const ctx = canvas.getContext('2d')!;
-const backdrop = rainbowGradient(ctx, FIELD_W, CANVAS_H, true);
 const controls = bindInput(canvas);
 
 // Dev workflow only: the level editor's "Play" button saves its draft to
@@ -145,7 +144,7 @@ function frame(now: number): void {
   // current frame, instead of relying on an imperfect translucent overlay
   // that technically never fully clears (it only asymptotically approaches
   // the background color).
-  ctx.fillStyle = backdrop;
+  ctx.fillStyle = BG;
   ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
 
   // Screen shake only offsets the actual drawing below, not the opaque
