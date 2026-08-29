@@ -940,12 +940,13 @@ describe('contact sound limiting', () => {
 });
 
 describe('ball roles', () => {
-  it('enables automatic flippers by default and aims a nearby core ball', () => {
+  it('automatically aims a nearby core ball after gaining Auto Flippers', () => {
     const world = ballOnFlipper('core');
+    expect(world.upgrades.autoFlippers).toBe(0);
+    world.upgrades.autoFlippers = 1;
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.upgrades.autoFlippers).toBe(1);
     expect(world.flippers[0].active).toBe(true);
     expect(world.phase).toBe('aim');
     expect(world.aim?.sweepT).toBe(0.5);
