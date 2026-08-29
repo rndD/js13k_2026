@@ -169,13 +169,13 @@ function updateVibrancy(world: World, dt: number): void {
   const damage = world.damageLog.reduce((sum, hit) => sum + hit[1], 0);
   const target = Math.min(1, damage / 120);
   world.vibrancy += (target - world.vibrancy) * Math.min(1, dt * 2);
-  world.spectrumPhase += dt * (0.15 + world.vibrancy * 0.7);
+  world.spectrumPhase += dt * (0.2 + world.vibrancy ** 2 * 4);
 }
 
 function queueUpgradeMilestones(world: World): void {
   while (world.points >= world.nextUpgradeAt) {
     world.pendingUpgrades += 1;
-    const nextGap = world.previousUpgradeGap + world.upgradeGap;
+    const nextGap = Math.min(5000, world.previousUpgradeGap + world.upgradeGap);
     world.previousUpgradeGap = world.upgradeGap;
     world.upgradeGap = nextGap;
     world.nextUpgradeAt += nextGap;

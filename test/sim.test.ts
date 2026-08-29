@@ -292,6 +292,14 @@ describe('upgrade milestones', () => {
     expect(world.pendingUpgrades).toBe(0);
     expect(world.upgradeCount).toBe(3);
   });
+
+  it('caps late-game upgrade gaps at 5000 points', () => {
+    const world = createWorld();
+    world.points = 1e6;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.upgradeGap).toBe(5000);
+    expect(world.nextUpgradeAt - 1e6).toBeLessThanOrEqual(5000);
+  });
 });
 
 describe('wild upgrades', () => {

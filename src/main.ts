@@ -46,6 +46,7 @@ function loadLevelOverride(): [LevelData | undefined, number] {
 let world = createWorld(...loadLevelOverride());
 let started = false;
 let waitForRelease = false;
+let endedAt = 0;
 function start(): void {
   if (!started) {
     started = true;
@@ -103,13 +104,14 @@ let bgFx = createBgFx();
 const crt = createCrtState(ctx);
 
 function restart(): void {
-  if (world.phase !== 'win' && world.phase !== 'lose') return;
+  if ((world.phase !== 'win' && world.phase !== 'lose') || performance.now() - endedAt < 2000) return;
   world = createWorld(...loadLevelOverride());
   fx = createFxState();
   bgFx = createBgFx();
   trails.clear();
   acc = 0;
   last = performance.now();
+  endedAt = 0;
   waitForRelease = true;
 }
 canvas.addEventListener('pointerdown', restart);
@@ -146,6 +148,7 @@ function frame(now: number): void {
     spawnBgFx(bgFx, world);
     acc -= FIXED_DT;
   }
+  if (!endedAt && (world.phase === 'win' || world.phase === 'lose')) endedAt = now;
   updateTrails();
   // Age/drift/fade every splat at a constant real-world rate, independent
   // of how many fixed steps ran this frame (unlike spawnBgFx above, which
