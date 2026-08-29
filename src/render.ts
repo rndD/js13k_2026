@@ -8,7 +8,7 @@
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIMES, BOSS_BLAST_RADIUS, BOSS_BLAST_WARNING, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
 import { abilityById, abilityDescription, type AbilityRarity } from './abilities';
-import { BG, CYAN, HUD_BG, LIME, MAGENTA, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
+import { BG, CYAN, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, rainbowGradient, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
 export const COLOR_HEX: Record<Ball['color'], string> = {
@@ -88,7 +88,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   const w = FIELD_W - pad * 2;
   const barH = 6;
 
-  ctx.fillStyle = HUD_BG;
+  ctx.fillStyle = rainbowGradient(ctx, FIELD_W, 0, true);
   ctx.fillRect(0, 0, FIELD_W, HUD_HEIGHT);
 
   ctx.font = '9px monospace';
@@ -169,7 +169,7 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawFieldBorder(ctx: CanvasRenderingContext2D): void {
-  ctx.strokeStyle = STRUCTURE;
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H);
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, 0);
@@ -185,7 +185,7 @@ function drawFieldBorder(ctx: CanvasRenderingContext2D): void {
  * else placed by the level - see level.ts). Gaps between/within walls are
  * where the ball can fall through (drains). */
 function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = STRUCTURE;
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H);
   ctx.lineWidth = 3;
   for (const wall of world.walls) {
     ctx.beginPath();
@@ -199,7 +199,7 @@ function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = STRUCTURE;
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H);
   ctx.lineWidth = 3;
   for (const p of world.pegs) {
     ctx.beginPath();
@@ -616,9 +616,7 @@ function drawMenu(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = withAlpha(BG, 0.9);
   ctx.fillRect(0, 0, FIELD_W, FIELD_H);
   ctx.textAlign = 'center';
-  const rainbow = ctx.createLinearGradient(45, 0, 315, 0);
-  [RED, ORANGE, YELLOW, LIME, CYAN, VIOLET, MAGENTA].forEach((color, i, all) => rainbow.addColorStop(i / (all.length - 1), color));
-  ctx.fillStyle = rainbow;
+  ctx.fillStyle = rainbowGradient(ctx, 315, 0);
   ctx.font = 'bold 27px monospace';
   ctx.fillText('ROLL THE RAINBOW!', FIELD_W / 2, 250);
   ctx.fillStyle = WHITE;

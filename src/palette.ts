@@ -1,24 +1,31 @@
 // Single source of truth for the game's color palette, per dis_doc.md's art
-// direction: a deep-indigo field with soft neutral geometry and a balanced
-// pastel spectrum. Warm/cool complements keep combat readable without the
-// previous acidic-neon look. Every draw
+// direction: saturated spectral pigments over a dark rainbow field. Colors
+// are vivid but glows stay restrained, avoiding both neon and washed pastels.
 // call in render.ts/fx.ts/main.ts pulls its colors from here instead of
 // scattering slightly-different hex literals per file.
-export const BG = '#17152b'; // deep indigo field
-export const HUD_BG = '#211d38';
-export const STRUCTURE = '#aaa5c4'; // muted lavender neutral
-export const WHITE = '#fff8ed'; // warm neutral
+export const BG = '#100b1f';
+export const HUD_BG = '#17102a';
+export const STRUCTURE = '#8d78c6';
+export const WHITE = '#f7f3e8';
 
-export const CYAN = '#72d7e8';
-export const MAGENTA = '#f08bc5';
-export const YELLOW = '#f6d66f';
-export const LIME = '#9bdd9a';
-export const VIOLET = '#b89ae8';
-export const RED = '#f07878';
-export const ORANGE = '#f2a36f';
+export const RED = '#e63946';
+export const ORANGE = '#f47c20';
+export const YELLOW = '#f2c94c';
+export const LIME = '#43aa5c';
+export const CYAN = '#2584d8';
+export const VIOLET = '#7048c8';
+export const MAGENTA = '#b83b9f';
 
 /** The fully-charged "rainbow" ball tier cycles through this sequence. */
-const SPECTRUM = [RED, YELLOW, LIME, CYAN, VIOLET, MAGENTA];
+export const SPECTRUM = [RED, ORANGE, YELLOW, LIME, CYAN, VIOLET, MAGENTA];
+const NIGHT = ['#280b18', '#2b1608', '#292507', '#092419', '#081d30', '#160d32', '#290d2b'];
+
+export function rainbowGradient(ctx: CanvasRenderingContext2D, x: number, y: number, dark = false): CanvasGradient {
+  const colors = dark ? NIGHT : SPECTRUM;
+  const g = ctx.createLinearGradient(0, 0, x, y);
+  colors.forEach((color, i) => g.addColorStop(i / (colors.length - 1), color));
+  return g;
+}
 
 /**
  * Smoothly interpolated point on SPECTRUM, driven by world.time - the
@@ -76,7 +83,7 @@ export function withAlpha(hex: string, a: number): string {
 export function withGlow(ctx: CanvasRenderingContext2D, color: string, blur: number, draw: () => void): void {
   ctx.save();
   ctx.shadowColor = color;
-  ctx.shadowBlur = blur * 0.4;
+  ctx.shadowBlur = blur * 0.3;
   draw();
   ctx.restore();
 }
