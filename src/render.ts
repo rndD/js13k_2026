@@ -94,13 +94,15 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.textAlign = 'left';
   ctx.fillStyle = STRUCTURE;
   ctx.fillText(`BOSS ${boss.rank + 1}`, pad, 14);
-  const seconds = Math.floor(world.time);
-  ctx.textAlign = 'right';
-  ctx.fillText(`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W - pad, 14);
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
 
   ctx.fillStyle = LIME;
+  ctx.textAlign = 'left';
   ctx.fillText(`POINTS ${Math.round(world.points)} / ${world.nextUpgradeAt}`, pad, 40);
+  const seconds = Math.floor(world.time);
+  ctx.fillStyle = STRUCTURE;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W / 2, 40);
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
   const stored = world.coreBalls - world.balls.filter((ball) => ball.role === 'core' && ball.stocked).length;
