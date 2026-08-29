@@ -114,19 +114,19 @@ export function step(world: World, controls: ControlsState, dt: number): World {
     return world;
   }
 
+  if (world.phase === 'pick') {
+    updateVibrancy(world, dt);
+    updatePick(world, controls, dt);
+    return world;
+  }
+
   world.time += dt;
-  if (world.phase === 'pick') for (const hit of world.damageLog) hit[0] += dt;
   while (world.damageLog[0]?.[0] < world.time - 3) world.damageLog.shift();
   updateVibrancy(world, dt);
 
   if (world.phase === 'transition') {
     world.transitionTimer -= dt;
     if (world.transitionTimer <= 0) startNextBoss(world);
-    return world;
-  }
-
-  if (world.phase === 'pick') {
-    updatePick(world, controls, dt);
     return world;
   }
 
@@ -497,13 +497,11 @@ function updateBalls(world: World, dt: number): void {
       }
       if (wallResult === 'bounced') {
         bounced = true;
-        world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
       }
 
       for (const wall of world.walls) {
         if (resolveWall(ball, wall, WALL_THICKNESS)) {
           bounced = true;
-          world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
         }
       }
 
@@ -546,7 +544,6 @@ function updateBalls(world: World, dt: number): void {
       if (ball.role !== 'hostile') for (const peg of world.pegs) {
         if (resolveBumper(ball, peg, PEG_IMPULSE)) {
           bounced = true; // plain physical bounce, no scoring effect
-          world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
         }
       }
 
@@ -626,6 +623,7 @@ function updateBalls(world: World, dt: number): void {
     // of multiple clicks for one visible bounce would sound like a glitch.
     if (bounced && !drained && !aiming && !expired && ball.wallSoundTicks === 0) {
       world.sfx.push('wallTick');
+      world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
       ball.wallSoundTicks = WALL_SOUND_TICKS;
     }
 

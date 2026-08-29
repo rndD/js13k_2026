@@ -782,16 +782,16 @@ describe('outcomes', () => {
     expect(echo.stocked).toBe(false);
   });
 
-  it('counts card choices and transitions in the run timer', () => {
+  it('pauses the run timer during card choices but counts transitions', () => {
     const world = createWorld();
     world.phase = 'pick';
     world.pick = { offers: ['poison'], resumePhase: 'battle', timer: 1, armed: false, selected: null };
     step(world, NO_CONTROLS, 1);
-    expect(world.time).toBe(1);
+    expect(world.time).toBe(0);
     world.phase = 'transition';
     world.transitionTimer = 2;
     step(world, NO_CONTROLS, 1);
-    expect(world.time).toBe(2);
+    expect(world.time).toBe(1);
   });
 
   it('freezes the world once a win/lose outcome is reached', () => {
@@ -905,21 +905,24 @@ function ballOnFlipper(role: 'core' | 'hostile' | 'echo') {
 }
 
 describe('contact sound limiting', () => {
-  it('plays wall sound at most once per ball every three simulation ticks', () => {
+  it('emits one wall sound and structure splat per ball every ten simulation ticks', () => {
     const world = createWorld();
     world.phase = 'battle';
     const ball = createBall(1, 3, 350);
     world.balls = [ball];
 
     const wallSounds: number[] = [];
-    for (let tick = 0; tick < 4; tick++) {
+    const splats: number[] = [];
+    for (let tick = 0; tick < 11; tick++) {
       ball.x = 3;
       ball.vx = -100;
       step(world, NO_CONTROLS, FIXED_DT);
       if (world.sfx.includes('wallTick')) wallSounds.push(tick);
+      if (world.contacts.some((contact) => contact.kind === 'structure')) splats.push(tick);
     }
 
-    expect(wallSounds).toEqual([0, 3]);
+    expect(wallSounds).toEqual([0, 10]);
+    expect(splats).toEqual(wallSounds);
   });
 });
 

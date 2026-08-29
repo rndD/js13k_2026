@@ -135,7 +135,7 @@ export const LAUNCH_MIN_SPEED = 260;
 export const LAUNCH_MAX_SPEED = 560;
 
 export const FIXED_DT = 1 / 60;
-export const WALL_SOUND_TICKS = 3; // per-ball wall/peg sound limiter
+export const WALL_SOUND_TICKS = 10; // per-ball wall/peg sound limiter
 export const HIT_MULTIPLIER_COST = 0.5;
 export const BULLET_SPEED = 420;
 export const BULLET_LIFETIME = 1.5;
