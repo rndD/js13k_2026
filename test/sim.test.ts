@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ARMOR_ORBIT_RADIUS, AUTO_LAUNCH_DELAY, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
 import { createBall, createBoss, createWorld } from '../src/entities';
-import { abilityById } from '../src/abilities';
+import { abilityById, abilityDescription } from '../src/abilities';
 import { LEVEL, LEVELS } from '../src/level';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
@@ -788,12 +788,60 @@ describe('ball roles', () => {
     expect(echo.role).toBe('echo');
     expect(echo.charge).toBe(2);
     expect(echo.multiplier).toBe(4.5);
-    expect(echo.stability).toBe(9);
-    expect(abilityById('recruiter').description).toEqual([
-      'Captured balls:',
-      '+1x starting power',
-      'Survive 2 more hits',
+    expect(echo.stability).toBe(20);
+    expect(echo.lifetime).toBe(60);
+    expect(abilityDescription(abilityById('recruiter'), 2)).toEqual([
+      'Echoes: +1x power',
+      '40 hits / 120 sec',
     ]);
+  });
+
+  it('upgrades current echoes to 10, 20, then 40 useful hits', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const echo = createBall(1, 180, 300, 'echo');
+    world.balls = [echo];
+
+    applyUpgrade(world, 'recruiter');
+    expect([echo.multiplier, echo.stability, echo.lifetime]).toEqual([2, 10, 30]);
+    applyUpgrade(world, 'recruiter');
+    expect([echo.multiplier, echo.stability, echo.lifetime]).toEqual([3, 20, 60]);
+    applyUpgrade(world, 'recruiter');
+    expect([echo.multiplier, echo.stability, echo.lifetime]).toEqual([4, 40, 120]);
+  });
+
+  it('lets hostile balls pass through pegs on their way to the flippers', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.walls = [];
+    world.bumpers = [];
+    world.launchPads = [];
+    world.pegs = [{ x: 180, y: 300, r: 8 }];
+    const hostile = createBall(1, 192, 300, 'hostile');
+    hostile.vx = -10;
+    world.balls = [hostile];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(hostile.vx).toBe(-10);
+    expect(world.contacts).toEqual([]);
+  });
+
+  it('relaunches a ball that escaped through a non-drain boundary', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const ball = createBall(1, -100, 300);
+    ball.multiplier = 3;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls).toEqual([ball]);
+    expect(ball.x).toBeGreaterThan(world.launch.x - 5);
+    expect(ball.y).toBeLessThan(world.launch.y);
+    expect(ball.vy).toBeLessThan(0);
+    expect(ball.multiplier).toBe(3);
+    expect(world.coreBalls).toBe(3);
   });
 
   it('does not convert a hostile on passive flipper contact', () => {

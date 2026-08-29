@@ -41,8 +41,6 @@ import {
   BUMPER_IMPULSE,
   CRITICAL_CHANCE,
   DIRECT_DAMAGE_BASE,
-  ECHO_STABILITY,
-  ECHO_LIFETIME,
   ENERGY_TARGET_MULT_BONUS,
   FIELD_H,
   FIELD_W,
@@ -72,6 +70,8 @@ import {
   POINTS_PAINT_TARGET,
   POISON_DAMAGE,
   POISON_DELAY,
+  RECRUITER_LIFETIMES,
+  RECRUITER_STABILITIES,
   ROLE_FLASH_DURATION,
   STUCK_MAX_RESCUES,
   STUCK_PROGRESS_RADIUS,
@@ -208,6 +208,14 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
   if (id === 'extraCore') {
     const amount = world.upgrades.extraCore + 1;
     world.coreBalls += amount;
+  }
+  if (id === 'recruiter') {
+    const rank = world.upgrades.recruiter;
+    for (const ball of world.balls) if (ball.role === 'echo') {
+      ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + 1);
+      ball.stability = Math.max(ball.stability, RECRUITER_STABILITIES[rank]);
+      ball.lifetime = Math.max(ball.lifetime, RECRUITER_LIFETIMES[rank]);
+    }
   }
   if (id === 'overcharge') {
     const rank = world.upgrades.overcharge;
@@ -400,6 +408,7 @@ function updateBalls(world: World, dt: number): void {
   const subDt = dt / BALL_SUBSTEPS;
 
   for (const ball of world.balls) {
+    recoverEscapedBall(world, ball);
     ball.r = ball.role === 'hostile' ? BALL_RADIUS : BALL_RADIUS * (1 + Math.max(0, ball.multiplier - 1) * BALL_SIZE_PER_MULT);
     ball.roleFlash -= dt;
     ball.wallSoundTicks = Math.max(0, ball.wallSoundTicks - 1);
@@ -482,7 +491,7 @@ function updateBalls(world: World, dt: number): void {
       }
       if (aiming) break;
 
-      for (const peg of world.pegs) {
+      if (ball.role !== 'hostile') for (const peg of world.pegs) {
         if (resolveBumper(ball, peg, PEG_IMPULSE)) {
           bounced = true; // plain physical bounce, no scoring effect
           world.contacts.push({ kind: 'structure', x: ball.x, y: ball.y });
@@ -572,6 +581,8 @@ function updateBalls(world: World, dt: number): void {
       continue;
     }
 
+    recoverEscapedBall(world, ball);
+
     if (!aiming && checkStuck(world, ball, dt)) {
       consumeDrainedBall(world, ball);
       world.sfx.push('ballDrain');
@@ -611,6 +622,21 @@ function consumeDrainedBall(world: World, ball: Ball): void {
   addPoints(world, -(ball.role === 'core' ? POINTS_CORE_DRAIN_PENALTY : POINTS_OTHER_DRAIN_PENALTY));
 }
 
+function recoverEscapedBall(world: World, ball: Ball): void {
+  const invalid = !Number.isFinite(ball.x + ball.y + ball.vx + ball.vy);
+  const escaped = ball.x + ball.r < 0 || ball.x - ball.r > FIELD_W || ball.y + ball.r < 0;
+  if (!invalid && (!escaped || ball.y - ball.r > FIELD_H)) return;
+  ball.x = world.launch.x;
+  ball.y = world.launch.y;
+  ball.vx = -60;
+  ball.vy = -LAUNCH_MIN_SPEED;
+  ball.anchorX = ball.x;
+  ball.anchorY = ball.y;
+  ball.stuckTimer = 0;
+  ball.rescueCount = 0;
+  world.sfx.push('launchWhoosh');
+}
+
 function addPoints(world: World, amount: number): void {
   world.points = Math.max(0, world.points + amount);
 }
@@ -629,8 +655,8 @@ function explodeBall(world: World, ball: Ball): void {
 function convertHostile(world: World, ball: Ball): void {
   const recruiter = world.upgrades.recruiter;
   ball.role = 'echo';
-  ball.stability = ECHO_STABILITY + recruiter * 2;
-  ball.lifetime = ECHO_LIFETIME;
+  ball.stability = RECRUITER_STABILITIES[recruiter];
+  ball.lifetime = RECRUITER_LIFETIMES[recruiter];
   ball.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades.overcharge];
   ball.charge = recruiter;
   ball.color = 'white';

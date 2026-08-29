@@ -13,7 +13,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Extra Ball
   { id: 'extraCore', description: ['Add 2 balls', 'to your stock'], rarity: 'common', maxStacks: 4 },
   // Recruiter
-  { id: 'recruiter', description: ['Captured balls:', '+1x starting power', 'Survive 2 more hits'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 'recruiter', description: ['Stronger echoes'], rarity: 'uncommon', maxStacks: 3 },
   // Poison
   { id: 'poison', description: ['Poison'], rarity: 'rare', maxStacks: 3 },
   // Auto Gun
@@ -38,6 +38,7 @@ export function abilityById(id: AbilityId): AbilityDefinition {
 
 export function abilityDescription(ability: AbilityDefinition, rank: number): string[] {
   if (ability.id === 'extraCore') return [`Add ${rank + 2} balls`, 'to your stock'];
+  if (ability.id === 'recruiter') return [`Echoes: +1x power`, `${[10, 20, 40][rank]} hits / ${[30, 60, 120][rank]} sec`];
   if (ability.id === 'overcharge') return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];
