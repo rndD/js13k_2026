@@ -503,7 +503,7 @@ describe('wild upgrades', () => {
     const idle = createWorld();
     world.phase = 'pick';
     idle.phase = 'pick';
-    world.damageLog = [[0, 105]];
+    world.damageLog = [[0, 120]];
 
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.vibrancy).toBeGreaterThan(0);
