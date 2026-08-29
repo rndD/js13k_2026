@@ -76,7 +76,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   ctx.restore();
 }
 
-function damage10(world: World): number {
+function recentDamage(world: World): number {
   return Math.round(world.damageLog.reduce((sum, hit) => sum + hit[1], 0));
 }
 
@@ -84,7 +84,7 @@ function drawDamageDebug(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.font = '8px monospace';
   ctx.textAlign = 'left';
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText(`DPS ${damage10(world)}/10s`, 8, FIELD_H - 8);
+  ctx.fillText(`DPS ${recentDamage(world)}/3s`, 8, FIELD_H - 8);
 }
 
 function drawBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, frac: number, color: string): void {
@@ -634,8 +634,6 @@ function drawMenu(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
   ctx.fillText('CLICK OR PRESS A KEY', FIELD_W / 2, 325);
-  ctx.fillStyle = rainbowColor(performance.now() / 700);
-  ctx.fillText('RED + BLUE = RAINBOW', FIELD_W / 2, 350);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText('A/D FLIPPERS  W LAUNCH', FIELD_W / 2, 385);
+  ctx.fillText('A/D FLIPPERS  W LAUNCH', FIELD_W / 2, 365);
 }

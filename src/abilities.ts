@@ -34,6 +34,7 @@ export const ABILITIES: AbilityDefinition[] = [
   { id: 'paintShot', description: ['Red bumpers shoot', 'through the table'], rarity: 'rare', maxStacks: 3 },
   // Echo Spark
   { id: 'energyEcho', description: ['Blue bumpers spawn', 'temporary balls'], rarity: 'rare', maxStacks: 3 },
+  { id: 'foreverRainbow', description: ['All your balls stay', 'rainbow forever'], rarity: 'rare', maxStacks: 1 },
 ];
 
 export function abilityById(id: AbilityId): AbilityDefinition {

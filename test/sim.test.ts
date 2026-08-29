@@ -439,6 +439,24 @@ describe('wild upgrades', () => {
     expect(world.balls.find((ball) => ball.id === 3)!.multiplier).toBe(5);
   });
 
+  it('makes current and future player balls permanently rainbow', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const mine = createBall(1, 80, 300);
+    const hostile = createBall(2, 160, 300, 'hostile');
+    world.balls = [mine, hostile];
+    world.nextBallId = 3;
+
+    applyUpgrade(world, 'foreverRainbow');
+    expect(mine.color).toBe('rainbow');
+    expect(hostile.color).not.toBe('rainbow');
+
+    step(world, { ...NO_CONTROLS, launch: true }, FIXED_DT);
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(mine.color).toBe('rainbow');
+    expect(world.balls.find((ball) => ball.id === 3)!.color).toBe('rainbow');
+  });
+
   it('never drains player balls below their upgraded base power', () => {
     const world = createWorld();
     world.phase = 'battle';
@@ -454,7 +472,7 @@ describe('wild upgrades', () => {
     expect(ball.multiplier).toBe(5);
   });
 
-  it('tracks damage dealt during the latest ten seconds', () => {
+  it('tracks damage dealt during the latest three seconds', () => {
     const world = createWorld();
     world.phase = 'battle';
     for (const armor of world.boss.armor) armor.hp = 0;
@@ -465,19 +483,19 @@ describe('wild upgrades', () => {
 
     world.phase = 'pick';
     world.pick = null;
-    for (let i = 0; i < 601; i++) step(world, NO_CONTROLS, FIXED_DT);
+    for (let i = 0; i < 181; i++) step(world, NO_CONTROLS, FIXED_DT);
     expect(world.damageLog).toHaveLength(1);
 
     world.phase = 'transition';
     world.transitionTimer = 20;
-    for (let i = 0; i < 601; i++) step(world, NO_CONTROLS, FIXED_DT);
+    for (let i = 0; i < 181; i++) step(world, NO_CONTROLS, FIXED_DT);
     expect(world.damageLog).toHaveLength(0);
   });
 
   it('animates toward damage-driven vibrancy instead of changing instantly', () => {
     const world = createWorld();
     world.phase = 'pick';
-    world.damageLog = [[0, 350]];
+    world.damageLog = [[0, 105]];
 
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.vibrancy).toBeGreaterThan(0);

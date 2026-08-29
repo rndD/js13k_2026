@@ -8,7 +8,7 @@ export interface Vec2 {
 }
 
 export type BallRole = 'core' | 'hostile' | 'echo';
-export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet' | 'ballRestore' | 'critical' | 'paintShot' | 'energyEcho';
+export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet' | 'ballRestore' | 'critical' | 'paintShot' | 'energyEcho' | 'foreverRainbow';
 
 export interface Ball {
   id: number;

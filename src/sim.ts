@@ -116,7 +116,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
 
   world.time += dt;
   if (world.phase === 'pick') for (const hit of world.damageLog) hit[0] += dt;
-  while (world.damageLog[0]?.[0] < world.time - 10) world.damageLog.shift();
+  while (world.damageLog[0]?.[0] < world.time - 3) world.damageLog.shift();
   updateVibrancy(world, dt);
 
   if (world.phase === 'transition') {
@@ -167,7 +167,7 @@ function trackDamage(world: World, amount: number): void {
 
 function updateVibrancy(world: World, dt: number): void {
   const damage = world.damageLog.reduce((sum, hit) => sum + hit[1], 0);
-  const target = Math.min(1, damage / 350);
+  const target = Math.min(1, damage / 105);
   world.vibrancy += (target - world.vibrancy) * Math.min(1, dt * 2);
 }
 
@@ -239,6 +239,7 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
     const bonus = OVERCHARGE_BONUSES[rank] - OVERCHARGE_BONUSES[rank - 1];
     for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + bonus);
   }
+  if (id === 'foreverRainbow') for (const ball of world.balls) if (ball.role !== 'hostile') makeRainbow(ball);
   if (id === 'splitAll') {
     const originals = world.balls.filter((ball) => ball.role !== 'hostile');
     world.nextBallId = Math.max(world.nextBallId, ...world.balls.map((ball) => ball.id + 1));
@@ -334,6 +335,7 @@ function launchBall(world: World, power: number): void {
   const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
   const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
   ball.multiplier = baseMultiplier(world);
+  if (world.upgrades.foreverRainbow) makeRainbow(ball);
   ball.vx = -60;
   ball.vy = -speed;
   world.balls.push(ball);
@@ -703,6 +705,7 @@ function convertHostile(world: World, ball: Ball): void {
   ball.charge = recruiter;
   ball.color = 'white';
   ball.accent = false;
+  if (world.upgrades.foreverRainbow) makeRainbow(ball);
   ball.roleFlash = ROLE_FLASH_DURATION;
   addPoints(world, POINTS_HOSTILE_CAPTURE);
   world.sfx.push('echoCapture');
@@ -752,6 +755,12 @@ function deriveColor(hasPaint: boolean, hasAccent: boolean): Ball['color'] {
   if (hasPaint) return 'red';
   if (hasAccent) return 'blue';
   return 'white';
+}
+
+function makeRainbow(ball: Ball): void {
+  ball.charge = Math.max(1, ball.charge);
+  ball.accent = true;
+  ball.color = 'rainbow';
 }
 
 /**
@@ -861,6 +870,7 @@ function applyEnergyHit(world: World, ball: Ball): void {
     echo.lifetime = RECRUITER_LIFETIMES[recruiter];
     echo.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades.overcharge];
     echo.charge = recruiter;
+    if (world.upgrades.foreverRainbow) makeRainbow(echo);
     echo.vx = world.randomSeed % 121 - 60;
     echo.vy = -HOSTILE_BALL_SPEED;
     world.balls.push(echo);
