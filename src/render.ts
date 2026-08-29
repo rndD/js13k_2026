@@ -8,7 +8,7 @@
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIMES, BOSS_BLAST_RADIUS, BOSS_BLAST_WARNING, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
 import { abilityById, abilityDescription, type AbilityRarity } from './abilities';
-import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
+import { BG, CYAN, HUD_BG, LIME, MAGENTA, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
 export const COLOR_HEX: Record<Ball['color'], string> = {
@@ -278,6 +278,15 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const { boss } = world;
   const r = boss.r;
   const exposed = boss.armor.every((armor) => armor.hp <= 0);
+
+  if (boss.rank === 3) {
+    ctx.fillStyle = rainbowColor(world.time);
+    ctx.beginPath();
+    ctx.moveTo(boss.x - 5, boss.y - r + 2);
+    ctx.lineTo(boss.x, boss.y - r - 25);
+    ctx.lineTo(boss.x + 5, boss.y - r + 2);
+    ctx.fill();
+  }
 
   for (const armor of boss.armor) {
     if (armor.hp <= 0) continue;
@@ -607,12 +616,16 @@ function drawMenu(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = withAlpha(BG, 0.9);
   ctx.fillRect(0, 0, FIELD_W, FIELD_H);
   ctx.textAlign = 'center';
-  ctx.fillStyle = RED;
+  const rainbow = ctx.createLinearGradient(45, 0, 315, 0);
+  [RED, ORANGE, YELLOW, LIME, CYAN, VIOLET, MAGENTA].forEach((color, i, all) => rainbow.addColorStop(i / (all.length - 1), color));
+  ctx.fillStyle = rainbow;
   ctx.font = 'bold 27px monospace';
-  ctx.fillText('PINBALL DEFENSE', FIELD_W / 2, 250);
+  ctx.fillText('ROLL THE RAINBOW!', FIELD_W / 2, 250);
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
   ctx.fillText('CLICK OR PRESS A KEY', FIELD_W / 2, 325);
+  ctx.fillStyle = rainbowColor(performance.now() / 700);
+  ctx.fillText('RED + BLUE = RAINBOW', FIELD_W / 2, 350);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText('A/D FLIPPERS  W LAUNCH', FIELD_W / 2, 365);
+  ctx.fillText('A/D FLIPPERS  W LAUNCH', FIELD_W / 2, 385);
 }

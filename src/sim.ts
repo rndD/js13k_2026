@@ -342,7 +342,7 @@ function updateGun(world: World, dt: number): void {
       vx: Math.cos(angle) * BULLET_SPEED,
       vy: Math.sin(angle) * BULLET_SPEED,
       r: 2,
-      damage: damage * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier),
+      damage: damage * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier) * (ball.color === 'rainbow' ? 1.25 : 1),
       lifetime: BULLET_LIFETIME,
     });
     ball.gunTimer = interval;
@@ -549,7 +549,7 @@ function updateBalls(world: World, dt: number): void {
         world.contacts.push({ kind: 'armor', x: hit.x, y: hit.y });
         if (ball.role !== 'hostile' && ball.armorCooldown <= 0) {
           const critical = rollCritical(world);
-          const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1)) * (critical ? 2 : 1);
+          const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1) * (ball.color === 'rainbow' ? 1.25 : 1)) * (critical ? 2 : 1);
           armor.hp = Math.max(0, armor.hp - damage);
           ball.armorCooldown = ARMOR_HIT_COOLDOWN;
           addPoints(world, damage + (armor.hp === 0 ? POINTS_ARMOR_BREAK : 0));
@@ -565,7 +565,7 @@ function updateBalls(world: World, dt: number): void {
 
       if (!hitArmor && !blockedBossThisTick && ball.role !== 'hostile' && ball.bossCooldown <= 0 && overlapsCircle(ball, world.boss)) {
         const critical = rollCritical(world);
-        const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier) * (critical ? 2 : 1);
+        const dmg = Math.round(DIRECT_DAMAGE_BASE * ball.multiplier * (ball.color === 'rainbow' ? 1.25 : 1)) * (critical ? 2 : 1);
         world.boss.hp = Math.max(0, world.boss.hp - dmg);
         addPoints(world, dmg);
         ball.bossCooldown = BOSS_HIT_COOLDOWN;
@@ -818,7 +818,7 @@ function applyPaintHit(world: World, ball: Ball, bumper: Bumper): void {
   if (rank) {
     const angle = Math.atan2(world.boss.y - bumper.y, world.boss.x - bumper.x);
     const gun = world.upgrades.autoGun;
-    const damage = (PAINT_SHOT_DAMAGES[rank - 1] + (gun ? BULLET_DAMAGES[gun - 1] : 0)) * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier);
+    const damage = (PAINT_SHOT_DAMAGES[rank - 1] + (gun ? BULLET_DAMAGES[gun - 1] : 0)) * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier) * (ball.color === 'rainbow' ? 1.25 : 1);
     world.bullets.push({ x: bumper.x, y: bumper.y, vx: Math.cos(angle) * BULLET_SPEED, vy: Math.sin(angle) * BULLET_SPEED, r: 4, damage, lifetime: 2, paint: true });
     world.sfx.push('gunShot');
   }

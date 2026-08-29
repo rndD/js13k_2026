@@ -156,6 +156,21 @@ describe('boss ghost damage', () => {
     expect(hp - world.boss.hp).toBe(20);
     expect(ball.multiplier).toBe(1.5);
   });
+
+  it('rewards a rainbow ball with 25% more direct damage', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    const ball = createBall(1, world.boss.x, world.boss.y);
+    ball.multiplier = 2;
+    ball.color = 'rainbow';
+    world.balls = [ball];
+    const hp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(hp - world.boss.hp).toBe(25);
+  });
 });
 
 describe('paint bumper', () => {

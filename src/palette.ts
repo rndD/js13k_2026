@@ -1,21 +1,21 @@
 // Single source of truth for the game's color palette, per dis_doc.md's art
-// direction: an almost-black/deep-violet field with pale-grey/white base
-// geometry, and neon reserved for charged/energized things - "кислотные
-// спектральные акценты": cyan, magenta, yellow, lime, violet. Every draw
+// direction: a deep-indigo field with soft neutral geometry and a balanced
+// pastel spectrum. Warm/cool complements keep combat readable without the
+// previous acidic-neon look. Every draw
 // call in render.ts/fx.ts/main.ts pulls its colors from here instead of
 // scattering slightly-different hex literals per file.
-export const BG = '#050208'; // field/canvas background
-export const HUD_BG = '#0a0612'; // HUD strip background
-export const STRUCTURE = '#8888a0'; // pale grey - walls, pegs, flippers, HUD labels
-export const WHITE = '#e8e8f0'; // bright neutral - fresh ball, boss face, plunger outline
+export const BG = '#17152b'; // deep indigo field
+export const HUD_BG = '#211d38';
+export const STRUCTURE = '#aaa5c4'; // muted lavender neutral
+export const WHITE = '#fff8ed'; // warm neutral
 
-export const CYAN = '#38d6ff'; // energy bumper / charged ball
-export const MAGENTA = '#ff3bd6'; // spectral accent
-export const YELLOW = '#ffe93b'; // launch pads (speed), aim indicator
-export const LIME = '#9dff3b'; // build-power / multiplier readout
-export const VIOLET = '#b23bff'; // rainbow-tier spectrum accent, active-flipper glow
-export const RED = '#ff3b6b'; // paint bumper / boss hp / damage
-export const ORANGE = '#ff8a3b'; // warm hostile accent
+export const CYAN = '#72d7e8';
+export const MAGENTA = '#f08bc5';
+export const YELLOW = '#f6d66f';
+export const LIME = '#9bdd9a';
+export const VIOLET = '#b89ae8';
+export const RED = '#f07878';
+export const ORANGE = '#f2a36f';
 
 /** The fully-charged "rainbow" ball tier cycles through this sequence. */
 const SPECTRUM = [RED, YELLOW, LIME, CYAN, VIOLET, MAGENTA];
@@ -76,7 +76,7 @@ export function withAlpha(hex: string, a: number): string {
 export function withGlow(ctx: CanvasRenderingContext2D, color: string, blur: number, draw: () => void): void {
   ctx.save();
   ctx.shadowColor = color;
-  ctx.shadowBlur = blur;
+  ctx.shadowBlur = blur * 0.4;
   draw();
   ctx.restore();
 }
