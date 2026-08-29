@@ -187,7 +187,7 @@ function beginPick(world: World, resumePhase = world.phase): void {
   const offers: AbilityId[] = [];
   while (offers.length < 3 && eligible.length) {
     const groups = ['common', 'uncommon', 'rare'].map((rarity) => eligible.filter((ability) => ability.rarity === rarity));
-    const weights = [6, 3, 1];
+    const weights = [10, 7, 3];
     let roll = random(world) * groups.reduce((sum, group, i) => sum + (group.length ? weights[i] : 0), 0);
     let tier = 0;
     while (!groups[tier].length || (roll -= weights[tier]) > 0) tier++;
