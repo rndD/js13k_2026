@@ -72,19 +72,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   if (!menu) drawFieldOverlay(ctx, world);
   if (menu) drawMenu(ctx, touch);
   drawPickCards(ctx, world);
-  if ((import.meta as any).env.DEV) drawDamageDebug(ctx, world);
   ctx.restore();
-}
-
-function recentDamage(world: World): number {
-  return Math.round(world.damageLog.reduce((sum, hit) => sum + hit[1], 0));
-}
-
-function drawDamageDebug(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.font = '8px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillStyle = STRUCTURE;
-  ctx.fillText(`DPS ${recentDamage(world)}/3s`, 8, FIELD_H - 8);
 }
 
 function drawBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, frac: number, color: string): void {

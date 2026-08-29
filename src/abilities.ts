@@ -47,7 +47,7 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 'recruiter') return [`Temporary balls +1x`, `${[10, 20, 40][rank]} hits / ${[30, 60, 120][rank]} sec`];
   if (ability.id === 'overcharge') return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 'paintShot') return [`Red bumper shot`, `${[8, 14, 22][rank]} base damage`];
-  if (ability.id === 'energyEcho') return [`Blue bumper:`, `${[12, 25, 40][rank]}% chance for`, `temporary ball`];
+  if (ability.id === 'energyEcho') return [`Blue bumper:`, `${[18, 38, 60][rank]}% chance for`, `temporary ball`];
   if (ability.id === 'ballRestore') return ['Restore +1 ball', `every ${[30, 25][rank]} seconds`];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];

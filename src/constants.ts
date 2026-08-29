@@ -142,7 +142,7 @@ export const BULLET_LIFETIME = 1.5;
 export const BULLET_INTERVALS = [0.9, 0.6, 0.6, 0.4];
 export const BULLET_DAMAGES = [4, 4, 8, 8];
 export const PAINT_SHOT_DAMAGES = [8, 14, 22];
-export const ENERGY_ECHO_CHANCES = [0.12, 0.25, 0.4];
+export const ENERGY_ECHO_CHANCES = [0.18, 0.38, 0.6];
 
 // Visual-only feedback (fx.ts): hit-flash, screen shake, floating damage
 // numbers. Purely cosmetic/render-side state, not simulation state - see

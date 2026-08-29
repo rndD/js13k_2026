@@ -795,6 +795,14 @@ describe('outcomes', () => {
     expect(echo.stocked).toBe(false);
   });
 
+  it('shows the stronger Blue Bumper temporary-ball chances', () => {
+    expect([0, 1, 2].map((rank) => abilityDescription(abilityById('energyEcho'), rank)[1])).toEqual([
+      '18% chance for',
+      '38% chance for',
+      '60% chance for',
+    ]);
+  });
+
   it('pauses the run timer during card choices but counts transitions', () => {
     const world = createWorld();
     world.phase = 'pick';
