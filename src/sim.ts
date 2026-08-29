@@ -169,6 +169,7 @@ function updateVibrancy(world: World, dt: number): void {
   const damage = world.damageLog.reduce((sum, hit) => sum + hit[1], 0);
   const target = Math.min(1, damage / 105);
   world.vibrancy += (target - world.vibrancy) * Math.min(1, dt * 2);
+  world.spectrumPhase += dt * (0.15 + world.vibrancy * 0.7);
 }
 
 function queueUpgradeMilestones(world: World): void {

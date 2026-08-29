@@ -230,6 +230,9 @@ describe('energy target', () => {
 describe('upgrade milestones', () => {
   it('pauses at 100 points, grants a free choice, and resumes the frozen fight', () => {
     const world = createWorld();
+    world.upgrades.poison = 3;
+    world.upgrades.autoGun = 4;
+    world.upgrades.critical = 3;
     world.phase = 'battle';
     world.points = 90;
     const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
@@ -244,7 +247,8 @@ describe('upgrade milestones', () => {
     expect(world.nextUpgradeAt).toBe(250);
     expect(world.pick?.offers).toHaveLength(3);
     expect(new Set(world.pick?.offers).size).toBe(3);
-    expect(world.pick?.offers[0]).toBe('extraCore');
+    const extraIndex = world.pick!.offers.indexOf('extraCore');
+    expect(extraIndex).toBeGreaterThanOrEqual(0);
     const frozen = world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }));
 
     step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT); // accidental early click is ignored
@@ -253,7 +257,7 @@ describe('upgrade milestones', () => {
     expect(world.pick?.selected).toBeNull();
     step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
     expect(world.pick?.selected).toBeNull(); // flipper/arrow controls never select cards
-    step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT);
+    step(world, { ...NO_CONTROLS, choice: extraIndex }, FIXED_DT);
     expect(world.phase).toBe('pick'); // applies on release, so gameplay input cannot leak through
     step(world, NO_CONTROLS, FIXED_DT);
 
@@ -496,14 +500,20 @@ describe('wild upgrades', () => {
 
   it('animates toward damage-driven vibrancy instead of changing instantly', () => {
     const world = createWorld();
+    const idle = createWorld();
     world.phase = 'pick';
+    idle.phase = 'pick';
     world.damageLog = [[0, 105]];
 
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.vibrancy).toBeGreaterThan(0);
     expect(world.vibrancy).toBeLessThan(1);
-    for (let i = 0; i < 180; i++) step(world, NO_CONTROLS, FIXED_DT);
+    for (let i = 0; i < 180; i++) {
+      step(world, NO_CONTROLS, FIXED_DT);
+      step(idle, NO_CONTROLS, FIXED_DT);
+    }
     expect(world.vibrancy).toBeGreaterThan(0.99);
+    expect(world.spectrumPhase).toBeGreaterThan(idle.spectrumPhase * 2);
   });
 
   it('splits every current player-owned ball but not boss balls', () => {

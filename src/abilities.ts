@@ -15,9 +15,9 @@ export const ABILITIES: AbilityDefinition[] = [
   // Recruiter
   { id: 'recruiter', description: ['Stronger temporary', 'balls'], rarity: 'uncommon', maxStacks: 3 },
   // Poison
-  { id: 'poison', description: ['Poison'], rarity: 'rare', maxStacks: 3 },
+  { id: 'poison', description: ['Poison'], rarity: 'common', maxStacks: 3 },
   // Auto Gun
-  { id: 'autoGun', description: ['Main balls fire', 'tiny boss shots'], rarity: 'rare', maxStacks: 4 },
+  { id: 'autoGun', description: ['Main balls fire', 'tiny boss shots'], rarity: 'common', maxStacks: 4 },
   // Overcharge
   { id: 'overcharge', description: ['Raise base power', 'of all your balls'], rarity: 'uncommon', maxStacks: 3 },
   // Split All
@@ -25,13 +25,13 @@ export const ABILITIES: AbilityDefinition[] = [
   // Sacrifice
   { id: 'sacrifice', description: ['Halve boss HP', 'Destroy all balls', 'Gain 2 more picks'], rarity: 'rare', maxStacks: 1 },
   // Boss Magnet
-  { id: 'bossMagnet', description: ['Your balls curve', 'toward the boss'], rarity: 'rare', maxStacks: 3 },
+  { id: 'bossMagnet', description: ['Your balls curve', 'toward the boss'], rarity: 'uncommon', maxStacks: 3 },
   // Ball Regen
   { id: 'ballRestore', description: ['Restore lost ball'], rarity: 'uncommon', maxStacks: 2 },
   // Critical
-  { id: 'critical', description: ['Balls gain 15%', 'double hit chance'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 'critical', description: ['Balls gain 15%', 'double hit chance'], rarity: 'common', maxStacks: 3 },
   // Paint Cannon
-  { id: 'paintShot', description: ['Red bumpers shoot', 'through the table'], rarity: 'rare', maxStacks: 3 },
+  { id: 'paintShot', description: ['Red bumpers shoot', 'through the table'], rarity: 'uncommon', maxStacks: 3 },
   // Echo Spark
   { id: 'energyEcho', description: ['Blue bumpers spawn', 'temporary balls'], rarity: 'rare', maxStacks: 3 },
   { id: 'foreverRainbow', description: ['All your balls stay', 'rainbow forever'], rarity: 'rare', maxStacks: 1 },

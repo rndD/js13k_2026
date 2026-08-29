@@ -100,7 +100,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   const w = FIELD_W - pad * 2;
   const barH = 6;
 
-  ctx.fillStyle = rainbowGradient(ctx, FIELD_W, 0, true, world.vibrancy);
+  ctx.fillStyle = rainbowGradient(ctx, FIELD_W, 0, true, world.vibrancy, world.spectrumPhase);
   ctx.fillRect(0, 0, FIELD_W, HUD_HEIGHT);
 
   ctx.font = '9px monospace';
@@ -181,7 +181,7 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawFieldBorder(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy);
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy, world.spectrumPhase);
   ctx.lineWidth = 2 + world.vibrancy * 2;
   ctx.beginPath();
   ctx.moveTo(0, 0);
@@ -197,7 +197,7 @@ function drawFieldBorder(ctx: CanvasRenderingContext2D, world: World): void {
  * else placed by the level - see level.ts). Gaps between/within walls are
  * where the ball can fall through (drains). */
 function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy);
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy, world.spectrumPhase);
   ctx.lineWidth = 2 + world.vibrancy * 2;
   for (const wall of world.walls) {
     ctx.beginPath();
@@ -211,7 +211,7 @@ function drawWalls(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
-  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy);
+  ctx.strokeStyle = rainbowGradient(ctx, FIELD_W, FIELD_H, false, world.vibrancy, world.spectrumPhase);
   ctx.lineWidth = 2 + world.vibrancy * 2;
   for (const p of world.pegs) {
     ctx.beginPath();

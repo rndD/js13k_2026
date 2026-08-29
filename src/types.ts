@@ -245,6 +245,7 @@ export interface World {
   time: number;
   damageLog: [number, number][];
   vibrancy: number;
+  spectrumPhase: number;
   phase: Phase;
   tableIndex: number;
   transitionTimer: number;
