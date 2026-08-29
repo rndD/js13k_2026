@@ -188,10 +188,9 @@ export const BGFX_CUT_ALPHA = 0.85; // how fully the hole erases at its center (
 // corners via CSS (toggled alongside crt.on) instead of any per-pixel warp -
 // a soft off-center highlight gradient here sells the rest of the glass-
 // curvature illusion for near-zero extra bytes.
-export const CRT_SCANLINE_ALPHA = 0.14;
-export const CRT_VIGNETTE_ALPHA = 0.45;
-export const CRT_FLICKER_AMOUNT = 0.025; // +/- alpha wobble on the scanline layer
-export const CRT_HIGHLIGHT_ALPHA = 0.05; // faint glass-reflection highlight, upper-left
+export const CRT_SCANLINE_ALPHA = 0.07;
+export const CRT_VIGNETTE_ALPHA = 0.25;
+export const CRT_FLICKER_AMOUNT = 0.012; // +/- alpha wobble on the scanline layer
 // Real geometric "bulging glass" warp (not just a CSS corner-round): the
 // whole rendered scene is drawn to an offscreen canvas, then re-drawn onto
 // the visible canvas in thin strips whose scale bulges outward toward the

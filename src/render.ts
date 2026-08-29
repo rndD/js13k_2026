@@ -70,6 +70,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
   if (!menu) drawFieldOverlay(ctx, world);
+  if (!menu && touch) drawTouchGuide(ctx, world);
   if (menu) drawMenu(ctx, touch);
   drawPickCards(ctx, world);
   ctx.restore();
@@ -241,13 +242,15 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World, touch: bool
   const { x, y } = world.launch;
   const power = world.launch.power;
 
+  ctx.save();
+  ctx.globalAlpha = activeCores && !world.launch.charging ? 0.35 : 1;
   ctx.fillStyle = withAlpha(YELLOW, world.launch.charging ? 0.14 : 0.05);
-  ctx.fillRect(FIELD_W * 0.67, 0, FIELD_W * 0.33, FIELD_H * 0.6);
+  ctx.fillRect(FIELD_W * 0.72, 0, FIELD_W * 0.28, FIELD_H * 0.42);
   ctx.fillStyle = world.launch.charging ? YELLOW : STRUCTURE;
   ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(touch ? 'HOLD HERE' : 'HOLD HERE OR ↑', FIELD_W * 0.835, 130);
-  ctx.fillText('TO LAUNCH', FIELD_W * 0.835, 143);
+  ctx.fillText('HOLD HERE / ↑', FIELD_W * 0.86, 110);
+  ctx.fillText('TO LAUNCH', FIELD_W * 0.86, 123);
 
   const springTop = y + BALL_RADIUS + 4;
   const springBottom = FIELD_H - 6;
@@ -279,6 +282,24 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World, touch: bool
     ctx.textAlign = 'right';
     ctx.fillText(`AUTO LAUNCH ${Math.max(0, Math.ceil(AUTO_LAUNCH_DELAY - world.launch.autoTimer))}`, x - BALL_RADIUS - 6, y + 3);
   }
+  ctx.restore();
+}
+
+function drawTouchGuide(ctx: CanvasRenderingContext2D, world: World): void {
+  if (world.time > 12) return;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, (12 - world.time) / 4);
+  ctx.fillStyle = withAlpha(CYAN, 0.08);
+  ctx.fillRect(0, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
+  ctx.fillRect(FIELD_W * 0.67, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
+  ctx.font = 'bold 9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = WHITE;
+  ctx.fillText('LEFT', FIELD_W * 0.16, FIELD_H - 24);
+  ctx.fillText('RIGHT', FIELD_W * 0.84, FIELD_H - 24);
+  ctx.fillText('HOLD TO CATCH MAIN BALL', FIELD_W / 2, FIELD_H * 0.67);
+  ctx.fillText('RELEASE TO AIM', FIELD_W / 2, FIELD_H * 0.67 + 14);
+  ctx.restore();
 }
 
 function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {

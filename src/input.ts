@@ -1,5 +1,5 @@
 // Unified input: Pointer Events (multi-touch friendly, works for mouse too)
-// mapped onto the two bottom flipper zones plus the upper-right third for launch,
+// mapped onto the two bottom flipper zones plus an upper-right launch zone,
 // with keyboard fallback for desktop. Produces a
 // single mutable ControlsState object that main.ts reads every frame.
 //
@@ -19,7 +19,7 @@ function zoneAt(x: number, y: number): Zone {
     if (x > FIELD_W * 0.67) return 'right';
     return null;
   }
-  if (x > FIELD_W * 0.67) return 'launch';
+  if (x > FIELD_W * 0.72 && y < FIELD_H * 0.42) return 'launch';
   return null;
 }
 

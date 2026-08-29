@@ -13,17 +13,15 @@
 import {
   CANVAS_H,
   CRT_FLICKER_AMOUNT,
-  CRT_HIGHLIGHT_ALPHA,
   CRT_SCANLINE_ALPHA,
   CRT_VIGNETTE_ALPHA,
   FIELD_W,
 } from './constants';
-import { BG, WHITE, withAlpha } from './palette';
+import { BG, withAlpha } from './palette';
 
 export interface CrtState {
   scanlines: CanvasPattern;
   vignette: CanvasGradient;
-  highlight: CanvasGradient;
 }
 
 function buildScanlinePattern(ctx: CanvasRenderingContext2D): CanvasPattern {
@@ -45,21 +43,10 @@ function buildVignette(ctx: CanvasRenderingContext2D): CanvasGradient {
   return g;
 }
 
-// Off-center soft highlight, like a glass reflection catching the light on
-// a curved tube face - upper-left, small, low-alpha so it stays a subtle
-// hint rather than a distracting glare.
-function buildHighlight(ctx: CanvasRenderingContext2D): CanvasGradient {
-  const g = ctx.createRadialGradient(FIELD_W * 0.32, CANVAS_H * 0.14, 0, FIELD_W * 0.32, CANVAS_H * 0.14, CANVAS_H * 0.55);
-  g.addColorStop(0, withAlpha(WHITE, CRT_HIGHLIGHT_ALPHA));
-  g.addColorStop(1, withAlpha(WHITE, 0));
-  return g;
-}
-
 export function createCrtState(ctx: CanvasRenderingContext2D): CrtState {
   return {
     scanlines: buildScanlinePattern(ctx),
     vignette: buildVignette(ctx),
-    highlight: buildHighlight(ctx),
   };
 }
 
@@ -74,8 +61,6 @@ export function drawCrtFrame(ctx: CanvasRenderingContext2D, crt: CrtState, time:
   ctx.fillStyle = crt.vignette;
   ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
 
-  ctx.fillStyle = crt.highlight;
-  ctx.fillRect(0, 0, FIELD_W, CANVAS_H);
 }
 
 
