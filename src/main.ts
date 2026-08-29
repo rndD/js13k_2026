@@ -28,6 +28,7 @@ resize();
 
 const ctx = canvas.getContext('2d')!;
 const controls = bindInput(canvas);
+let touch = matchMedia('(pointer:coarse)').matches;
 
 // Dev workflow only: the level editor's "Play" button saves its draft to
 // localStorage and opens this page with ?level=draft, so `LEVEL` can be
@@ -47,7 +48,8 @@ let world = createWorld(...loadLevelOverride());
 let started = false;
 let waitForRelease = false;
 let endedAt = 0;
-function start(): void {
+function start(event: PointerEvent | KeyboardEvent): void {
+  touch = event instanceof PointerEvent ? event.pointerType !== 'mouse' : false;
   if (!started) {
     started = true;
     waitForRelease = true;
@@ -165,7 +167,7 @@ function frame(now: number): void {
   ctx.translate(shake.x, shake.y);
   drawBgFx(ctx, bgFx, world);
   drawTrails();
-  render(ctx, world, !started);
+  render(ctx, world, !started, touch);
   drawFx(ctx, fx, world);
   ctx.restore();
 

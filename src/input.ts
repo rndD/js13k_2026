@@ -1,5 +1,5 @@
 // Unified input: Pointer Events (multi-touch friendly, works for mouse too)
-// mapped onto the two bottom flipper zones plus an upper-right launch zone,
+// mapped onto the two bottom flipper zones plus the upper-right third for launch,
 // with keyboard fallback for desktop. Produces a
 // single mutable ControlsState object that main.ts reads every frame.
 //
@@ -19,7 +19,7 @@ function zoneAt(x: number, y: number): Zone {
     if (x > FIELD_W * 0.67) return 'right';
     return null;
   }
-  if (x > FIELD_W * 0.8) return 'launch';
+  if (x > FIELD_W * 0.67) return 'launch';
   return null;
 }
 
@@ -84,17 +84,17 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
 
   window.addEventListener('keydown', (e) => {
     unlockAudio(); // harmless no-op once already resumed, see pointerdown above
-    if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = true;
-    else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = true;
-    else if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.launch = true;
+    if (e.key === 'ArrowLeft') keys.left = true;
+    else if (e.key === 'ArrowRight') keys.right = true;
+    else if (e.key === 'ArrowUp') keys.launch = true;
     else if (e.key === '1' || e.key === '2' || e.key === '3') keys.choice = Number(e.key) - 1;
     else return;
     recompute();
   });
   window.addEventListener('keyup', (e) => {
-    if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = false;
-    else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = false;
-    else if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.launch = false;
+    if (e.key === 'ArrowLeft') keys.left = false;
+    else if (e.key === 'ArrowRight') keys.right = false;
+    else if (e.key === 'ArrowUp') keys.launch = false;
     else if (e.key === '1' || e.key === '2' || e.key === '3') keys.choice = null;
     else return;
     recompute();

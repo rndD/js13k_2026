@@ -47,7 +47,7 @@ function drawImpactPulse(ctx: CanvasRenderingContext2D, x: number, y: number, ba
   });
 }
 
-export function render(ctx: CanvasRenderingContext2D, world: World, menu = false): void {
+export function render(ctx: CanvasRenderingContext2D, world: World, menu = false, touch = false): void {
   drawHudBar(ctx, world);
 
   ctx.save();
@@ -56,7 +56,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawWalls(ctx, world);
   drawPegs(ctx, world);
   drawLaunchPads(ctx, world);
-  drawLaunchZone(ctx, world);
+  drawLaunchZone(ctx, world, touch);
   drawBoss(ctx, world);
   for (const b of world.bumpers) {
     drawBumper(ctx, b, BUMPER_COLOR[b.kind]);
@@ -70,7 +70,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawBalls(ctx, world);
   drawAimIndicator(ctx, world);
   if (!menu) drawFieldOverlay(ctx, world);
-  if (menu) drawMenu(ctx);
+  if (menu) drawMenu(ctx, touch);
   drawPickCards(ctx, world);
   if ((import.meta as any).env.DEV) drawDamageDebug(ctx, world);
   ctx.restore();
@@ -247,11 +247,19 @@ function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
  * outline, so the (otherwise invisible) launch spot reads as "pull/hold
  * here" before the first ball exists. Only relevant during the 'launch'
  * phase - once a real ball is in play it's drawn by drawBalls() instead. */
-function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World): void {
+function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World, touch: boolean): void {
   const activeCores = world.balls.filter((ball) => ball.role === 'core').length;
   if (world.phase !== 'launch' && (world.phase !== 'battle' || activeCores >= world.coreBalls)) return;
   const { x, y } = world.launch;
   const power = world.launch.power;
+
+  ctx.fillStyle = withAlpha(YELLOW, world.launch.charging ? 0.14 : 0.05);
+  ctx.fillRect(FIELD_W * 0.67, 0, FIELD_W * 0.33, FIELD_H * 0.6);
+  ctx.fillStyle = world.launch.charging ? YELLOW : STRUCTURE;
+  ctx.font = 'bold 9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(touch ? 'HOLD HERE' : 'HOLD HERE OR ↑', FIELD_W * 0.835, 130);
+  ctx.fillText('TO LAUNCH', FIELD_W * 0.835, 143);
 
   const springTop = y + BALL_RADIUS + 4;
   const springBottom = FIELD_H - 6;
@@ -588,10 +596,7 @@ function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.fillStyle = LIME;
     ctx.fillText(`x${ball.multiplier.toFixed(1)}`, ball.x, ball.y - ball.r - 4);
   }
-  if (world.phase === 'launch') {
-    ctx.textAlign = 'center';
-    ctx.fillText('hold launch zone to charge', FIELD_W / 2, FIELD_H / 2);
-  } else if (world.phase === 'transition') {
+  if (world.phase === 'transition') {
     ctx.textAlign = 'center';
     ctx.font = '24px monospace';
     ctx.fillText(`LEVEL ${world.boss.rank + 1} CLEAR`, FIELD_W / 2, FIELD_H / 2);
@@ -626,7 +631,7 @@ function drawResults(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillText('PLAY AGAIN', FIELD_W / 2, FIELD_H / 2 + 69);
 }
 
-function drawMenu(ctx: CanvasRenderingContext2D): void {
+function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean): void {
   ctx.fillStyle = withAlpha(BG, 0.72);
   ctx.fillRect(0, 0, FIELD_W, FIELD_H);
   ctx.textAlign = 'center';
@@ -635,8 +640,8 @@ function drawMenu(ctx: CanvasRenderingContext2D): void {
   ctx.fillText('ROLL THE RAINBOW!', FIELD_W / 2, 250);
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
-  ctx.fillText('TAP OR PRESS A KEY', FIELD_W / 2, 325);
+  ctx.fillText(touch ? 'TAP TO START' : 'PRESS A KEY', FIELD_W / 2, 325);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText('BOTTOM CORNERS: FLIPPERS', FIELD_W / 2, 355);
-  ctx.fillText('UPPER RIGHT: LAUNCH', FIELD_W / 2, 375);
+  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : '← →  FLIPPERS', FIELD_W / 2, 355);
+  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : '↑  LAUNCH', FIELD_W / 2, 375);
 }
