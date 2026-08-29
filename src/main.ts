@@ -61,7 +61,7 @@ window.addEventListener('keydown', start);
 // it's pure render state, not simulation state - World must stay a plain,
 // serializable snapshot for tests.
 const TRAIL_LEN = 10;
-interface TrailPoint { x: number; y: number; color: string; role: string }
+interface TrailPoint { x: number; y: number; color: string; role: string; rainbow: boolean }
 const trails = new Map<number, TrailPoint[]>();
 
 function updateTrails(): void {
@@ -72,8 +72,8 @@ function updateTrails(): void {
     if (pts?.length && pts[pts.length - 1].role !== ball.role) pts = [];
     if (!pts) { pts = []; trails.set(ball.id, pts); }
     const color = ball.role === 'hostile' ? ORANGE : ball.role === 'echo' ? CYAN : ballColor(ball.color, world.time);
-    pts.push({ x: ball.x, y: ball.y, color, role: ball.role });
-    const maxLen = ball.role === 'core' ? TRAIL_LEN : ball.role === 'echo' ? 7 : 5;
+    pts.push({ x: ball.x, y: ball.y, color, role: ball.role, rainbow: ball.color === 'rainbow' });
+    const maxLen = ball.color === 'rainbow' ? 20 : ball.role === 'core' ? TRAIL_LEN : ball.role === 'echo' ? 7 : 5;
     while (pts.length > maxLen) pts.shift();
   }
 }
@@ -85,10 +85,10 @@ function drawTrails(): void {
     ctx.lineCap = 'round';
     for (let i = 1; i < pts.length; i++) {
       const t = i / (pts.length - 1);
-      const roleAlpha = pts[i].role === 'core' ? 0.5 : pts[i].role === 'echo' ? 0.3 : 0.45;
+      const roleAlpha = pts[i].rainbow ? 0.7 : pts[i].role === 'core' ? 0.5 : pts[i].role === 'echo' ? 0.3 : 0.45;
       ctx.globalAlpha = t * roleAlpha;
-      ctx.strokeStyle = pts[i].color;
-      ctx.lineWidth = 1 + t * 3;
+      ctx.strokeStyle = pts[i].rainbow ? ballColor('rainbow', world.time + i * 0.35) : pts[i].color;
+      ctx.lineWidth = 1 + t * (pts[i].rainbow ? 4 : 3);
       ctx.beginPath();
       ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
       ctx.lineTo(pts[i].x, pts[i].y);
