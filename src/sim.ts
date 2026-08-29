@@ -97,7 +97,7 @@ import {
   resolveWall,
   resolveWalls,
 } from './physics';
-import type { AimState, Ball, Bullet, Bumper, ControlsState, Flipper, World } from './types';
+import type { AbilityId, AimState, Ball, Bullet, Bumper, ControlsState, Flipper, World } from './types';
 
 /** Advance the world by one fixed timestep. Mutates and returns `world`. */
 export function step(world: World, controls: ControlsState, dt: number): World {
@@ -183,8 +183,17 @@ function queueUpgradeMilestones(world: World): void {
 
 function beginPick(world: World, resumePhase = world.phase): void {
   const eligible = ABILITIES.filter((ability) => world.upgrades[ability.id] < ability.maxStacks);
-  const start = (world.upgradeCount * 3) % Math.max(1, eligible.length);
-  const offers = [...eligible.slice(start), ...eligible.slice(0, start)].slice(0, 3).map((ability) => ability.id);
+  const offers: AbilityId[] = [];
+  while (offers.length < 3 && eligible.length) {
+    const groups = ['common', 'uncommon', 'rare'].map((rarity) => eligible.filter((ability) => ability.rarity === rarity));
+    const weights = [6, 3, 1];
+    let roll = random(world) * groups.reduce((sum, group, i) => sum + (group.length ? weights[i] : 0), 0);
+    let tier = 0;
+    while (!groups[tier].length || (roll -= weights[tier]) > 0) tier++;
+    const ability = groups[tier][Math.floor(random(world) * groups[tier].length)];
+    offers.push(ability.id);
+    eligible.splice(eligible.indexOf(ability), 1);
+  }
   if (!offers.length) {
     world.pendingUpgrades = 0;
     return;
@@ -299,8 +308,12 @@ function rollCritical(world: World): boolean {
 }
 
 function rollChance(world: World, chance: number): boolean {
+  return random(world) < chance;
+}
+
+function random(world: World): number {
   world.randomSeed = (world.randomSeed * 1664525 + 1013904223) >>> 0;
-  return world.randomSeed / 4294967296 < chance;
+  return world.randomSeed / 4294967296;
 }
 
 function baseMultiplier(world: World): number {

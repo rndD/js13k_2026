@@ -242,7 +242,9 @@ describe('upgrade milestones', () => {
     expect(world.phase).toBe('pick');
     expect(world.points).toBe(110);
     expect(world.nextUpgradeAt).toBe(250);
-    expect(world.pick?.offers).toEqual(['extraCore', 'recruiter', 'poison']);
+    expect(world.pick?.offers).toHaveLength(3);
+    expect(new Set(world.pick?.offers).size).toBe(3);
+    expect(world.pick?.offers[0]).toBe('extraCore');
     const frozen = world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }));
 
     step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT); // accidental early click is ignored
