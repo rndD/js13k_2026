@@ -249,7 +249,7 @@ function drawLaunchZone(ctx: CanvasRenderingContext2D, world: World, touch: bool
   ctx.fillStyle = world.launch.charging ? YELLOW : STRUCTURE;
   ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('HOLD HERE / ↑', FIELD_W * 0.86, 110);
+  ctx.fillText(touch ? 'HOLD HERE' : '↑', FIELD_W * 0.86, 110);
   ctx.fillText('TO LAUNCH', FIELD_W * 0.86, 123);
 
   const springTop = y + BALL_RADIUS + 4;
@@ -651,6 +651,6 @@ function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean): void {
   ctx.font = '13px monospace';
   ctx.fillText(touch ? 'TAP TO START' : 'PRESS A KEY', FIELD_W / 2, 325);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : '← →  FLIPPERS', FIELD_W / 2, 355);
-  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : '↑  LAUNCH', FIELD_W / 2, 375);
+  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : 'HOLD ← → TO CATCH', FIELD_W / 2, 355);
+  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'RELEASE TO AIM', FIELD_W / 2, 375);
 }
