@@ -167,9 +167,10 @@ function trackDamage(world: World, amount: number): void {
 
 function updateVibrancy(world: World, dt: number): void {
   const damage = world.damageLog.reduce((sum, hit) => sum + hit[1], 0);
-  const target = Math.min(1, damage / 120);
+  const target = Math.min(1, damage / 150);
+  const speed = Math.min(1, damage / 300);
   world.vibrancy += (target - world.vibrancy) * Math.min(1, dt * 2);
-  world.spectrumPhase += dt * (0.2 + world.vibrancy ** 2 * 4);
+  world.spectrumPhase += dt * (0.2 + speed ** 2 * 8);
 }
 
 function queueUpgradeMilestones(world: World): void {

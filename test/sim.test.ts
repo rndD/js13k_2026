@@ -511,7 +511,7 @@ describe('wild upgrades', () => {
     const idle = createWorld();
     world.phase = 'pick';
     idle.phase = 'pick';
-    world.damageLog = [[0, 120]];
+    world.damageLog = [[0, 150]];
 
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.vibrancy).toBeGreaterThan(0);
@@ -522,6 +522,11 @@ describe('wild upgrades', () => {
     }
     expect(world.vibrancy).toBeGreaterThan(0.99);
     expect(world.spectrumPhase).toBeGreaterThan(idle.spectrumPhase * 2);
+
+    world.damageLog = [[world.time, 300]];
+    const phase = world.spectrumPhase;
+    step(world, NO_CONTROLS, 1);
+    expect(world.spectrumPhase - phase).toBeCloseTo(8.2);
   });
 
   it('splits every current player-owned ball but not boss balls', () => {
