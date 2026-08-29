@@ -27,7 +27,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Boss Magnet
   { id: 'bossMagnet', description: ['Your balls curve', 'toward the boss'], rarity: 'rare', maxStacks: 3 },
   // Ball Regen
-  { id: 'ballRestore', description: ['Restore lost ball', 'every 30 seconds'], rarity: 'uncommon', maxStacks: 1 },
+  { id: 'ballRestore', description: ['Restore lost ball'], rarity: 'uncommon', maxStacks: 2 },
   // Critical
   { id: 'critical', description: ['Balls gain 15%', 'double hit chance'], rarity: 'uncommon', maxStacks: 3 },
   // Paint Cannon
@@ -46,6 +46,7 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 'overcharge') return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 'paintShot') return [`Red bumper shot`, `${[8, 14, 22][rank]} base damage`];
   if (ability.id === 'energyEcho') return [`Blue bumper:`, `${[12, 25, 40][rank]}% echo chance`];
+  if (ability.id === 'ballRestore') return ['Restore +1 ball', `every ${[30, 25][rank]} seconds`];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];
 }

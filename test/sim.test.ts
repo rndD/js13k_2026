@@ -315,6 +315,18 @@ describe('wild upgrades', () => {
     expect(world.coreBalls).toBe(5); // one active plus four actually stored
   });
 
+  it('restores a ball every twenty-five seconds at regen level two', () => {
+    const world = createWorld();
+    world.upgrades.ballRestore = 2;
+    world.coreBalls = 1;
+    world.launch.autoTimer = -1000;
+
+    for (let i = 0; i < 24 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.coreBalls).toBe(1);
+    for (let i = 0; i < 2 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.coreBalls).toBe(2);
+  });
+
   it('critical chance can double direct ball damage and marks the hit', () => {
     const world = createWorld();
     world.phase = 'battle';

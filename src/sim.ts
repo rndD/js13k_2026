@@ -20,7 +20,7 @@ import {
   ARMOR_ROTATION_SPEED,
   ARMOR_THICKNESS,
   AUTO_LAUNCH_DELAY,
-  BALL_RESTORE_TIME,
+  BALL_RESTORE_TIMES,
   BALL_RADIUS,
   BALL_SIZE_PER_MULT,
   BULLET_DAMAGES,
@@ -266,11 +266,13 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
 }
 
 function updateBallRestore(world: World, dt: number): void {
-  if (!world.upgrades.ballRestore || (world.phase !== 'launch' && world.phase !== 'battle')) return;
+  const rank = world.upgrades.ballRestore;
+  if (!rank || (world.phase !== 'launch' && world.phase !== 'battle')) return;
   const stored = world.coreBalls - world.balls.filter((ball) => ball.role === 'core' && ball.stocked).length;
   if (stored >= 4) return;
-  world.restoreTimer = Math.min(BALL_RESTORE_TIME, world.restoreTimer + dt);
-  if (world.restoreTimer >= BALL_RESTORE_TIME) {
+  const interval = BALL_RESTORE_TIMES[rank - 1];
+  world.restoreTimer = Math.min(interval, world.restoreTimer + dt);
+  if (world.restoreTimer >= interval) {
     world.coreBalls += 1;
     world.restoreTimer = 0;
     world.sfx.push('energyChime');
