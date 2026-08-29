@@ -651,6 +651,6 @@ function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean): void {
   ctx.font = '13px monospace';
   ctx.fillText(touch ? 'TAP TO START' : 'PRESS A KEY', FIELD_W / 2, 325);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : 'HOLD ← → TO CATCH', FIELD_W / 2, 355);
-  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'RELEASE TO AIM', FIELD_W / 2, 375);
+  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : '← →  FLIPPERS', FIELD_W / 2, 355);
+  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'HOLD TO AIM', FIELD_W / 2, 375);
 }
