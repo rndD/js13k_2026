@@ -519,7 +519,7 @@ describe('outcomes', () => {
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.coreBalls).toBe(5);
+    expect(world.coreBalls).toBe(6); // two temporary survivors plus level reward
     expect(world.balls).toHaveLength(0);
     for (let i = 0; i < 121; i++) step(world, NO_CONTROLS, FIXED_DT);
     expect(world.tableIndex).toBe(1);

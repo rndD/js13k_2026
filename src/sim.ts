@@ -854,7 +854,9 @@ function checkOutcome(world: World): void {
     world.coreBalls += world.balls.filter((ball) => ball.role !== 'hostile' && !ball.stocked).length;
     world.balls = [];
     world.bullets = [];
-    world.phase = world.boss.rank === 2 ? 'win' : 'transition';
+    const finished = world.boss.rank === 2;
+    if (!finished) world.coreBalls += 1;
+    world.phase = finished ? 'win' : 'transition';
     world.transitionTimer = LEVEL_TRANSITION_TIME;
     world.sfx.push('ballExplode', 'win');
     world.fx.push({ kind: 'win', x: world.boss.x, y: world.boss.y });

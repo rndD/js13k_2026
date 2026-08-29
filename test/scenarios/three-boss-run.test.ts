@@ -10,12 +10,14 @@ describe('scenario: three-boss run', () => {
     const world = createWorld(LEVELS[0], 0);
 
     for (let rank = 0; rank < 3; rank++) {
+      const ballsBefore = world.coreBalls;
       world.phase = 'battle';
       world.boss.hp = 0;
       step(world, NO_CONTROLS, FIXED_DT);
 
       if (rank === 2) break;
       expect(world.phase).toBe('transition');
+      expect(world.coreBalls).toBe(ballsBefore + 1);
       for (let tick = 0; tick < 121; tick++) step(world, NO_CONTROLS, FIXED_DT);
       expect(world.phase).toBe('launch');
       expect(world.boss.rank).toBe(rank + 1);
