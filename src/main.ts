@@ -43,7 +43,7 @@ function loadLevelOverride(): [LevelData | undefined, number] {
   return [LEVELS[index], index];
 }
 
-const world = createWorld(...loadLevelOverride());
+let world = createWorld(...loadLevelOverride());
 let started = false;
 let waitForRelease = false;
 function start(): void {
@@ -98,9 +98,22 @@ function drawTrails(): void {
   ctx.restore();
 }
 
-const fx = createFxState();
-const bgFx = createBgFx();
+let fx = createFxState();
+let bgFx = createBgFx();
 const crt = createCrtState(ctx);
+
+function restart(): void {
+  if (world.phase !== 'win' && world.phase !== 'lose') return;
+  world = createWorld(...loadLevelOverride());
+  fx = createFxState();
+  bgFx = createBgFx();
+  trails.clear();
+  acc = 0;
+  last = performance.now();
+  waitForRelease = true;
+}
+canvas.addEventListener('pointerdown', restart);
+window.addEventListener('keydown', restart);
 
 // Toggle button (see index.html) - kept as a plain DOM element rather than
 // a canvas hit-zone so it never competes with the gameplay touch zones.

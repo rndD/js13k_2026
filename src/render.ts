@@ -622,6 +622,10 @@ function drawResults(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.font = '14px monospace';
   ctx.fillText(`POINTS ${Math.round(world.points)}`, FIELD_W / 2, FIELD_H / 2);
   ctx.fillText(`TIME ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W / 2, FIELD_H / 2 + 28);
+  ctx.strokeStyle = VIOLET;
+  ctx.strokeRect(FIELD_W / 2 - 65, FIELD_H / 2 + 48, 130, 32);
+  ctx.font = '12px monospace';
+  ctx.fillText('PLAY AGAIN', FIELD_W / 2, FIELD_H / 2 + 69);
 }
 
 function drawMenu(ctx: CanvasRenderingContext2D): void {
