@@ -78,11 +78,11 @@ export const AIM_SPEED_PER_MULT = 35; // extra px/s per point of ball.multiplier
 
 // Boss
 export const BOSS_RADIUS = 22;
-export const BOSS_HPS = [1000, 1400, 1800, 3000];
-export const BOSS_ARMOR_COUNTS = [3, 9, 9, 18];
-export const BOSS_ARMOR_HPS = [120, 80, 100, 120];
-export const BOSS_ARMOR_ARCS = [0.72, 0.25, 0.25, 0.25];
-export const BOSS_HOSTILE_INTERVALS = [15, 11, 8, 6];
+export const BOSS_HPS = [1000, 1400, 1800, 3000, 5000];
+export const BOSS_ARMOR_COUNTS = [3, 9, 9, 18, 27];
+export const BOSS_ARMOR_HPS = [120, 80, 100, 120, 150];
+export const BOSS_ARMOR_ARCS = [0.72, 0.25, 0.25, 0.25, 0.25];
+export const BOSS_HOSTILE_INTERVALS = [15, 11, 8, 6, 4];
 export const BOSS_HIT_COOLDOWN = 0.25; // s, per-ball direct-damage cooldown while inside boss
 export const BOSS_MOVE_X = 55;
 export const BOSS_MOVE_Y = 12;
@@ -110,7 +110,7 @@ export const CRITICAL_CHANCE = 0.15;
 export const POINTS_ARMOR_BREAK = 75;
 export const BOSS_SHOT_INTERVAL = 9;
 export const BOSS_SHOT_SPEED = 180;
-export const BOSS_BLAST_INTERVAL = 13;
+export const BOSS_BLAST_INTERVALS = [13, 13, 13, 13, 8];
 export const BOSS_BLAST_WARNING = 1.5;
 export const BOSS_BLAST_RADIUS = 95;
 export const LEVEL_TRANSITION_TIME = 2;

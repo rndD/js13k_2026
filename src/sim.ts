@@ -28,7 +28,7 @@ import {
   BULLET_LIFETIME,
   BULLET_SPEED,
   BOSS_HIT_COOLDOWN,
-  BOSS_BLAST_INTERVAL,
+  BOSS_BLAST_INTERVALS,
   BOSS_BLAST_RADIUS,
   BOSS_BLAST_WARNING,
   BOSS_HOSTILE_INTERVALS,
@@ -856,8 +856,8 @@ function updateBoss(world: World, dt: number): void {
   const boss = world.boss;
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
-  for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt * (armor.ring ? -1 : 1);
-  if (boss.rank === 1 || boss.rank === 3) {
+  for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt * (armor.ring % 2 ? -1 : 1);
+  if (boss.rank === 1 || boss.rank >= 3) {
     boss.shotTimer -= dt;
     if (boss.shotTimer <= 0) {
       boss.shotTimer = BOSS_SHOT_INTERVAL;
@@ -885,7 +885,7 @@ function updateBoss(world: World, dt: number): void {
     } else {
       boss.specialTimer -= dt;
       if (boss.specialTimer <= 0) {
-        boss.specialTimer = BOSS_BLAST_INTERVAL;
+        boss.specialTimer = BOSS_BLAST_INTERVALS[boss.rank];
         boss.warningTimer = BOSS_BLAST_WARNING;
         world.sfx.push('energyChime');
       }

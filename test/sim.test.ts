@@ -513,7 +513,7 @@ describe('combat model', () => {
 });
 
 describe('outcomes', () => {
-  it('advances after the first boss and wins after the fourth', () => {
+  it('advances after the first boss and wins after the fifth', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss.hp = 5;
@@ -536,7 +536,7 @@ describe('outcomes', () => {
     expect(world.boss.armor).toHaveLength(9);
 
     world.phase = 'battle';
-    world.boss.rank = 3;
+    world.boss.rank = 4;
     world.boss.hp = 0;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.phase).toBe('win');
@@ -646,6 +646,27 @@ describe('outcomes', () => {
     expect(world.boss.warningTimer).toBeGreaterThan(0);
     expect(world.balls.some((ball) => ball.role === 'hostile')).toBe(true);
     expect(ARMOR_ORBIT_RADIUS + ARMOR_RING_GAP).toBe(56);
+  });
+
+  it('gives boss five more health, three armor rings, and faster destruction fields', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 4);
+    world.boss.shotTimer = 0;
+    world.boss.specialTimer = 0;
+    world.balls = [createBall(1, 180, 500)];
+
+    expect(world.boss.hp).toBe(5000);
+    expect(world.boss.armor).toHaveLength(27);
+    for (let ring = 0; ring < 3; ring++) {
+      expect(world.boss.armor.filter((armor) => armor.ring === ring)).toHaveLength(9);
+    }
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.bullets.some((bullet) => bullet.enemy)).toBe(true);
+    expect(world.boss.warningTimer).toBeGreaterThan(0);
+    expect(world.boss.specialTimer).toBe(8);
   });
 
   it('fires a geometry-piercing paint shot with Auto Gun bonus damage', () => {

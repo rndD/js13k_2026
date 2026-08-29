@@ -279,7 +279,7 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const r = boss.r;
   const exposed = boss.armor.every((armor) => armor.hp <= 0);
 
-  if (boss.rank === 3) {
+  if (boss.rank >= 3) {
     ctx.fillStyle = rainbowColor(world.time);
     ctx.beginPath();
     ctx.moveTo(boss.x - 5, boss.y - r + 2);
@@ -290,7 +290,7 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
 
   for (const armor of boss.armor) {
     if (armor.hp <= 0) continue;
-    const color = armor.ring ? VIOLET : CYAN;
+    const color = armor.ring === 2 ? ORANGE : armor.ring ? VIOLET : CYAN;
     const radius = ARMOR_ORBIT_RADIUS + armor.ring * ARMOR_RING_GAP;
     withGlow(ctx, color, 8, () => {
       ctx.lineCap = 'round';

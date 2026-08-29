@@ -9,7 +9,7 @@ import {
   BOSS_ARMOR_HPS,
   BOSS_HOSTILE_INTERVALS,
   BOSS_HPS,
-  BOSS_BLAST_INTERVAL,
+  BOSS_BLAST_INTERVALS,
   BOSS_SHOT_INTERVAL,
   FLIPPER_ACTIVE_ANGLE,
   FLIPPER_LENGTH,
@@ -83,21 +83,23 @@ export function createBoss(spot: LevelData['boss'], rank: number): Boss {
     hp: BOSS_HPS[rank],
     maxHp: BOSS_HPS[rank],
     spawnTimer: BOSS_HOSTILE_INTERVALS[rank],
-    specialTimer: BOSS_BLAST_INTERVAL,
+    specialTimer: BOSS_BLAST_INTERVALS[rank],
     shotTimer: BOSS_SHOT_INTERVAL,
     warningTimer: 0,
     armorArc: BOSS_ARMOR_ARCS[rank],
     poisonDamage: 0,
     poisonTimer: 0,
     armor: Array.from({ length: count }, (_, i) => {
-      const perRing = rank === 3 ? count / 2 : count;
-      const ring = +(rank === 3 && i < perRing);
+      const rings = rank >= 3 ? rank - 1 : 1;
+      const perRing = count / rings;
+      const ring = Math.floor(i / perRing);
       return {
-      angle: i % perRing * Math.PI * 2 / perRing + ring * Math.PI / perRing,
-      hp: armorHp,
-      maxHp: armorHp,
-      ring,
-    }}),
+        angle: i % perRing * Math.PI * 2 / perRing + ring * Math.PI / perRing,
+        hp: armorHp,
+        maxHp: armorHp,
+        ring,
+      };
+    }),
   };
 }
 
