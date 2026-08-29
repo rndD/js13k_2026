@@ -5,20 +5,20 @@
 // scattering slightly-different hex literals per file.
 export const BG = '#100b1f';
 export const HUD_BG = '#17102a';
-export const STRUCTURE = '#8d78c6';
-export const WHITE = '#f7f3e8';
+export const STRUCTURE = '#b399ff';
+export const WHITE = '#ffffff';
 
-export const RED = '#e63946';
-export const ORANGE = '#f47c20';
-export const YELLOW = '#f2c94c';
-export const LIME = '#43aa5c';
-export const CYAN = '#2584d8';
-export const VIOLET = '#7048c8';
-export const MAGENTA = '#b83b9f';
+export const RED = '#ff174d';
+export const ORANGE = '#ff7900';
+export const YELLOW = '#ffd600';
+export const LIME = '#00dc68';
+export const CYAN = '#00a8ff';
+export const VIOLET = '#7040ff';
+export const MAGENTA = '#e000ff';
 
 /** The fully-charged "rainbow" ball tier cycles through this sequence. */
 export const SPECTRUM = [RED, ORANGE, YELLOW, LIME, CYAN, VIOLET, MAGENTA];
-const NIGHT = ['#280b18', '#2b1608', '#292507', '#092419', '#081d30', '#160d32', '#290d2b'];
+const NIGHT = ['#690025', '#6b2c00', '#665300', '#005b32', '#004f82', '#421197', '#790073'];
 
 export function rainbowGradient(ctx: CanvasRenderingContext2D, x: number, y: number, dark = false): CanvasGradient {
   const colors = dark ? NIGHT : SPECTRUM;

@@ -8,7 +8,7 @@
 // space is unaffected by the HUD - sim.ts/physics.ts never need to know it exists.
 import { AIM_TIMEOUT, ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, ARMOR_THICKNESS, AUTO_LAUNCH_DELAY, BALL_RADIUS, BALL_RESTORE_TIMES, BOSS_BLAST_RADIUS, BOSS_BLAST_WARNING, BUMPER_COOLDOWN, ECHO_STABILITY, FIELD_H, FIELD_W, HUD_HEIGHT, LAUNCH_PAD_COOLDOWN, POISON_DELAY, ROLE_FLASH_DURATION } from './constants';
 import { abilityById, abilityDescription, type AbilityRarity } from './abilities';
-import { BG, CYAN, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, rainbowGradient, withAlpha, withGlow } from './palette';
+import { BG, CYAN, HUD_BG, LIME, ORANGE, RED, STRUCTURE, VIOLET, WHITE, YELLOW, rainbowColor, rainbowGradient, withAlpha, withGlow } from './palette';
 import type { Ball, World } from './types';
 
 export const COLOR_HEX: Record<Ball['color'], string> = {
@@ -125,7 +125,7 @@ const RARITY_COLOR: Record<AbilityRarity, string> = {
 
 function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
   if (world.phase !== 'pick' || !world.pick) return;
-  ctx.fillStyle = withAlpha(BG, 0.82);
+  ctx.fillStyle = withAlpha(BG, 0.68);
   ctx.fillRect(0, 0, FIELD_W, FIELD_H);
 
   ctx.textAlign = 'center';
@@ -613,7 +613,7 @@ function drawResults(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawMenu(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = withAlpha(BG, 0.9);
+  ctx.fillStyle = withAlpha(BG, 0.72);
   ctx.fillRect(0, 0, FIELD_W, FIELD_H);
   ctx.textAlign = 'center';
   ctx.fillStyle = rainbowGradient(ctx, 315, 0);

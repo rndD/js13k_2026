@@ -58,7 +58,7 @@ function buildHighlight(ctx: CanvasRenderingContext2D): CanvasGradient {
 
 export function createCrtState(ctx: CanvasRenderingContext2D): CrtState {
   return {
-    on: true,
+    on: false,
     scanlines: buildScanlinePattern(ctx),
     vignette: buildVignette(ctx),
     highlight: buildHighlight(ctx),
