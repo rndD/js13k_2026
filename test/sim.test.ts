@@ -948,7 +948,7 @@ describe('ball roles', () => {
     expect(echo.stability).toBe(20);
     expect(echo.lifetime).toBe(60);
     expect(abilityDescription(abilityById('recruiter'), 2)).toEqual([
-      'Echoes: +1x power',
+      'Temporary balls +1x',
       '40 hits / 120 sec',
     ]);
   });
