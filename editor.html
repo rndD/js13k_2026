@@ -23,6 +23,10 @@ canvas{background:#050208;touch-action:none}
   <div id="toolbar">
     <h1>Level Editor <span style="color:#ff8a3b">(dev only)</span></h1>
 
+    <h2>Load table</h2>
+    <button id="loadCrossfire">Load Crossfire</button>
+    <button id="loadOrbit">Load Orbit</button>
+
     <h2>Mode</h2>
     <button data-mode="select" class="active">Select / Move</button>
     <button data-mode="wall">Draw Wall</button>
@@ -76,7 +80,10 @@ canvas{background:#050208;touch-action:none}
       through edits. "Save to Browser" stores your draft in
       localStorage (persists across reloads of this page). "Play This
       Level" saves then opens the real game with this draft loaded in place
-      of the built-in level. This tool is dev-only: run it via the Vite dev
+      of the built-in level. Load Crossfire/Orbit starts a fresh copy of that
+      built-in table; Save/Play never modifies source files. Export generates
+      the named constant to paste back into level.ts. This tool is dev-only:
+      run it via the Vite dev
       server (this page, not index.html) - `vite build` only ever processes
       index.html, so editor.html/leveleditor.ts are never swept into the
       shipped game bundle.

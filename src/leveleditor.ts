@@ -5,10 +5,10 @@
 //
 // Lets you visually place/move/delete every LevelData element (walls as
 // polylines, pegs, bumpers, flippers, launch pads, boss, launch point) and
-// export the result as a drop-in replacement for the LEVEL const in level.ts.
+// export the result as a drop-in replacement for a table const in level.ts.
 import { CANVAS_H, FIELD_H, FIELD_W, HUD_HEIGHT } from './constants';
 import { createWorld } from './entities';
-import { LEVEL, type LevelData } from './level';
+import { LEVEL, LEVELS, type LevelData } from './level';
 import { render } from './render';
 import type { Vec2 } from './types';
 
@@ -56,10 +56,13 @@ function loadStoredLevel(): LevelData | null {
   }
 }
 
-// Deep clone so we never mutate the imported LEVEL module binding directly.
-// Resumes a previously saved draft if one exists, so a page reload doesn't
-// silently discard unsaved work.
-const level: LevelData = loadStoredLevel() ?? JSON.parse(JSON.stringify(LEVEL));
+const levelParam = new URLSearchParams(location.search).get('level');
+const requested = levelParam === null ? -1 : Number(levelParam);
+const builtIn = LEVELS[requested];
+const exportName = ['CROSSFIRE', 'ORBIT'][requested] ?? 'LEVEL';
+// An explicit ?level=0/1 starts from that built-in table. Plain editor.html
+// resumes the saved draft, falling back to the compact test fixture.
+const level: LevelData = JSON.parse(JSON.stringify(builtIn ?? loadStoredLevel() ?? LEVEL));
 
 // Undo/redo history: snapshots of the whole level as JSON strings. A snapshot
 // of the pre-mutation state is pushed onto undoStack right before any action
@@ -133,6 +136,8 @@ document.getElementById('redoBtn')!.addEventListener('click', redo);
 document.getElementById('exportBtn')!.addEventListener('click', exportLevel);
 document.getElementById('saveBtn')!.addEventListener('click', () => saveLevel(true));
 document.getElementById('playBtn')!.addEventListener('click', playLevel);
+document.getElementById('loadCrossfire')!.addEventListener('click', () => location.assign('/editor.html?level=0'));
+document.getElementById('loadOrbit')!.addEventListener('click', () => location.assign('/editor.html?level=1'));
 
 function finishWall(): void {
   if (wallInProgress && wallInProgress.length >= 2) {
@@ -228,7 +233,7 @@ function rotateSelected(delta: number): void {
 
 function exportLevel(): void {
   const box = document.getElementById('exportBox') as HTMLTextAreaElement;
-  box.value = `export const LEVEL: LevelData = ${JSON.stringify(level, null, 2)};\n`;
+  box.value = `export const ${exportName}: LevelData = ${JSON.stringify(level, null, 2)};\n`;
   box.select();
 }
 
