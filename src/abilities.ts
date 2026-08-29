@@ -13,7 +13,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Extra Ball
   { id: 'extraCore', description: ['Add 2 balls', 'to your stock'], rarity: 'common', maxStacks: 4 },
   // Recruiter
-  { id: 'recruiter', description: ['Stronger temporary', 'balls'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 'recruiter', description: ['Stronger temporary', 'balls'], rarity: 'common', maxStacks: 3 },
   // Poison
   { id: 'poison', description: ['Poison'], rarity: 'common', maxStacks: 3 },
   // Auto Gun
@@ -21,7 +21,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Overcharge
   { id: 'overcharge', description: ['Raise base power', 'of all your balls'], rarity: 'uncommon', maxStacks: 3 },
   // Split All
-  { id: 'splitAll', description: ['Clone every one', 'of your live balls'], rarity: 'rare', maxStacks: 2 },
+  { id: 'splitAll', description: ['Clone every one', 'of your live balls'], rarity: 'common', maxStacks: 2 },
   // Sacrifice
   { id: 'sacrifice', description: ['Halve boss HP', 'Destroy all balls', 'Gain 2 more picks'], rarity: 'rare', maxStacks: 1 },
   // Boss Magnet
@@ -33,7 +33,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Paint Cannon
   { id: 'paintShot', description: ['Red bumpers shoot', 'through the table'], rarity: 'uncommon', maxStacks: 3 },
   // Echo Spark
-  { id: 'energyEcho', description: ['Blue bumpers spawn', 'temporary balls'], rarity: 'rare', maxStacks: 3 },
+  { id: 'energyEcho', description: ['Blue bumpers spawn', 'temporary balls'], rarity: 'uncommon', maxStacks: 3 },
   { id: 'foreverRainbow', description: ['All your balls stay', 'rainbow forever'], rarity: 'rare', maxStacks: 1 },
 ];
 
