@@ -72,7 +72,7 @@ function updateTrails(): void {
   for (const id of trails.keys()) if (!liveIds.has(id)) trails.delete(id);
   for (const ball of world.balls) {
     let pts = trails.get(ball.id);
-    if (pts?.length && pts[pts.length - 1].role !== ball.role) pts = [];
+    if (pts && pts[0].role !== ball.role) pts.length = 0;
     if (!pts) { pts = []; trails.set(ball.id, pts); }
     const color = ball.role === 'hostile' ? ORANGE : ball.role === 'echo' ? CYAN : ballColor(ball.color, world.time);
     pts.push({ x: ball.x, y: ball.y, color, role: ball.role, rainbow: ball.color === 'rainbow' });
