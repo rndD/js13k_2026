@@ -652,7 +652,7 @@ function drawResults(ctx: CanvasRenderingContext2D, world: World): void {
 }
 
 function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean, time: number): void {
-  ctx.fillStyle = withAlpha(BG, 0.72);
+  ctx.fillStyle = withAlpha(BG, 0.86);
   ctx.fillRect(0, -HUD_HEIGHT, FIELD_W, FIELD_H + HUD_HEIGHT);
   ctx.textAlign = 'center';
   ctx.fillStyle = rainbowGradient(ctx, 315, 0, false, 1, time);
@@ -662,9 +662,10 @@ function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean, time: number): 
   ctx.fillText('DEFEAT ALL 5 BOSSES', FIELD_W / 2, 270);
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
-  ctx.fillText(touch ? 'TAP TO START' : 'PRESS ANY KEY TO START', FIELD_W / 2, 310);
+  ctx.fillText(touch ? 'TAP TO START' : 'PRESS ANY KEY TO START', FIELD_W / 2, 425);
   ctx.fillStyle = STRUCTURE;
   ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'USE ↑ ← → TO CONTROL', FIELD_W / 2, 340);
   ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : 'HOLD ↑ TO LAUNCH   ← → FLIPPERS', FIELD_W / 2, 365);
+  ctx.fillStyle = RED;
   ctx.fillText(touch ? 'HOLD ON BALL HIT TO AIM' : 'HOLD ← / → ON BALL HIT TO AIM', FIELD_W / 2, 390);
 }
