@@ -250,7 +250,7 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
     const bonus = OVERCHARGE_BONUSES[rank] - OVERCHARGE_BONUSES[rank - 1];
     for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + bonus);
   }
-  if (id === 'foreverRainbow') for (const ball of world.balls) if (ball.role !== 'hostile') makeRainbow(ball);
+  if (id === 'rainbow') for (const ball of world.balls) if (ball.role !== 'hostile') makeRainbow(ball);
   if (id === 'splitAll') {
     const originals = world.balls.filter((ball) => ball.role !== 'hostile');
     world.nextBallId = Math.max(world.nextBallId, ...world.balls.map((ball) => ball.id + 1));
@@ -354,7 +354,7 @@ function launchBall(world: World, power: number): void {
   const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
   const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
   ball.multiplier = baseMultiplier(world);
-  if (world.upgrades.foreverRainbow) makeRainbow(ball);
+  if (world.upgrades.rainbow) makeRainbow(ball);
   ball.vx = -60;
   ball.vy = -speed;
   world.balls.push(ball);
@@ -722,7 +722,7 @@ function convertHostile(world: World, ball: Ball): void {
   ball.charge = recruiter;
   ball.color = 'white';
   ball.accent = false;
-  if (world.upgrades.foreverRainbow) makeRainbow(ball);
+  if (world.upgrades.rainbow) makeRainbow(ball);
   ball.roleFlash = ROLE_FLASH_DURATION;
   addPoints(world, POINTS_HOSTILE_CAPTURE);
   world.sfx.push('echoCapture');
@@ -878,7 +878,7 @@ function applyEnergyHit(world: World, ball: Ball): void {
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS * growth);
   addPoints(world, POINTS_CHARGE_TARGET);
   world.sfx.push('energyChime');
-  const rank = world.upgrades.energyEcho;
+  const rank = world.upgrades.echo;
   if (rank && rollChance(world, ENERGY_ECHO_CHANCES[rank - 1])) {
     const echo = createBall(world.nextBallId++, world.boss.x, world.boss.y - ARMOR_ORBIT_RADIUS - ARMOR_RING_GAP - 14, 'echo');
     const recruiter = world.upgrades.recruiter;
@@ -887,7 +887,7 @@ function applyEnergyHit(world: World, ball: Ball): void {
     echo.lifetime = RECRUITER_LIFETIMES[recruiter];
     echo.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades.overcharge];
     echo.charge = recruiter;
-    if (world.upgrades.foreverRainbow) makeRainbow(echo);
+    if (world.upgrades.rainbow) makeRainbow(echo);
     echo.vx = world.randomSeed % 121 - 60;
     echo.vy = -HOSTILE_BALL_SPEED;
     world.balls.push(echo);

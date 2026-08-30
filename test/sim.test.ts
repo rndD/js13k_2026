@@ -475,7 +475,7 @@ describe('wild upgrades', () => {
     world.balls = [mine, hostile];
     world.nextBallId = 3;
 
-    applyUpgrade(world, 'foreverRainbow');
+    applyUpgrade(world, 'rainbow');
     expect(mine.color).toBe('rainbow');
     expect(hostile.color).not.toBe('rainbow');
 
@@ -799,7 +799,7 @@ describe('outcomes', () => {
   it('can spawn an echo above the boss from an energy bumper', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.energyEcho = 3;
+    world.upgrades.echo = 3;
     world.randomSeed = 0;
     const target = world.bumpers.find((bumper) => bumper.kind === 'energy')!;
     const ball = createBall(1, target.x + target.r + 3, target.y);
@@ -816,7 +816,7 @@ describe('outcomes', () => {
   });
 
   it('shows the stronger Blue Bumper temporary-ball chances', () => {
-    expect([0, 1, 2].map((rank) => abilityDescription(abilityById('energyEcho'), rank)[0])).toEqual([
+    expect([0, 1, 2].map((rank) => abilityDescription(abilityById('echo'), rank)[0])).toEqual([
       'Blue bumper: 18%',
       'Blue bumper: 38%',
       'Blue bumper: 60%',

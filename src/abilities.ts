@@ -33,8 +33,8 @@ export const ABILITIES: AbilityDefinition[] = [
   // Paint Cannon
   { id: 'paintShot', description: ['Red bumpers shoot', 'through the table'], rarity: 'uncommon', maxStacks: 3 },
   // Echo Spark
-  { id: 'energyEcho', description: ['Blue bumper: 18%', 'spawn temporary ball', 'above the boss'], rarity: 'uncommon', maxStacks: 3 },
-  { id: 'foreverRainbow', description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare', maxStacks: 1 },
+  { id: 'echo', description: ['Blue bumper: 18%', 'spawn temporary ball', 'above the boss'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 'rainbow', description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare', maxStacks: 1 },
   { id: 'autoFlippers', description: ['IDLE MODE', 'Flippers hit nearby', 'balls automatically'], rarity: 'rare', maxStacks: 1 },
 ];
 
@@ -48,7 +48,7 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 'overcharge') return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 'splitAll' && rank) return ['Quadruple all', 'your balls in play'];
   if (ability.id === 'paintShot') return [`Red bumper shot`, `${[8, 14, 22][rank]} base damage`];
-  if (ability.id === 'energyEcho') return [`Blue bumper: ${[18, 38, 60][rank]}%`, 'spawn temporary ball', 'above the boss'];
+  if (ability.id === 'echo') return [`Blue bumper: ${[18, 38, 60][rank]}%`, 'spawn temporary ball', 'above the boss'];
   if (ability.id === 'ballRestore') return ['Restore 1 ball', `every ${[30, 25][rank]} sec`, 'max 4 in reserve'];
   if (ability.id === 'critical') return [`${[15, 30, 45][rank]}% chance to`, 'deal double damage'];
   if (ability.id !== 'autoGun' || rank === 0) return ability.description;

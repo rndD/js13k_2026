@@ -126,7 +126,7 @@ export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
     restoreTimer: 0,
     randomSeed: 1,
     points: 0,
-    upgrades: { extraCore: 0, recruiter: 0, poison: 0, autoGun: 0, overcharge: 0, splitAll: 0, sacrifice: 0, bossMagnet: 0, ballRestore: 0, critical: 0, paintShot: 0, energyEcho: 0, foreverRainbow: 0, autoFlippers: 0 },
+    upgrades: { extraCore: 0, recruiter: 0, poison: 0, autoGun: 0, overcharge: 0, splitAll: 0, sacrifice: 0, bossMagnet: 0, ballRestore: 0, critical: 0, paintShot: 0, echo: 0, rainbow: 0, autoFlippers: 0 },
     previousUpgradeGap: 50,
     upgradeGap: 100,
     nextUpgradeAt: 100,
