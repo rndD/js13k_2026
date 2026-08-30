@@ -207,7 +207,7 @@ export interface FxEvent {
  * pegs, and BUMPER_COLOR keying off bumper.kind).
  */
 export interface ContactEvent {
-  kind: 'structure' | 'flipper' | 'paint' | 'energy' | 'pad' | 'armor';
+  kind: 'structure' | 'paint' | 'energy' | 'pad' | 'armor';
   x: number;
   y: number;
 }

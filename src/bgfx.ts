@@ -7,11 +7,11 @@
 //
 // Contact is tagged at the exact point-of-cause in sim.ts's updateBalls
 // (World.contacts, see types.ts's ContactEvent) - the same pattern already
-// used for sfx/fx - rather than guessed afterward, so every kind of thing
-// the ball can touch (wall/peg, flipper, paint bumper, energy bumper,
+// used for sfx/fx - rather than guessed afterward, so relevant things
+// the ball can touch (wall/peg, paint bumper, energy bumper,
 // launch pad) is covered exactly once and gets its own color below,
 // matching the color that element already uses elsewhere in the game
-// (paint=RED, energy=CYAN, pads=YELLOW, flippers=VIOLET while active).
+// (paint=RED, energy=CYAN, pads=YELLOW).
 //
 // Each splat is a standalone particle (not painted onto a persistent
 // bitmap): a bitmap can only ever erode/blur in place, it can't actually
@@ -41,7 +41,7 @@ import {
   BGFX_SWAY_FREQ,
   HUD_HEIGHT,
 } from './constants';
-import { BG, CYAN, RED, STRUCTURE, VIOLET, YELLOW, withAlpha } from './palette';
+import { BG, CYAN, RED, STRUCTURE, YELLOW, withAlpha } from './palette';
 import type { ContactEvent, World } from './types';
 
 interface Splat {
@@ -73,11 +73,10 @@ const HIT_COLOR: Record<'boss' | 'armor' | 'hostileBurst' | 'echoBurst' | 'win' 
 
 /** One color per ContactEvent.kind, matching how that element is colored
  * everywhere else in the game (paint bumper=RED, energy bumper=CYAN,
- * launch pad=YELLOW, active flipper glow=VIOLET) - plain wall/peg structure
+ * launch pad=YELLOW) - plain wall/peg structure
  * gets the neutral pale-grey STRUCTURE tone used for that geometry. */
 const CONTACT_COLOR: Record<ContactEvent['kind'], string> = {
   structure: STRUCTURE,
-  flipper: VIOLET,
   paint: RED,
   energy: CYAN,
   pad: YELLOW,
