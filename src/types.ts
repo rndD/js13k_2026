@@ -88,6 +88,8 @@ export interface Boss {
   maxHp: number;
   trailHp: number;
   hitTimer: number;
+  rage: number;
+  heal: number;
   spawnTimer: number;
   specialTimer: number;
   warningTimer: number;

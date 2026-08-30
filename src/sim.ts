@@ -37,9 +37,6 @@ import {
   BOSS_MOVE_X,
   BOSS_MOVE_Y,
   BOSS_MAGNET_FORCE,
-  BOSS_REGEN_AMOUNTS,
-  BOSS_REGEN_DELAY,
-  BOSS_REGEN_INTERVAL,
   BOSS_HP_TRAIL_DELAY,
   BOSS_HP_TRAIL_SPEED,
   BUMPER_COOLDOWN,
@@ -166,7 +163,7 @@ function isFinished(world: World): boolean {
 
 function trackDamage(world: World, amount: number): void {
   world.damageLog.push([world.time, amount]);
-  world.boss.hitTimer = BOSS_REGEN_DELAY;
+  world.boss.hitTimer = BOSS_HP_TRAIL_DELAY;
 }
 
 function updateVibrancy(world: World, dt: number): void {
@@ -893,13 +890,28 @@ function updateBoss(world: World, dt: number): void {
   if (world.phase !== 'battle') return;
   const boss = world.boss;
   boss.hitTimer -= dt;
-  if (boss.hitTimer < BOSS_REGEN_DELAY - BOSS_HP_TRAIL_DELAY) boss.trailHp = Math.max(boss.hp, boss.trailHp - boss.maxHp * BOSS_HP_TRAIL_SPEED * dt);
-  if (boss.rank >= 3 && boss.hitTimer <= 0 && boss.hp < boss.maxHp) {
-    const amount = Math.min(BOSS_REGEN_AMOUNTS[boss.rank - 3], boss.maxHp - boss.hp);
-    boss.hp += amount;
-    boss.trailHp = Math.max(boss.trailHp, boss.hp);
-    boss.hitTimer = BOSS_REGEN_INTERVAL;
-    world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });
+  if (boss.hitTimer < 0) boss.trailHp = Math.max(boss.hp, boss.trailHp - boss.maxHp * BOSS_HP_TRAIL_SPEED * dt);
+  if (boss.rank === 3 && !boss.rage && boss.hp <= boss.maxHp / 2) {
+    boss.rage = 1;
+    for (const armor of boss.armor) armor.hp = armor.maxHp;
+    world.sfx.push('energyChime');
+  }
+  if (boss.rank > 2 && boss.rage < 2 && boss.hp <= boss.maxHp / 4) {
+    boss.rage = 2;
+    boss.heal = 1;
+    if (boss.rank === 4) {
+      for (const armor of boss.armor) if (!armor.ring) armor.hp = armor.maxHp;
+      world.sfx.push('energyChime');
+    }
+  }
+  if (boss.rage === 2 && (boss.heal -= dt) <= 0) {
+    boss.heal = 1;
+    if (boss.hp < boss.maxHp) {
+      const amount = Math.min(boss.rank === 3 ? 5 : 10, boss.maxHp - boss.hp);
+      boss.hp += amount;
+      boss.trailHp = Math.max(boss.trailHp, boss.hp);
+      world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });
+    }
   }
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
