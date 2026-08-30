@@ -1,4 +1,5 @@
 import type { AbilityId } from './types';
+import { PAINT_SHOT_DAMAGES } from './constants';
 
 export type AbilityRarity = 'common' | 'uncommon' | 'rare';
 
@@ -15,7 +16,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Recruiter
   { id: 2, description: ['Temporary balls', 'hit harder &', 'last longer'], rarity: 'common', maxStacks: 3 },
   // Poison
-  { id: 3, description: ['Hits stack poison', '+8 each hit', 'Bursts every second'], rarity: 'common', maxStacks: 3 },
+  { id: 3, description: [], rarity: 'common', maxStacks: 3 },
   // Auto Gun
   { id: 4, description: ['Main balls fire', '4 damage bullets'], rarity: 'common', maxStacks: 4 },
   // Overcharge
@@ -48,7 +49,7 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 3) return ['Hits stack poison', `+${[8, 16, 24][rank]} each hit`];
   if (ability.id === 5) return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 6 && rank) return ['Quadruple all', 'your balls in play'];
-  if (ability.id === 11) return ['Red bumpers fire', `${[8, 14, 22][rank]} damage bullets`];
+  if (ability.id === 11) return ['Red bumpers fire', `${PAINT_SHOT_DAMAGES[rank]} damage bullets`];
   if (ability.id === 12) return [`Blue bumper: ${[18, 38, 60][rank]}%`, 'spawn temporary ball', 'above the boss'];
   if (ability.id === 9) return ['Restore 1 ball', `every ${[30, 25][rank]} sec`, 'max 4 in reserve'];
   if (ability.id === 10) return [`${[15, 30, 45][rank]}% chance to`, 'deal double damage'];
