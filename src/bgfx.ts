@@ -110,6 +110,7 @@ function spawnSplat(state: BgFxState, x: number, y: number, color: string, radiu
  * anything), spawning one splat per event, colored per its kind. */
 export function spawnBgFx(state: BgFxState, world: World): void {
   for (const ev of world.fx) {
+    if (ev.heal) continue;
     const burst = ev.kind === 'hostileBurst' || ev.kind === 'echoBurst';
     spawnSplat(
       state,

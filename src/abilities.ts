@@ -52,5 +52,5 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 9) return ['Restore 1 ball', `every ${[30, 25][rank]} sec`, 'max 4 in reserve'];
   if (ability.id === 10) return [`${[15, 30, 45][rank]}% chance to`, 'deal double damage'];
   if (ability.id !== 4 || rank === 0) return ability.description;
-  return rank === 2 ? ['Double bullet', 'damage'] : ['Fire bullets', '50% faster'];
+  return rank === 2 ? ['Double bullet', 'damage'] : rank === 3 ? ['24 damage bullets', '50% faster'] : ['Fire bullets', '50% faster'];
 }

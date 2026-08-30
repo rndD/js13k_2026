@@ -85,6 +85,8 @@ export interface Boss {
   r: number;
   hp: number;
   maxHp: number;
+  trailHp: number;
+  hitTimer: number;
   spawnTimer: number;
   specialTimer: number;
   warningTimer: number;
@@ -193,6 +195,7 @@ export interface FxEvent {
   /** damage dealt, drawn as a floating number - omitted for win/lose */
   amount?: number;
   critical?: boolean;
+  heal?: boolean;
 }
 
 /**

@@ -15,7 +15,7 @@ import {
   FX_SHAKE_WIN,
   HUD_HEIGHT,
 } from './constants';
-import { CYAN, ORANGE, RED, WHITE, YELLOW, withGlow } from './palette';
+import { CYAN, LIME, ORANGE, RED, WHITE, YELLOW, withGlow } from './palette';
 import type { FxEvent, World } from './types';
 
 interface Floater {
@@ -23,6 +23,7 @@ interface Floater {
   y: number;
   text: string;
   color: string;
+  size: number;
   age: number;
 }
 
@@ -67,7 +68,7 @@ const SHAKE_FOR: Record<FxEvent['kind'], number> = {
  * everything already in flight (shake magnitude, flash timers, floaters). */
 export function updateFx(fx: FxState, world: World, dt: number): void {
   for (const ev of world.fx) {
-    fx.shake = Math.max(fx.shake, SHAKE_FOR[ev.kind]);
+    if (!ev.heal) fx.shake = Math.max(fx.shake, SHAKE_FOR[ev.kind]);
     if (ev.kind === 'hostileBurst' || ev.kind === 'echoBurst' || ev.kind === 'win') {
       const color = ev.kind === 'hostileBurst' ? ORANGE : ev.kind === 'echoBurst' ? CYAN : YELLOW;
       const count = ev.kind === 'win' ? 20 : 10;
@@ -83,10 +84,10 @@ export function updateFx(fx: FxState, world: World, dt: number): void {
         })),
       });
     }
-    else if (ev.kind !== 'win' && ev.kind !== 'lose') fx.flashes.set(ev.kind, FX_FLASH_DURATION);
+    else if (!ev.heal && ev.kind !== 'lose') fx.flashes.set(ev.kind, FX_FLASH_DURATION);
     if (ev.amount !== undefined) {
       const amount = Math.round(ev.amount);
-      fx.floaters.push({ x: ev.x, y: ev.y, text: ev.critical ? `CRIT ${amount}` : String(amount), color: ev.critical ? YELLOW : FLOATER_COLOR[ev.kind], age: 0 });
+      fx.floaters.push({ x: ev.x, y: ev.y, text: ev.heal ? `+${amount}` : ev.critical ? `CRIT ${amount}` : String(amount), color: ev.heal ? LIME : ev.critical ? YELLOW : FLOATER_COLOR[ev.kind], size: Math.min(24, 10 + Math.sqrt(amount)), age: 0 });
     }
   }
 
@@ -154,13 +155,13 @@ export function drawFx(ctx: CanvasRenderingContext2D, fx: FxState, world: World)
   }
 
   ctx.globalAlpha = 1;
-  ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'center';
   for (const f of fx.floaters) {
     const t = f.age / FX_FLOATER_LIFE;
     ctx.globalAlpha = 1 - t;
     withGlow(ctx, f.color, 6, () => {
       ctx.fillStyle = f.color;
+      ctx.font = `bold ${f.size}px monospace`;
       ctx.fillText(f.text, f.x, f.y - t * FX_FLOATER_RISE);
     });
   }

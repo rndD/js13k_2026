@@ -37,6 +37,11 @@ import {
   BOSS_MOVE_X,
   BOSS_MOVE_Y,
   BOSS_MAGNET_FORCE,
+  BOSS_REGEN_AMOUNTS,
+  BOSS_REGEN_DELAY,
+  BOSS_REGEN_INTERVAL,
+  BOSS_HP_TRAIL_DELAY,
+  BOSS_HP_TRAIL_SPEED,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   CRITICAL_CHANCE,
@@ -161,6 +166,7 @@ function isFinished(world: World): boolean {
 
 function trackDamage(world: World, amount: number): void {
   world.damageLog.push([world.time, amount]);
+  world.boss.hitTimer = BOSS_REGEN_DELAY;
 }
 
 function updateVibrancy(world: World, dt: number): void {
@@ -848,8 +854,7 @@ function applyPaintHit(world: World, ball: Ball, bumper: Bumper): void {
   const rank = world.upgrades[11];
   if (rank) {
     const angle = Math.atan2(world.boss.y - bumper.y, world.boss.x - bumper.x);
-    const gun = world.upgrades[4];
-    const damage = (PAINT_SHOT_DAMAGES[rank - 1] + (gun ? BULLET_DAMAGES[gun - 1] : 0)) * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier) * (ball.color === 'rainbow' ? 1.25 : 1);
+    const damage = PAINT_SHOT_DAMAGES[rank - 1] * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier) * (ball.color === 'rainbow' ? 1.25 : 1);
     world.bullets.push({ x: bumper.x, y: bumper.y, vx: Math.cos(angle) * BULLET_SPEED, vy: Math.sin(angle) * BULLET_SPEED, r: 4, damage, lifetime: 2, paint: true, critical: rollBulletCritical(world) });
     world.sfx.push('gunShot');
   }
@@ -886,6 +891,15 @@ function updateCooldowns(world: World, dt: number): void {
 function updateBoss(world: World, dt: number): void {
   if (world.phase !== 'battle') return;
   const boss = world.boss;
+  boss.hitTimer -= dt;
+  if (boss.hitTimer < BOSS_REGEN_DELAY - BOSS_HP_TRAIL_DELAY) boss.trailHp = Math.max(boss.hp, boss.trailHp - boss.maxHp * BOSS_HP_TRAIL_SPEED * dt);
+  if (boss.rank >= 3 && boss.hitTimer <= 0 && boss.hp < boss.maxHp) {
+    const amount = Math.min(BOSS_REGEN_AMOUNTS[boss.rank - 3], boss.maxHp - boss.hp);
+    boss.hp += amount;
+    boss.trailHp = Math.max(boss.trailHp, boss.hp);
+    boss.hitTimer = BOSS_REGEN_INTERVAL;
+    world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });
+  }
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
   for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt * (armor.ring % 2 ? -1 : 1);

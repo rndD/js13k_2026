@@ -96,19 +96,24 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.textAlign = 'left';
   ctx.fillStyle = STRUCTURE;
   ctx.fillText(`BOSS ${boss.rank + 1}`, pad, 14);
+  ctx.fillStyle = WHITE;
+  ctx.fillRect(pad, 17, w * boss.trailHp / boss.maxHp, barH);
   drawBar(ctx, pad, 17, w, barH, boss.hp / boss.maxHp, RED);
 
   ctx.fillStyle = LIME;
   ctx.textAlign = 'left';
   ctx.fillText(`POINTS ${Math.round(world.points)}`, pad, 40);
   drawBar(ctx, pad, 44, 70, 3, (world.points - world.nextUpgradeAt + world.upgradeGap) / world.upgradeGap, LIME);
+  ctx.font = 'bold 8px monospace';
+  ctx.fillText(`LV ${world.upgradeCount + 1}`, 84, 47);
   const seconds = Math.floor(world.time);
+  ctx.font = 'bold 13px monospace';
   ctx.fillStyle = STRUCTURE;
   ctx.textAlign = 'center';
   ctx.fillText(`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W / 2, 40);
   ctx.textAlign = 'right';
-  ctx.fillStyle = WHITE;
   const stored = world.coreBalls - world.balls.filter((ball) => ball.stocked).length;
+  ctx.fillStyle = stored <= 1 ? RED : WHITE;
   const regen = world.upgrades[9] && stored < 4 ? ` +1 ${Math.ceil(BALL_RESTORE_TIMES[world.upgrades[9] - 1] - world.restoreTimer)}s` : '';
   ctx.fillText(`BALLS ${stored}${regen}`, FIELD_W - pad, 40);
 

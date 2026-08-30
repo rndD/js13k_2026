@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, AUTO_LAUNCH_DELAY, BOSS_HPS, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED } from '../src/constants';
+import { ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, AUTO_LAUNCH_DELAY, BOSS_HPS, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED, PAINT_SHOT_DAMAGES } from '../src/constants';
 import { createBall, createBoss, createWorld } from '../src/entities';
 import { abilityById, abilityDescription } from '../src/abilities';
 import { LEVEL, LEVELS } from '../src/level';
@@ -419,6 +419,19 @@ describe('wild upgrades', () => {
     expect(world.bullets[0].damage).toBe(8);
   });
 
+  it('makes the final Auto Gun shot stronger than the final red-bumper shot', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades[4] = 4;
+    const ball = createBall(1, 40, 400);
+    ball.vy = -300;
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.bullets[0].damage).toBeGreaterThan(PAINT_SHOT_DAMAGES[2]);
+  });
+
   it('gun shots pass through table geometry', () => {
     const world = createWorld();
     world.phase = 'battle';
@@ -797,7 +810,7 @@ describe('outcomes', () => {
     expect(world.boss.specialTimer).toBe(8);
   });
 
-  it('fires a geometry-piercing paint shot with Auto Gun bonus damage', () => {
+  it('fires a geometry-piercing paint shot without Auto Gun bonus damage', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.upgrades[11] = 1;
@@ -811,7 +824,41 @@ describe('outcomes', () => {
 
     const shot = world.bullets.find((bullet) => bullet.paint)!;
     expect(shot).toBeDefined();
-    expect(shot.damage).toBe(24);
+    expect(shot.damage).toBe(12);
+  });
+
+  it('regenerates bosses four and five every half second after three seconds without damage', () => {
+    for (const [rank, amount] of [[3, 4], [4, 8]]) {
+      const world = createWorld();
+      world.phase = 'battle';
+      world.boss = createBoss(LEVEL.boss, rank);
+      world.boss.hp -= 100;
+
+      for (let i = 0; i < 179; i++) step(world, NO_CONTROLS, FIXED_DT);
+      expect(world.boss.hp).toBe(world.boss.maxHp - 100);
+      for (let i = 0; i < 2; i++) step(world, NO_CONTROLS, FIXED_DT);
+      expect(world.boss.hp).toBe(world.boss.maxHp - 100 + amount);
+      expect(world.fx).toContainEqual(expect.objectContaining({ kind: 'boss', amount, heal: true }));
+      for (let i = 0; i < 29; i++) step(world, NO_CONTROLS, FIXED_DT);
+      expect(world.boss.hp).toBe(world.boss.maxHp - 100 + amount);
+      for (let i = 0; i < 2; i++) step(world, NO_CONTROLS, FIXED_DT);
+      expect(world.boss.hp).toBe(world.boss.maxHp - 100 + amount * 2);
+    }
+  });
+
+  it('holds recent boss damage in the health trail before it catches up', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    world.bullets = [{ x: world.boss.x, y: world.boss.y, vx: 0, vy: 0, r: 2, damage: 50, lifetime: 1 }];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.trailHp).toBe(world.boss.maxHp);
+    for (let i = 0; i < 30; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.trailHp).toBe(world.boss.maxHp);
+    for (let i = 0; i < 12; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.trailHp).toBeLessThan(world.boss.maxHp);
+    expect(world.boss.trailHp).toBeGreaterThanOrEqual(world.boss.hp);
   });
 
   it('can spawn an echo above the boss from an energy bumper', () => {
