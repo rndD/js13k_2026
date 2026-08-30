@@ -233,35 +233,35 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
 
   world.upgrades[id] += 1;
   world.upgradeCount += 1;
-  if (id === 'extraCore') {
-    const amount = world.upgrades.extraCore + 1;
+  if (id === 1) {
+    const amount = world.upgrades[1] + 1;
     world.coreBalls += amount;
   }
-  if (id === 'recruiter') {
-    const rank = world.upgrades.recruiter;
+  if (id === 2) {
+    const rank = world.upgrades[2];
     for (const ball of world.balls) if (ball.role === 'echo') {
       ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + 1);
       ball.stability = Math.max(ball.stability, RECRUITER_STABILITIES[rank]);
       ball.lifetime = Math.max(ball.lifetime, RECRUITER_LIFETIMES[rank]);
     }
   }
-  if (id === 'overcharge') {
-    const rank = world.upgrades.overcharge;
+  if (id === 5) {
+    const rank = world.upgrades[5];
     const bonus = OVERCHARGE_BONUSES[rank] - OVERCHARGE_BONUSES[rank - 1];
     for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + bonus);
   }
-  if (id === 'rainbow') for (const ball of world.balls) if (ball.role !== 'hostile') makeRainbow(ball);
-  if (id === 'splitAll') {
+  if (id === 13) for (const ball of world.balls) if (ball.role !== 'hostile') makeRainbow(ball);
+  if (id === 6) {
     const originals = world.balls.filter((ball) => ball.role !== 'hostile');
     world.nextBallId = Math.max(world.nextBallId, ...world.balls.map((ball) => ball.id + 1));
     for (const ball of originals) {
-      for (let copy = 1; copy < (world.upgrades.splitAll === 2 ? 4 : 2); copy++) {
+      for (let copy = 1; copy < (world.upgrades[6] === 2 ? 4 : 2); copy++) {
         const sign = copy % 2 ? 1 : -1;
         world.balls.push({ ...ball, id: world.nextBallId++, stocked: false, x: ball.x + sign * ball.r * copy, vx: ball.vx + sign * 90, gunTimer: 0 });
       }
     }
   }
-  if (id === 'sacrifice') {
+  if (id === 7) {
     trackDamage(world, world.boss.hp - Math.ceil(world.boss.hp / 2));
     world.boss.hp = Math.ceil(world.boss.hp / 2);
     for (const ball of world.balls) {
@@ -284,7 +284,7 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
   for (const f of world.flippers) {
     const wasActive = f.active;
     const held = f.side === 'left' ? controls.left : controls.right;
-    const auto = world.upgrades.autoFlippers && world.balls.some((ball) => Math.hypot(ball.x - f.pivot.x, ball.y - f.pivot.y) < 100);
+    const auto = world.upgrades[14] && world.balls.some((ball) => Math.hypot(ball.x - f.pivot.x, ball.y - f.pivot.y) < 100);
     f.active = !!(held || auto);
     if (f.active && !wasActive) world.sfx.push('flipperClick');
     const target = f.active ? f.activeAngle : f.restAngle;
@@ -296,7 +296,7 @@ function updateFlippers(world: World, controls: ControlsState, dt: number): void
 }
 
 function updateBallRestore(world: World, dt: number): void {
-  const rank = world.upgrades.ballRestore;
+  const rank = world.upgrades[9];
   if (!rank || (world.phase !== 'launch' && world.phase !== 'battle')) return;
   const stored = world.coreBalls - world.balls.filter((ball) => ball.stocked).length;
   if (stored >= 4) return;
@@ -310,7 +310,7 @@ function updateBallRestore(world: World, dt: number): void {
 }
 
 function rollCritical(world: World): boolean {
-  return world.upgrades.critical > 0 && rollChance(world, CRITICAL_CHANCE * world.upgrades.critical);
+  return world.upgrades[10] > 0 && rollChance(world, CRITICAL_CHANCE * world.upgrades[10]);
 }
 
 function rollChance(world: World, chance: number): boolean {
@@ -323,7 +323,7 @@ function random(world: World): number {
 }
 
 function baseMultiplier(world: World): number {
-  return 1 + OVERCHARGE_BONUSES[world.upgrades.overcharge];
+  return 1 + OVERCHARGE_BONUSES[world.upgrades[5]];
 }
 
 function updateLaunch(world: World, controls: ControlsState, dt: number): void {
@@ -354,7 +354,7 @@ function launchBall(world: World, power: number): void {
   const speed = LAUNCH_MIN_SPEED + power * (LAUNCH_MAX_SPEED - LAUNCH_MIN_SPEED);
   const ball = createBall(world.nextBallId++, world.launch.x, world.launch.y);
   ball.multiplier = baseMultiplier(world);
-  if (world.upgrades.rainbow) makeRainbow(ball);
+  if (world.upgrades[13]) makeRainbow(ball);
   ball.vx = -60;
   ball.vy = -speed;
   world.balls.push(ball);
@@ -366,7 +366,7 @@ function launchBall(world: World, power: number): void {
 }
 
 function updateGun(world: World, dt: number): void {
-  const rank = world.upgrades.autoGun;
+  const rank = world.upgrades[4];
   if (!rank) return;
   const interval = BULLET_INTERVALS[rank - 1];
   const damage = BULLET_DAMAGES[rank - 1];
@@ -476,11 +476,11 @@ function updateBalls(world: World, dt: number): void {
         continue;
       }
     }
-    if (ball.role !== 'hostile' && world.upgrades.bossMagnet > 0) {
+    if (ball.role !== 'hostile' && world.upgrades[8] > 0) {
       const dx = world.boss.x - ball.x;
       const dy = world.boss.y - ball.y;
       const distance = Math.hypot(dx, dy) || 1;
-      const pull = BOSS_MAGNET_FORCE * world.upgrades.bossMagnet * dt;
+      const pull = BOSS_MAGNET_FORCE * world.upgrades[8] * dt;
       ball.vx += dx / distance * pull;
       ball.vy += dy / distance * pull;
     }
@@ -535,7 +535,7 @@ function updateBalls(world: World, dt: number): void {
             side: f.side,
             centerAngle: aimCenterAngle(ball.x, ball.y, world.boss.x, world.boss.y),
             cone: aimConeForMultiplier(ball.multiplier),
-            sweepT: world.upgrades.autoFlippers ? 0.5 : 0,
+            sweepT: world.upgrades[14] ? 0.5 : 0,
             dir: 1,
             timer: AIM_TIMEOUT,
           };
@@ -613,8 +613,8 @@ function updateBalls(world: World, dt: number): void {
         world.fx.push({ kind: 'boss', x: world.boss.x, y: world.boss.y, amount: dmg, critical });
         if (critical) world.sfx.push('energyChime');
         ball.multiplier = Math.max(baseMultiplier(world), ball.multiplier - HIT_MULTIPLIER_COST);
-        if (world.upgrades.poison > 0) {
-          world.boss.poisonDamage += POISON_DAMAGE * world.upgrades.poison;
+        if (world.upgrades[3] > 0) {
+          world.boss.poisonDamage += POISON_DAMAGE * world.upgrades[3];
           world.boss.poisonTimer = POISON_DELAY;
         }
         expired = spendEchoStability(ball);
@@ -714,15 +714,15 @@ function explodeBall(world: World, ball: Ball): void {
 }
 
 function convertHostile(world: World, ball: Ball): void {
-  const recruiter = world.upgrades.recruiter;
+  const recruiter = world.upgrades[2];
   ball.role = 'echo';
   ball.stability = RECRUITER_STABILITIES[recruiter];
   ball.lifetime = RECRUITER_LIFETIMES[recruiter];
-  ball.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades.overcharge];
+  ball.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades[5]];
   ball.charge = recruiter;
   ball.color = 'white';
   ball.accent = false;
-  if (world.upgrades.rainbow) makeRainbow(ball);
+  if (world.upgrades[13]) makeRainbow(ball);
   ball.roleFlash = ROLE_FLASH_DURATION;
   addPoints(world, POINTS_HOSTILE_CAPTURE);
   world.sfx.push('echoCapture');
@@ -862,10 +862,10 @@ function applyPaintHit(world: World, ball: Ball, bumper: Bumper): void {
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + PAINT_MULTIPLIER_STEP * growth);
   addPoints(world, POINTS_PAINT_TARGET);
   world.sfx.push('paintHit');
-  const rank = world.upgrades.paintShot;
+  const rank = world.upgrades[11];
   if (rank) {
     const angle = Math.atan2(world.boss.y - bumper.y, world.boss.x - bumper.x);
-    const gun = world.upgrades.autoGun;
+    const gun = world.upgrades[4];
     const damage = (PAINT_SHOT_DAMAGES[rank - 1] + (gun ? BULLET_DAMAGES[gun - 1] : 0)) * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier) * (ball.color === 'rainbow' ? 1.25 : 1);
     world.bullets.push({ x: bumper.x, y: bumper.y, vx: Math.cos(angle) * BULLET_SPEED, vy: Math.sin(angle) * BULLET_SPEED, r: 4, damage, lifetime: 2, paint: true });
     world.sfx.push('gunShot');
@@ -878,16 +878,16 @@ function applyEnergyHit(world: World, ball: Ball): void {
   ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + ENERGY_TARGET_MULT_BONUS * growth);
   addPoints(world, POINTS_CHARGE_TARGET);
   world.sfx.push('energyChime');
-  const rank = world.upgrades.echo;
+  const rank = world.upgrades[12];
   if (rank && rollChance(world, ENERGY_ECHO_CHANCES[rank - 1])) {
     const echo = createBall(world.nextBallId++, world.boss.x, world.boss.y - ARMOR_ORBIT_RADIUS - ARMOR_RING_GAP - 14, 'echo');
-    const recruiter = world.upgrades.recruiter;
+    const recruiter = world.upgrades[2];
     echo.stocked = false;
     echo.stability = RECRUITER_STABILITIES[recruiter];
     echo.lifetime = RECRUITER_LIFETIMES[recruiter];
-    echo.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades.overcharge];
+    echo.multiplier = 1 + recruiter + OVERCHARGE_BONUSES[world.upgrades[5]];
     echo.charge = recruiter;
-    if (world.upgrades.rainbow) makeRainbow(echo);
+    if (world.upgrades[13]) makeRainbow(echo);
     echo.vx = world.randomSeed % 121 - 60;
     echo.vy = -HOSTILE_BALL_SPEED;
     world.balls.push(echo);

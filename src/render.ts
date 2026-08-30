@@ -108,7 +108,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.textAlign = 'right';
   ctx.fillStyle = WHITE;
   const stored = world.coreBalls - world.balls.filter((ball) => ball.stocked).length;
-  const regen = world.upgrades.ballRestore && stored < 4 ? ` +1 ${Math.ceil(BALL_RESTORE_TIMES[world.upgrades.ballRestore - 1] - world.restoreTimer)}s` : '';
+  const regen = world.upgrades[9] && stored < 4 ? ` +1 ${Math.ceil(BALL_RESTORE_TIMES[world.upgrades[9] - 1] - world.restoreTimer)}s` : '';
   ctx.fillText(`BALLS ${stored}${regen}`, FIELD_W - pad, 40);
 
   ctx.strokeStyle = STRUCTURE;
@@ -466,7 +466,7 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
     else {
       const opacity = ball.role === 'echo' ? Math.min(1, Math.max(0.25, ball.stability / ECHO_STABILITY)) : 1;
       drawBallSphere(ctx, ball, color, world.time, opacity);
-      if (ball.role === 'core' && world.upgrades.autoGun > 0) {
+      if (ball.role === 'core' && world.upgrades[4] > 0) {
         const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);
         ctx.strokeStyle = YELLOW;
         ctx.lineWidth = 3;

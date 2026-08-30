@@ -244,9 +244,9 @@ describe('energy target', () => {
 describe('upgrade milestones', () => {
   it('pauses at 100 points, grants a free choice, and resumes the frozen fight', () => {
     const world = createWorld();
-    world.upgrades.poison = 3;
-    world.upgrades.autoGun = 4;
-    world.upgrades.critical = 3;
+    world.upgrades[3] = 3;
+    world.upgrades[4] = 4;
+    world.upgrades[10] = 3;
     world.phase = 'battle';
     world.points = 90;
     const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
@@ -261,7 +261,7 @@ describe('upgrade milestones', () => {
     expect(world.nextUpgradeAt).toBe(250);
     expect(world.pick?.offers).toHaveLength(3);
     expect(new Set(world.pick?.offers).size).toBe(3);
-    const extraIndex = world.pick!.offers.indexOf('extraCore');
+    const extraIndex = world.pick!.offers.indexOf(1);
     expect(extraIndex).toBeGreaterThanOrEqual(0);
     const frozen = world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }));
 
@@ -279,7 +279,7 @@ describe('upgrade milestones', () => {
     expect(world.pick).toBeNull();
     expect(world.points).toBe(110);
     expect(world.coreBalls).toBe(5);
-    expect(world.upgrades.extraCore).toBe(1);
+    expect(world.upgrades[1]).toBe(1);
   });
 
   it('queues every crossed Fibonacci milestone even if points later fall', () => {
@@ -297,7 +297,7 @@ describe('upgrade milestones', () => {
 
     for (let i = 0; i < 3; i++) {
       for (let tick = 0; tick < 31; tick++) step(world, NO_CONTROLS, FIXED_DT);
-      const safeIndex = world.pick!.offers.findIndex((id) => id !== 'sacrifice');
+      const safeIndex = world.pick!.offers.findIndex((id) => id !== 7);
       step(world, { ...NO_CONTROLS, choice: safeIndex }, FIXED_DT);
       step(world, NO_CONTROLS, FIXED_DT);
     }
@@ -318,7 +318,7 @@ describe('upgrade milestones', () => {
 
 describe('wild upgrades', () => {
   it('explains every sacrifice consequence on the card', () => {
-    expect(abilityById('sacrifice').description).toEqual([
+    expect(abilityById(7).description).toEqual([
       'Halve boss HP',
       'Lose balls in play',
       'Pick 2 more cards',
@@ -330,14 +330,14 @@ describe('wild upgrades', () => {
     world.phase = 'battle';
 
     for (const expected of [5, 8, 12, 17]) {
-      applyUpgrade(world, 'extraCore');
+      applyUpgrade(world, 1);
       expect(world.coreBalls).toBe(expected);
     }
   });
 
   it('restores one lost ball every thirty active seconds and pauses at four', () => {
     const world = createWorld();
-    world.upgrades.ballRestore = 1;
+    world.upgrades[9] = 1;
     world.coreBalls = 2;
     world.launch.autoTimer = -1000;
 
@@ -360,7 +360,7 @@ describe('wild upgrades', () => {
 
   it('restores a ball every twenty-five seconds at regen level two', () => {
     const world = createWorld();
-    world.upgrades.ballRestore = 2;
+    world.upgrades[9] = 2;
     world.coreBalls = 1;
     world.launch.autoTimer = -1000;
 
@@ -373,7 +373,7 @@ describe('wild upgrades', () => {
   it('critical chance can double direct ball damage and marks the hit', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.critical = 3;
+    world.upgrades[10] = 3;
     world.randomSeed = 1;
     world.boss.armor.forEach((armor) => armor.hp = 0);
     const ball = createBall(1, world.boss.x, world.boss.y);
@@ -392,7 +392,7 @@ describe('wild upgrades', () => {
     const ball = createBall(1, 40, 400);
     ball.vy = -300;
     world.balls = [ball];
-    world.upgrades.autoGun = 1;
+    world.upgrades[4] = 1;
 
     step(world, NO_CONTROLS, FIXED_DT);
 
@@ -407,7 +407,7 @@ describe('wild upgrades', () => {
   it('scales bullet damage from its ball modifier at half strength above x2', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.autoGun = 1;
+    world.upgrades[4] = 1;
     const ball = createBall(1, 40, 400);
     ball.vy = -300;
     ball.multiplier = 4;
@@ -431,7 +431,7 @@ describe('wild upgrades', () => {
   it('does not fire while the ball is still at the launcher', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.autoGun = 1;
+    world.upgrades[4] = 1;
     const ball = createBall(1, world.launch.x, world.launch.y);
     world.balls = [ball];
 
@@ -453,11 +453,11 @@ describe('wild upgrades', () => {
     world.balls = [mine, bossBall];
     world.nextBallId = 3;
 
-    applyUpgrade(world, 'overcharge');
+    applyUpgrade(world, 5);
     expect(mine.multiplier).toBe(1.5);
-    applyUpgrade(world, 'overcharge');
+    applyUpgrade(world, 5);
     expect(mine.multiplier).toBe(2.5);
-    applyUpgrade(world, 'overcharge');
+    applyUpgrade(world, 5);
 
     expect(mine.multiplier).toBe(5);
     expect(bossBall.multiplier).toBe(1);
@@ -475,7 +475,7 @@ describe('wild upgrades', () => {
     world.balls = [mine, hostile];
     world.nextBallId = 3;
 
-    applyUpgrade(world, 'rainbow');
+    applyUpgrade(world, 13);
     expect(mine.color).toBe('rainbow');
     expect(hostile.color).not.toBe('rainbow');
 
@@ -488,7 +488,7 @@ describe('wild upgrades', () => {
   it('never drains player balls below their upgraded base power', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.overcharge = 3;
+    world.upgrades[5] = 3;
     for (const armor of world.boss.armor) armor.hp = 0;
     const ball = createBall(1, world.boss.x, world.boss.y);
     ball.multiplier = 5;
@@ -548,17 +548,17 @@ describe('wild upgrades', () => {
     world.phase = 'battle';
     world.balls = [createBall(1, 80, 300), createBall(2, 160, 300, 'echo'), createBall(3, 220, 300, 'hostile')];
 
-    applyUpgrade(world, 'splitAll');
+    applyUpgrade(world, 6);
 
     expect(world.balls.filter((ball) => ball.role !== 'hostile')).toHaveLength(4);
     expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
     expect(new Set(world.balls.map((ball) => ball.id)).size).toBe(world.balls.length);
 
-    applyUpgrade(world, 'splitAll');
+    applyUpgrade(world, 6);
 
     expect(world.balls.filter((ball) => ball.role !== 'hostile')).toHaveLength(16);
     expect(world.balls.filter((ball) => ball.role === 'hostile')).toHaveLength(1);
-    expect(abilityDescription(abilityById('splitAll'), 1)).toEqual(['Quadruple all', 'your balls in play']);
+    expect(abilityDescription(abilityById(6), 1)).toEqual(['Quadruple all', 'your balls in play']);
   });
 
   it('sacrifice halves boss life, bursts every ball, and grants two choices', () => {
@@ -567,7 +567,7 @@ describe('wild upgrades', () => {
     world.boss.hp = 301;
     world.balls = [createBall(1, 80, 300), createBall(2, 160, 300, 'hostile')];
 
-    applyUpgrade(world, 'sacrifice');
+    applyUpgrade(world, 7);
 
     expect(world.boss.hp).toBe(151);
     expect(world.balls).toHaveLength(0);
@@ -580,7 +580,7 @@ describe('wild upgrades', () => {
   it('boss magnet curves player-owned balls but not boss balls', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.bossMagnet = 1;
+    world.upgrades[8] = 1;
     const mine = createBall(1, 40, world.boss.y);
     const bossBall = createBall(2, 40, world.boss.y, 'hostile');
     world.balls = [mine, bossBall];
@@ -594,7 +594,7 @@ describe('wild upgrades', () => {
   it('poison adds delayed damage after a direct boss hit', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.poison = 1;
+    world.upgrades[3] = 1;
     world.boss.armor.forEach((armor) => armor.hp = 0);
     world.balls = [createBall(1, world.boss.x, world.boss.y)];
     const hp = world.boss.hp;
@@ -782,8 +782,8 @@ describe('outcomes', () => {
   it('fires a geometry-piercing paint shot with Auto Gun bonus damage', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.paintShot = 1;
-    world.upgrades.autoGun = 3;
+    world.upgrades[11] = 1;
+    world.upgrades[4] = 3;
     const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
     const ball = createBall(1, target.x + target.r + 3, target.y);
     ball.vx = -10;
@@ -799,7 +799,7 @@ describe('outcomes', () => {
   it('can spawn an echo above the boss from an energy bumper', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.upgrades.echo = 3;
+    world.upgrades[12] = 3;
     world.randomSeed = 0;
     const target = world.bumpers.find((bumper) => bumper.kind === 'energy')!;
     const ball = createBall(1, target.x + target.r + 3, target.y);
@@ -816,7 +816,7 @@ describe('outcomes', () => {
   });
 
   it('shows the stronger Blue Bumper temporary-ball chances', () => {
-    expect([0, 1, 2].map((rank) => abilityDescription(abilityById('echo'), rank)[0])).toEqual([
+    expect([0, 1, 2].map((rank) => abilityDescription(abilityById(12), rank)[0])).toEqual([
       'Blue bumper: 18%',
       'Blue bumper: 38%',
       'Blue bumper: 60%',
@@ -826,7 +826,7 @@ describe('outcomes', () => {
   it('pauses the run timer during card choices but counts transitions', () => {
     const world = createWorld();
     world.phase = 'pick';
-    world.pick = { offers: ['poison'], resumePhase: 'battle', timer: 1, armed: false, selected: null };
+    world.pick = { offers: [3], resumePhase: 'battle', timer: 1, armed: false, selected: null };
     step(world, NO_CONTROLS, 1);
     expect(world.time).toBe(0);
     world.phase = 'transition';
@@ -970,8 +970,8 @@ describe('contact sound limiting', () => {
 describe('ball roles', () => {
   it('automatically aims a nearby core ball after gaining Auto Flippers', () => {
     const world = ballOnFlipper('core');
-    expect(world.upgrades.autoFlippers).toBe(0);
-    world.upgrades.autoFlippers = 1;
+    expect(world.upgrades[14]).toBe(0);
+    world.upgrades[14] = 1;
 
     step(world, NO_CONTROLS, FIXED_DT);
 
@@ -1037,8 +1037,8 @@ describe('ball roles', () => {
 
   it('makes captured echoes stronger with Recruiter ranks', () => {
     const world = ballOnFlipper('hostile');
-    world.upgrades.recruiter = 2;
-    world.upgrades.overcharge = 2;
+    world.upgrades[2] = 2;
+    world.upgrades[5] = 2;
 
     step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
 
@@ -1048,7 +1048,7 @@ describe('ball roles', () => {
     expect(echo.multiplier).toBe(4.5);
     expect(echo.stability).toBe(20);
     expect(echo.lifetime).toBe(60);
-    expect(abilityDescription(abilityById('recruiter'), 2)).toEqual(['Temporary balls', 'hit harder &', 'last longer']);
+    expect(abilityDescription(abilityById(2), 2)).toEqual(['Temporary balls', 'hit harder &', 'last longer']);
   });
 
   it('upgrades current echoes to 10, 20, then 40 useful hits', () => {
@@ -1057,11 +1057,11 @@ describe('ball roles', () => {
     const echo = createBall(1, 180, 300, 'echo');
     world.balls = [echo];
 
-    applyUpgrade(world, 'recruiter');
+    applyUpgrade(world, 2);
     expect([echo.multiplier, echo.stability, echo.lifetime]).toEqual([2, 10, 30]);
-    applyUpgrade(world, 'recruiter');
+    applyUpgrade(world, 2);
     expect([echo.multiplier, echo.stability, echo.lifetime]).toEqual([3, 20, 60]);
-    applyUpgrade(world, 'recruiter');
+    applyUpgrade(world, 2);
     expect([echo.multiplier, echo.stability, echo.lifetime]).toEqual([4, 40, 120]);
   });
 
@@ -1101,7 +1101,7 @@ describe('ball roles', () => {
 
   it('does not convert a hostile on passive flipper contact', () => {
     const world = ballOnFlipper('hostile');
-    world.upgrades.autoFlippers = 0;
+    world.upgrades[14] = 0;
     world.balls.push(createBall(2, 30, 300));
 
     step(world, NO_CONTROLS, FIXED_DT);

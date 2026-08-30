@@ -8,7 +8,10 @@ export interface Vec2 {
 }
 
 export type BallRole = 'core' | 'hostile' | 'echo';
-export type AbilityId = 'extraCore' | 'recruiter' | 'poison' | 'autoGun' | 'overcharge' | 'splitAll' | 'sacrifice' | 'bossMagnet' | 'ballRestore' | 'critical' | 'paintShot' | 'echo' | 'rainbow' | 'autoFlippers';
+// Upgrade IDs: 1 extra ball, 2 recruiter, 3 poison, 4 auto gun,
+// 5 overcharge, 6 split all, 7 sacrifice, 8 boss magnet, 9 ball restore,
+// 10 critical, 11 paint shot, 12 energy echo, 13 forever rainbow, 14 auto flippers.
+export type AbilityId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
 
 export interface Ball {
   id: number;
@@ -255,7 +258,7 @@ export interface World {
   restoreTimer: number;
   randomSeed: number;
   points: number;
-  upgrades: Record<AbilityId, number>;
+  upgrades: number[];
   previousUpgradeGap: number;
   upgradeGap: number;
   nextUpgradeAt: number;
