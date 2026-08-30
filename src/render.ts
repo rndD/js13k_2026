@@ -301,8 +301,9 @@ function drawControlGuide(ctx: CanvasRenderingContext2D, world: World, touch: bo
   ctx.fillStyle = WHITE;
   ctx.fillText(touch ? 'LEFT' : '← LEFT FLIPPER', FIELD_W * 0.16, FIELD_H - 24);
   ctx.fillText(touch ? 'RIGHT' : 'RIGHT FLIPPER →', FIELD_W * 0.84, FIELD_H - 24);
-  ctx.fillText(touch ? 'HOLD TO CATCH MAIN BALL' : 'HOLD ← / → TO CATCH', FIELD_W / 2, FIELD_H * 0.67);
-  ctx.fillText('RELEASE TO AIM', FIELD_W / 2, FIELD_H * 0.67 + 14);
+  ctx.fillText(touch ? 'HOLD TO CATCH MAIN BALL' : 'WHEN BALL IS CLOSE:', FIELD_W / 2, FIELD_H * 0.67);
+  ctx.fillText(touch ? 'RELEASE TO AIM' : 'HOLD ← / → TO CATCH', FIELD_W / 2, FIELD_H * 0.67 + 14);
+  if (!touch) ctx.fillText('RELEASE TO AIM', FIELD_W / 2, FIELD_H * 0.67 + 28);
   ctx.restore();
 }
 
