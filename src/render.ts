@@ -534,7 +534,7 @@ function drawBallSphere(ctx: CanvasRenderingContext2D, ball: Ball, color: string
 }
 
 function drawHostileBall(ctx: CanvasRenderingContext2D, ball: Ball): void {
-  ctx.strokeStyle = withAlpha(STRUCTURE, 0.5);
+  ctx.strokeStyle = withAlpha(WHITE, 0.7);
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
