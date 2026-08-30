@@ -578,14 +578,14 @@ function updateBalls(world: World, dt: number): void {
       ball.armorCooldown -= subDt;
 
       let hitArmor = false;
-      for (const armor of world.boss.armor) {
+      if (ball.role !== 'hostile') for (const armor of world.boss.armor) {
         if (armor.hp <= 0) continue;
         const hit = resolveArmorArc(ball, world.boss.x, world.boss.y, armor.angle, world.boss.armorArc, armorRadius(armor.ring));
         if (!hit) continue;
         hitArmor = true;
         blockedBossThisTick = true;
         world.contacts.push({ kind: 'armor', x: hit.x, y: hit.y });
-        if (ball.role !== 'hostile' && ball.armorCooldown <= 0) {
+        if (ball.armorCooldown <= 0) {
           const critical = rollCritical(world);
           const damage = Math.round(ARMOR_DAMAGE_BASE * ball.multiplier * (ball.accent ? ARMOR_ACCENT_BONUS : 1) * (ball.color === 'rainbow' ? 1.25 : 1)) * (critical ? 2 : 1);
           trackDamage(world, Math.min(armor.hp, damage));

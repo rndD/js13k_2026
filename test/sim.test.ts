@@ -1257,6 +1257,19 @@ describe('moving armored boss', () => {
     expect(world.points).toBeGreaterThan(0);
   });
 
+  it('lets hostile balls pass through boss armor', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    const armor = world.boss.armor[0];
+    const ball = createBall(1, world.boss.x + Math.cos(armor.angle) * ARMOR_ORBIT_RADIUS, world.boss.y + Math.sin(armor.angle) * ARMOR_ORBIT_RADIUS, 'hostile');
+    world.balls = [ball];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.contacts.some((contact) => contact.kind === 'armor')).toBe(false);
+    expect(armor.hp).toBe(armor.maxHp);
+  });
+
   it('spends power after directly damaging armor', () => {
     const world = createWorld();
     world.phase = 'battle';
