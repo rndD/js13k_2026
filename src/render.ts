@@ -167,7 +167,7 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.fillStyle = WHITE;
     ctx.font = '9px monospace';
     description.forEach((line, i) => {
-      ctx.fillStyle = id === 7 && i === 1 || id === 14 && !i ? RED : WHITE;
+      ctx.fillStyle = id === 7 && i > 0 && i < 3 || id === 14 && !i ? RED : WHITE;
       ctx.fillText(line, x + cardW / 2, y + 68 + i * 15);
     });
     ctx.fillStyle = STRUCTURE;

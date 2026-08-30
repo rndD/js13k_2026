@@ -322,7 +322,8 @@ describe('wild upgrades', () => {
   it('explains every sacrifice consequence on the card', () => {
     expect(abilityById(7).description).toEqual([
       'Halve boss HP',
-      'Lose ALL balls in play',
+      'Lose ALL balls',
+      'in play',
       'Pick 2 more cards',
     ]);
   });
