@@ -166,7 +166,10 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.fillText(ability.rarity.toUpperCase(), x + cardW / 2, y + 30);
     ctx.fillStyle = WHITE;
     ctx.font = '9px monospace';
-    description.forEach((line, i) => ctx.fillText(line, x + cardW / 2, y + 68 + i * 15));
+    description.forEach((line, i) => {
+      ctx.fillStyle = id === 7 && i === 1 || id === 14 && !i ? RED : WHITE;
+      ctx.fillText(line, x + cardW / 2, y + 68 + i * 15);
+    });
     ctx.fillStyle = STRUCTURE;
     ctx.fillText(`LEVEL ${world.upgrades[id] + 1}/${ability.maxStacks}`, x + cardW / 2, y + 145);
     ctx.fillStyle = color;
@@ -469,7 +472,7 @@ function drawBullets(ctx: CanvasRenderingContext2D, world: World): void {
 function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
   for (const ball of world.balls) {
     const color = ballColor(ball.color, world.time);
-    if (ball.role === 'hostile') drawHostileBall(ctx, ball, world.time);
+    if (ball.role === 'hostile') drawHostileBall(ctx, ball);
     else {
       const opacity = ball.role === 'echo' ? Math.min(1, Math.max(0.25, ball.stability / ECHO_STABILITY)) : 1;
       drawBallSphere(ctx, ball, color, world.time, opacity);
@@ -530,28 +533,12 @@ function drawBallSphere(ctx: CanvasRenderingContext2D, ball: Ball, color: string
   });
 }
 
-function drawHostileBall(ctx: CanvasRenderingContext2D, ball: Ball, time: number): void {
-  withGlow(ctx, ORANGE, 10, () => {
-    ctx.fillStyle = BG;
-    ctx.strokeStyle = RED;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(ball.x, ball.y);
-    ctx.rotate(time * 3);
-    ctx.beginPath();
-    for (let i = 0; i < 4; i++) {
-      ctx.moveTo(ball.r + 2, 0);
-      ctx.lineTo(ball.r + 7, 0);
-      ctx.rotate(Math.PI / 2);
-    }
-    ctx.stroke();
-    ctx.restore();
-  });
+function drawHostileBall(ctx: CanvasRenderingContext2D, ball: Ball): void {
+  ctx.strokeStyle = withAlpha(STRUCTURE, 0.5);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 /**
