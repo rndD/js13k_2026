@@ -296,13 +296,13 @@ function drawControlGuide(ctx: CanvasRenderingContext2D, world: World, touch: bo
     ctx.fillRect(0, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
     ctx.fillRect(FIELD_W * 0.67, FIELD_H * 0.6, FIELD_W * 0.33, FIELD_H * 0.4);
   }
-  ctx.font = 'bold 9px monospace';
+  ctx.font = `bold ${touch ? 9 : 11}px monospace`;
   ctx.textAlign = 'center';
   ctx.fillStyle = WHITE;
-  ctx.fillText(touch ? 'LEFT' : '←', FIELD_W * 0.16, FIELD_H - 24);
-  ctx.fillText(touch ? 'RIGHT' : '→', FIELD_W * 0.84, FIELD_H - 24);
-  ctx.fillText(touch ? 'HOLD TO CATCH MAIN BALL' : 'HOLD TO AIM', FIELD_W / 2, FIELD_H * 0.67);
-  if (touch) ctx.fillText('RELEASE TO AIM', FIELD_W / 2, FIELD_H * 0.67 + 14);
+  ctx.fillText(touch ? 'LEFT' : '← LEFT FLIPPER', FIELD_W * 0.16, FIELD_H - 24);
+  ctx.fillText(touch ? 'RIGHT' : 'RIGHT FLIPPER →', FIELD_W * 0.84, FIELD_H - 24);
+  ctx.fillText(touch ? 'HOLD TO CATCH MAIN BALL' : 'HOLD ← / → TO CATCH', FIELD_W / 2, FIELD_H * 0.67);
+  ctx.fillText('RELEASE TO AIM', FIELD_W / 2, FIELD_H * 0.67 + 14);
   ctx.restore();
 }
 
