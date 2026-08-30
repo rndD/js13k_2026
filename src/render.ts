@@ -47,8 +47,8 @@ function drawImpactPulse(ctx: CanvasRenderingContext2D, x: number, y: number, ba
   });
 }
 
-export function render(ctx: CanvasRenderingContext2D, world: World, menu = false, touch = false): void {
-  drawHudBar(ctx, world);
+export function render(ctx: CanvasRenderingContext2D, world: World, menu = false, touch = false, time = 0): void {
+  if (!menu) drawHudBar(ctx, world);
 
   ctx.save();
   ctx.translate(0, HUD_HEIGHT);
@@ -71,7 +71,7 @@ export function render(ctx: CanvasRenderingContext2D, world: World, menu = false
   drawAimIndicator(ctx, world);
   if (!menu) drawFieldOverlay(ctx, world);
   if (!menu) drawControlGuide(ctx, world, touch);
-  if (menu) drawMenu(ctx, touch);
+  if (menu) drawMenu(ctx, touch, time);
   drawPickCards(ctx, world);
   ctx.restore();
 }
@@ -651,19 +651,20 @@ function drawResults(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillText('PLAY AGAIN', FIELD_W / 2, FIELD_H / 2 + 69);
 }
 
-function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean): void {
+function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean, time: number): void {
   ctx.fillStyle = withAlpha(BG, 0.72);
-  ctx.fillRect(0, 0, FIELD_W, FIELD_H);
+  ctx.fillRect(0, -HUD_HEIGHT, FIELD_W, FIELD_H + HUD_HEIGHT);
   ctx.textAlign = 'center';
-  ctx.fillStyle = rainbowGradient(ctx, 315, 0);
+  ctx.fillStyle = rainbowGradient(ctx, 315, 0, false, 1, time);
   ctx.font = 'bold 27px monospace';
-  ctx.fillText('TECHNICOLOR TILT', FIELD_W / 2, 250);
+  ctx.fillText('TECHNICOLOR TILT', FIELD_W / 2, 235);
   ctx.font = 'bold 13px monospace';
-  ctx.fillText('DEFEAT ALL 5 BOSSES', FIELD_W / 2, 285);
+  ctx.fillText('DEFEAT ALL 5 BOSSES', FIELD_W / 2, 270);
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
-  ctx.fillText(touch ? 'TAP TO START' : 'PRESS A KEY', FIELD_W / 2, 325);
+  ctx.fillText(touch ? 'TAP TO START' : 'PRESS ANY KEY TO START', FIELD_W / 2, 310);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : '← →  FLIPPERS', FIELD_W / 2, 355);
-  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'HOLD TO AIM', FIELD_W / 2, 375);
+  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'USE ↑ ← → TO CONTROL', FIELD_W / 2, 340);
+  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : '↑ LAUNCH   ← → FLIPPERS', FIELD_W / 2, 365);
+  ctx.fillText(touch ? 'HOLD ON BALL HIT TO AIM' : 'HOLD ← / → ON BALL HIT TO AIM', FIELD_W / 2, 390);
 }

@@ -167,7 +167,7 @@ function frame(now: number): void {
   ctx.translate(shake.x, shake.y);
   drawBgFx(ctx, bgFx, world);
   drawTrails();
-  render(ctx, world, !started, touch);
+  render(ctx, world, !started, touch, now / 1000);
   drawFx(ctx, fx, world);
   ctx.restore();
 
