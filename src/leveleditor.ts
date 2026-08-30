@@ -165,7 +165,7 @@ function deleteSelected(): void {
   } else if (selection.kind === 'bumper') {
     level.bumpers.splice(selection.index, 1);
   } else if (selection.kind === 'launchPad') {
-    level.launchPads.splice(selection.index, 1);
+    level.pads.splice(selection.index, 1);
   }
   // flippers/boss/launch are required singletons - not deletable.
   selection = null;
@@ -196,9 +196,9 @@ function duplicateSelected(): void {
     level.bumpers.push({ ...src, x: src.x + DUPLICATE_OFFSET, y: src.y + DUPLICATE_OFFSET });
     selection = { kind: 'bumper', index: level.bumpers.length - 1 };
   } else if (selection.kind === 'launchPad') {
-    const src = level.launchPads[selection.index];
-    level.launchPads.push({ ...src, x: src.x + DUPLICATE_OFFSET, y: src.y + DUPLICATE_OFFSET });
-    selection = { kind: 'launchPad', index: level.launchPads.length - 1 };
+    const src = level.pads[selection.index];
+    level.pads.push({ ...src, x: src.x + DUPLICATE_OFFSET, y: src.y + DUPLICATE_OFFSET });
+    selection = { kind: 'launchPad', index: level.pads.length - 1 };
   }
   // flippers/boss/launch are required singletons - not duplicable.
 }
@@ -219,7 +219,7 @@ function flipSelected(): void {
   if (!p) return;
   p.x = FIELD_W - p.x;
   if (selection.kind === 'launchPad') {
-    level.launchPads[selection.index].angle = Math.PI - level.launchPads[selection.index].angle;
+    level.pads[selection.index].angle = Math.PI - level.pads[selection.index].angle;
   }
 }
 
@@ -228,7 +228,7 @@ function flipSelected(): void {
 function rotateSelected(delta: number): void {
   if (!selection || selection.kind !== 'launchPad') return;
   pushUndo();
-  level.launchPads[selection.index].angle += delta;
+  level.pads[selection.index].angle += delta;
 }
 
 function exportLevel(): void {
@@ -304,7 +304,7 @@ function pickAt(p: Vec2): Selection {
     const d = dist(p, b);
     if (d < bestDist) { bestDist = d; best = { kind: 'bumper', index: i }; }
   });
-  level.launchPads.forEach((pad, i) => {
+  level.pads.forEach((pad, i) => {
     const d = dist(p, pad);
     if (d < bestDist) { bestDist = d; best = { kind: 'launchPad', index: i }; }
   });
@@ -362,7 +362,7 @@ function moveSelection(p: Vec2): void {
   } else if (selection.kind === 'bumper') {
     Object.assign(level.bumpers[selection.index], p);
   } else if (selection.kind === 'launchPad') {
-    Object.assign(level.launchPads[selection.index], p);
+    Object.assign(level.pads[selection.index], p);
   } else if (selection.kind === 'flipper') {
     Object.assign(level.flippers[selection.index].pivot, p);
   } else if (selection.kind === 'boss') {
@@ -409,7 +409,7 @@ canvas.addEventListener('pointerdown', (e) => {
     // angle later isn't supported yet, but you can edit the exported JSON.
     pushUndo();
     const angle = Math.atan2(level.boss.y - p.y, level.boss.x - p.x);
-    level.launchPads.push({ x: p.x, y: p.y, angle });
+    level.pads.push({ x: p.x, y: p.y, angle });
     return;
   }
   if (mode === 'flipper-left') {
@@ -567,7 +567,7 @@ function selectionPoint(sel: NonNullable<Selection>): Vec2 | null {
   if (sel.kind === 'wallPoint') return level.walls[sel.wallIndex][sel.pointIndex];
   if (sel.kind === 'peg') return level.pegs[sel.index];
   if (sel.kind === 'bumper') return level.bumpers[sel.index];
-  if (sel.kind === 'launchPad') return level.launchPads[sel.index];
+  if (sel.kind === 'launchPad') return level.pads[sel.index];
   if (sel.kind === 'flipper') return level.flippers[sel.index].pivot;
   if (sel.kind === 'boss') return level.boss;
   if (sel.kind === 'launch') return level.launch;

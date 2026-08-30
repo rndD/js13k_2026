@@ -535,7 +535,7 @@ function updateBalls(world: World, dt: number): void {
         }
       }
 
-      if (ball.role !== 'hostile') for (const pad of world.launchPads) {
+      if (ball.role !== 'hostile') for (const pad of world.pads) {
         if (pad.cooldown <= 0 && resolveLaunchPad(ball, pad, LAUNCH_PAD_TRIGGER_R, LAUNCH_PAD_BOOST)) {
           pad.cooldown = LAUNCH_PAD_COOLDOWN;
           world.sfx.push('padBoost');
@@ -880,7 +880,7 @@ function applyEnergyHit(world: World, ball: Ball): void {
 
 function updateCooldowns(world: World, dt: number): void {
   for (const b of world.bumpers) b.cooldown -= dt;
-  for (const p of world.launchPads) p.cooldown -= dt;
+  for (const p of world.pads) p.cooldown -= dt;
 }
 
 function updateBoss(world: World, dt: number): void {

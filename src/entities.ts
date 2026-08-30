@@ -106,7 +106,7 @@ export function loadTable(world: World, level: LevelData): void {
   world.flippers = createFlippers(level.flippers);
   world.bumpers = level.bumpers.map((b) => createBumper(b));
   world.pegs = level.pegs.map((p) => ({ ...p }));
-  world.launchPads = level.launchPads.map((p) => ({ ...p, cooldown: 0 }));
+  world.pads = level.pads.map((p) => ({ ...p, cooldown: 0 }));
   world.launch = { x: level.launch.x, y: level.launch.y, charging: false, power: 0, autoTimer: 0 };
 }
 
@@ -138,7 +138,7 @@ export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
     boss: createBoss(level.boss, 0),
     bumpers: level.bumpers.map((b) => createBumper(b)),
     pegs: level.pegs.map((p) => ({ ...p })),
-    launchPads: level.launchPads.map((p) => ({ ...p, cooldown: 0 })),
+    pads: level.pads.map((p) => ({ ...p, cooldown: 0 })),
     launch: { x: level.launch.x, y: level.launch.y, charging: false, power: 0, autoTimer: 0 },
     aim: null,
     sfx: [],

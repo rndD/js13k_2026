@@ -213,7 +213,7 @@ function drawPegs(ctx: CanvasRenderingContext2D, world: World): void {
 /** Directional boost pads, drawn as small triangles pointing along their angle. */
 function drawLaunchPads(ctx: CanvasRenderingContext2D, world: World): void {
   const size = 12;
-  for (const pad of world.launchPads) {
+  for (const pad of world.pads) {
     withGlow(ctx, YELLOW, 10, () => {
       ctx.fillStyle = YELLOW;
       ctx.save();

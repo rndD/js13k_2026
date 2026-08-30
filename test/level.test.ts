@@ -14,8 +14,8 @@ describe('built-in tables', () => {
       expect(level.flippers.map((flipper) => flipper.side)).toEqual(['left', 'right']);
       expect(level.walls.length).toBeGreaterThanOrEqual(2);
       expect(level.bumpers.length).toBeGreaterThanOrEqual(2);
-      expect(level.launchPads.length).toBeGreaterThanOrEqual(2);
-      for (const item of [level.boss, level.launch, ...level.pegs, ...level.bumpers, ...level.launchPads, ...level.walls.flat()]) {
+      expect(level.pads.length).toBeGreaterThanOrEqual(2);
+      for (const item of [level.boss, level.launch, ...level.pegs, ...level.bumpers, ...level.pads, ...level.walls.flat()]) {
         expect(item.x).toBeGreaterThanOrEqual(0);
         expect(item.x).toBeLessThanOrEqual(FIELD_W);
         expect(item.y).toBeGreaterThanOrEqual(0);

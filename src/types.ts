@@ -271,7 +271,7 @@ export interface World {
   boss: Boss;
   bumpers: Bumper[];
   pegs: Peg[];
-  launchPads: LaunchPad[];
+  pads: LaunchPad[];
   launch: LaunchState;
   aim: AimState | null;
   /** transient per-step sound-event queue, see SfxEvent - drained by main.ts, cleared by sim.ts at the start of each step() */

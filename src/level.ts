@@ -40,7 +40,7 @@ export interface LevelData {
   pegs: { x: number; y: number; r: number }[];
   bumpers: LevelBumper[];
   flippers: LevelFlipper[];
-  launchPads: LevelLaunchPad[];
+  pads: LevelLaunchPad[];
   boss: { x: number; y: number; r: number };
   launch: Vec2;
 }
@@ -90,7 +90,7 @@ export const LEVEL: LevelData = {
   ],
 
   // Corner boost pads, aimed at the boss, just outside the flippers.
-  launchPads: [
+  pads: [
     { x: leftPad.x, y: leftPad.y, angle: angleTo(leftPad, { x: BOSS_X, y: BOSS_Y }) },
     { x: rightPad.x, y: rightPad.y, angle: angleTo(rightPad, { x: BOSS_X, y: BOSS_Y }) },
   ],
@@ -131,8 +131,8 @@ export const CROSSFIRE: LevelData = {
     { x: 92.2, y: 60.84, r: 18, kind: 'paint' },
     { x: 181.34, y: 39.68, r: 18, kind: 'energy' },
   ],
-  launchPads: [
-    LEVEL.launchPads[0], LEVEL.launchPads[1],
+  pads: [
+    LEVEL.pads[0], LEVEL.pads[1],
     { x: 70, y: 414, angle: angleTo({ x: 70, y: 414 }, { x: 270, y: 250 }) },
     { x: 290, y: 414, angle: angleTo({ x: 290, y: 414 }, { x: 90, y: 250 }) },
     { x: 180, y: 305, angle: -Math.PI / 2 },
@@ -166,7 +166,7 @@ export const ORBIT: LevelData = {
     { x: 62.97, y: 59, r: 18, kind: 'energy' },
     { x: 298.66, y: 59, r: 18, kind: 'paint' },
   ],
-  launchPads: [
+  pads: [
     { x: 2, y: 526, angle: -1.127 },
     { x: 357, y: 527, angle: -2.015 },
     { x: 74, y: 365, angle: -0.72 },
