@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, AUTO_LAUNCH_DELAY, BOSS_HPS, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED, PAINT_SHOT_DAMAGES } from '../src/constants';
-import { createBall, createBoss, createWorld } from '../src/entities';
+import { createBall, createBoss, createWorld, loadTable } from '../src/entities';
 import { abilityById, abilityDescription } from '../src/abilities';
 import { LEVEL, LEVELS } from '../src/level';
 import { step } from '../src/sim';
@@ -247,6 +247,7 @@ describe('upgrade milestones', () => {
     world.upgrades[3] = 3;
     world.upgrades[4] = 4;
     world.upgrades[10] = 3;
+    world.upgrades[15] = 1;
     world.phase = 'battle';
     world.points = 90;
     const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
@@ -635,6 +636,25 @@ describe('wild upgrades', () => {
 
     expect(mine.vx).toBeGreaterThan(0);
     expect(bossBall.vx).toBe(0);
+  });
+
+  it('enlarges flippers and strengthens their active bounce', () => {
+    const world = createWorld();
+    const length = world.flippers[0].length;
+    applyUpgrade(world, 15);
+    expect(world.flippers[0].length).toBeGreaterThan(length);
+    loadTable(world, LEVELS[0]);
+    expect(world.flippers[0].length).toBeGreaterThan(length);
+    world.phase = 'battle';
+    const flipper = world.flippers[0];
+    flipper.angle = flipper.activeAngle;
+    const ball = createBall(1, flipper.pivot.x + Math.cos(flipper.angle) * flipper.length / 2, flipper.pivot.y + Math.sin(flipper.angle) * flipper.length / 2 - 10, 'echo');
+    ball.vy = 100;
+    world.balls = [ball];
+
+    step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
+
+    expect(Math.hypot(ball.vx, ball.vy)).toBeGreaterThan(580);
   });
 
   it('poison adds delayed damage after a direct boss hit', () => {

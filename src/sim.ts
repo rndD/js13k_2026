@@ -255,6 +255,7 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
     for (const ball of world.balls) if (ball.role !== 'hostile') ball.multiplier = Math.min(PAINT_MULTIPLIER_MAX, ball.multiplier + bonus);
   }
   if (id === 13) for (const ball of world.balls) if (ball.role !== 'hostile') makeRainbow(ball);
+  if (id === 15) for (const flipper of world.flippers) flipper.length *= 1.15;
   if (id === 6) {
     const originals = world.balls.filter((ball) => ball.role !== 'hostile');
     world.nextBallId = Math.max(world.nextBallId, ...world.balls.map((ball) => ball.id + 1));
@@ -500,7 +501,7 @@ function updateBalls(world: World, dt: number): void {
       }
 
       for (const f of world.flippers) {
-        const hit = resolveFlipper(ball, f, FLIPPER_BOOST_SPEED, FLIPPER_THICKNESS);
+        const hit = resolveFlipper(ball, f, FLIPPER_BOOST_SPEED * (world.upgrades[15] ? 1.2 : 1), FLIPPER_THICKNESS);
         if (hit) world.contacts.push({ kind: 'flipper', x: ball.x, y: ball.y });
         // An ACTIVE flipper swing catching the ball opens the contact-aim
         // window instead of applying its usual instant boost: freeze the

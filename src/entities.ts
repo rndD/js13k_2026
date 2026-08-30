@@ -107,6 +107,7 @@ export function createBoss(spot: LevelData['boss'], rank: number): Boss {
 export function loadTable(world: World, level: LevelData): void {
   world.walls = level.walls.map((wall) => wall.map((p) => ({ ...p })));
   world.flippers = createFlippers(level.flippers);
+  if (world.upgrades[15]) for (const flipper of world.flippers) flipper.length *= 1.15;
   world.bumpers = level.bumpers.map((b) => createBumper(b));
   world.pegs = level.pegs.map((p) => ({ ...p }));
   world.pads = level.pads.map((p) => ({ ...p, cooldown: 0 }));
@@ -127,7 +128,7 @@ export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
     restoreTimer: 0,
     randomSeed: 1,
     points: 0,
-    upgrades: Array(15).fill(0),
+    upgrades: Array(16).fill(0),
     previousUpgradeGap: 50,
     upgradeGap: 100,
     nextUpgradeAt: 100,

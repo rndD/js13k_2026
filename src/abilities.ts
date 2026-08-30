@@ -36,6 +36,7 @@ export const ABILITIES: AbilityDefinition[] = [
   { id: 12, description: ['Blue bumper: 18%', 'spawn temporary ball', 'above the boss'], rarity: 'uncommon', maxStacks: 3 },
   { id: 13, description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare', maxStacks: 1 },
   { id: 14, description: ['IDLE MODE', 'Flippers hit nearby', 'balls automatically'], rarity: 'rare', maxStacks: 1 },
+  { id: 15, description: ['15% longer flippers', '20% stronger hits'], rarity: 'common', maxStacks: 1 },
 ];
 
 export function abilityById(id: AbilityId): AbilityDefinition {
