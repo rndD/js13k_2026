@@ -59,8 +59,8 @@ export interface Bullet {
   r: number;
   damage: number;
   lifetime: number;
-  enemy?: boolean;
   paint?: boolean;
+  critical?: boolean;
 }
 
 export type FlipperSide = 'left' | 'right';
@@ -87,7 +87,6 @@ export interface Boss {
   maxHp: number;
   spawnTimer: number;
   specialTimer: number;
-  shotTimer: number;
   warningTimer: number;
   armorArc: number;
   poisonDamage: number;

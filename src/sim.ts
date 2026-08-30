@@ -37,8 +37,6 @@ import {
   BOSS_MOVE_X,
   BOSS_MOVE_Y,
   BOSS_MAGNET_FORCE,
-  BOSS_SHOT_INTERVAL,
-  BOSS_SHOT_SPEED,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   CRITICAL_CHANCE,
@@ -313,6 +311,10 @@ function rollCritical(world: World): boolean {
   return world.upgrades[10] > 0 && rollChance(world, CRITICAL_CHANCE * world.upgrades[10]);
 }
 
+function rollBulletCritical(world: World): boolean {
+  return world.upgrades[10] > 0 && rollChance(world, CRITICAL_CHANCE * world.upgrades[10] / 2);
+}
+
 function rollChance(world: World, chance: number): boolean {
   return random(world) < chance;
 }
@@ -383,6 +385,7 @@ function updateGun(world: World, dt: number): void {
       r: 2,
       damage: damage * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier) * (ball.color === 'rainbow' ? 1.25 : 1),
       lifetime: BULLET_LIFETIME,
+      critical: rollBulletCritical(world),
     });
     ball.gunTimer = interval;
     world.sfx.push('gunShot');
@@ -402,30 +405,6 @@ function updateBullets(world: World, dt: number): void {
       }
       bullet.x += bullet.vx * dt / BALL_SUBSTEPS;
       bullet.y += bullet.vy * dt / BALL_SUBSTEPS;
-      if (bullet.enemy) {
-        const index = world.balls.findIndex((ball) => ball.role !== 'hostile' && overlapsCircle(bullet, ball));
-        if (index >= 0) {
-          const ball = world.balls[index];
-          if (ball.role === 'echo' || !ball.stocked) {
-            explodeBall(world, ball);
-            world.balls.splice(index, 1);
-          } else ball.multiplier = Math.max(baseMultiplier(world), ball.multiplier - 0.5);
-          world.sfx.push('armorHit');
-          hit = true;
-        }
-      }
-      if (hit) break;
-      if (!bullet.paint) {
-        hit = resolveWalls(bullet, FIELD_W, FIELD_H) !== 'none';
-        for (const wall of world.walls) if (resolveWall(bullet, wall, WALL_THICKNESS)) hit = true;
-        for (const peg of world.pegs) if (resolveBumper(bullet, peg, PEG_IMPULSE)) hit = true;
-        for (const bumper of world.bumpers) if (resolveBumper(bullet, bumper, 0)) hit = true;
-        for (const flipper of world.flippers) if (resolveFlipper(bullet, flipper, 0, FLIPPER_THICKNESS)) hit = true;
-        for (const pad of world.launchPads) if (resolveLaunchPad(bullet, pad, LAUNCH_PAD_TRIGGER_R, 0)) hit = true;
-      }
-      if (hit) break;
-
-      if (bullet.enemy) continue;
       const dx = bullet.x - world.boss.x;
       const dy = bullet.y - world.boss.y;
       const distance = Math.hypot(dx, dy);
@@ -433,18 +412,22 @@ function updateBullets(world: World, dt: number): void {
       for (const armor of world.boss.armor) {
         const angleDelta = Math.atan2(Math.sin(angle - armor.angle), Math.cos(angle - armor.angle));
         if (armor.hp <= 0 || Math.abs(angleDelta) > world.boss.armorArc || Math.abs(distance - armorRadius(armor.ring)) > ARMOR_THICKNESS / 2 + bullet.r) continue;
-        trackDamage(world, Math.min(armor.hp, bullet.damage));
-        armor.hp = Math.max(0, armor.hp - bullet.damage);
-        addPoints(world, bullet.damage);
-        world.fx.push({ kind: 'armor', x: bullet.x, y: bullet.y, amount: bullet.damage });
+        const damage = bullet.damage * (bullet.critical ? 2 : 1);
+        trackDamage(world, Math.min(armor.hp, damage));
+        armor.hp = Math.max(0, armor.hp - damage);
+        addPoints(world, damage);
+        world.fx.push({ kind: 'armor', x: bullet.x, y: bullet.y, amount: damage, critical: bullet.critical });
+        if (bullet.critical) world.sfx.push('energyChime');
         hit = true;
         break;
       }
       if (!hit && distance < world.boss.r + bullet.r) {
-        trackDamage(world, Math.min(world.boss.hp, bullet.damage));
-        world.boss.hp = Math.max(0, world.boss.hp - bullet.damage);
-        addPoints(world, bullet.damage);
-        world.fx.push({ kind: 'boss', x: bullet.x, y: bullet.y, amount: bullet.damage });
+        const damage = bullet.damage * (bullet.critical ? 2 : 1);
+        trackDamage(world, Math.min(world.boss.hp, damage));
+        world.boss.hp = Math.max(0, world.boss.hp - damage);
+        addPoints(world, damage);
+        world.fx.push({ kind: 'boss', x: bullet.x, y: bullet.y, amount: damage, critical: bullet.critical });
+        if (bullet.critical) world.sfx.push('energyChime');
         hit = true;
       }
     }
@@ -867,7 +850,7 @@ function applyPaintHit(world: World, ball: Ball, bumper: Bumper): void {
     const angle = Math.atan2(world.boss.y - bumper.y, world.boss.x - bumper.x);
     const gun = world.upgrades[4];
     const damage = (PAINT_SHOT_DAMAGES[rank - 1] + (gun ? BULLET_DAMAGES[gun - 1] : 0)) * (ball.multiplier > 2 ? ball.multiplier / 2 : ball.multiplier) * (ball.color === 'rainbow' ? 1.25 : 1);
-    world.bullets.push({ x: bumper.x, y: bumper.y, vx: Math.cos(angle) * BULLET_SPEED, vy: Math.sin(angle) * BULLET_SPEED, r: 4, damage, lifetime: 2, paint: true });
+    world.bullets.push({ x: bumper.x, y: bumper.y, vx: Math.cos(angle) * BULLET_SPEED, vy: Math.sin(angle) * BULLET_SPEED, r: 4, damage, lifetime: 2, paint: true, critical: rollBulletCritical(world) });
     world.sfx.push('gunShot');
   }
 }
@@ -906,19 +889,6 @@ function updateBoss(world: World, dt: number): void {
   boss.x = boss.homeX + Math.sin(world.time * BOSS_MOVE_SPEED) * BOSS_MOVE_X;
   boss.y = boss.homeY + Math.sin(world.time * BOSS_MOVE_SPEED * 1.6) * BOSS_MOVE_Y;
   for (const armor of boss.armor) armor.angle += ARMOR_ROTATION_SPEED * dt * (armor.ring % 2 ? -1 : 1);
-  if (boss.rank === 1 || boss.rank >= 3) {
-    boss.shotTimer -= dt;
-    if (boss.shotTimer <= 0) {
-      boss.shotTimer = BOSS_SHOT_INTERVAL;
-      const targets = world.balls.filter((ball) => ball.role !== 'hostile');
-      if (targets.length) {
-        const target = targets[world.randomSeed++ % targets.length];
-        const angle = Math.atan2(target.y - boss.y, target.x - boss.x);
-        world.bullets.push({ x: boss.x + Math.cos(angle) * (boss.r + 4), y: boss.y + Math.sin(angle) * (boss.r + 4), vx: Math.cos(angle) * BOSS_SHOT_SPEED, vy: Math.sin(angle) * BOSS_SHOT_SPEED, r: 3, damage: 0, lifetime: 3, enemy: true });
-        world.sfx.push('gunShot');
-      }
-    }
-  }
   if (boss.rank >= 2) {
     if (boss.warningTimer > 0) {
       boss.warningTimer -= dt;

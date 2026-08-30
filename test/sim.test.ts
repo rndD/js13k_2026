@@ -252,6 +252,7 @@ describe('upgrade milestones', () => {
     const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
     const ball = createBall(1, target.x + target.r + 3, target.y);
     ball.vx = -10;
+    ball.gunTimer = 1;
     world.balls = [ball];
 
     step(world, NO_CONTROLS, FIXED_DT);
@@ -418,14 +419,47 @@ describe('wild upgrades', () => {
     expect(world.bullets[0].damage).toBe(8);
   });
 
-  it('gun shots disappear on table walls instead of passing through', () => {
+  it('gun shots pass through table geometry', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.bullets = [{ x: 359, y: 300, vx: 420, vy: 0, r: 2, damage: 4, lifetime: 1 }];
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.bullets).toHaveLength(0);
+    expect(world.bullets).toHaveLength(1);
+  });
+
+  it('gives player bullets half the normal critical chance', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades[4] = 1;
+    world.upgrades[10] = 3;
+    const ball = createBall(1, 40, 400);
+    ball.vy = -300;
+    world.balls = [ball];
+
+    world.randomSeed = 1;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.bullets[0].critical).toBe(false);
+
+    world.bullets = [];
+    ball.gunTimer = 0;
+    world.randomSeed = 1972;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.bullets[0].critical).toBe(true);
+  });
+
+  it('critical bullets deal double damage and mark the hit', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    world.bullets = [{ x: world.boss.x, y: world.boss.y, vx: 0, vy: 0, r: 2, damage: 4, lifetime: 1, critical: true }];
+    const hp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(hp - world.boss.hp).toBe(8);
+    expect(world.fx).toContainEqual(expect.objectContaining({ kind: 'boss', amount: 8, critical: true }));
   });
 
   it('does not fire while the ball is still at the launcher', () => {
@@ -493,7 +527,6 @@ describe('wild upgrades', () => {
     const ball = createBall(1, world.boss.x, world.boss.y);
     ball.multiplier = 5;
     world.balls = [ball];
-    world.bullets = [{ x: ball.x, y: ball.y, vx: 0, vy: 0, r: 3, damage: 0, lifetime: 1, enemy: true }];
 
     step(world, NO_CONTROLS, FIXED_DT);
 
@@ -672,37 +705,6 @@ describe('outcomes', () => {
     expect(world.bumpers).toHaveLength(LEVELS[1].bumpers.length);
   });
 
-  it('boss two bullets weaken stocked cores and destroy temporary balls', () => {
-    const world = createWorld();
-    world.phase = 'battle';
-    world.boss = createBoss(LEVEL.boss, 1);
-    const core = createBall(1, 150, 350);
-    core.multiplier = 3;
-    world.balls = [core];
-    world.bullets = [{ x: core.x, y: core.y, vx: 0, vy: 0, r: 3, damage: 0, lifetime: 1, enemy: true }];
-    step(world, NO_CONTROLS, FIXED_DT);
-    expect(core.multiplier).toBe(2.5);
-
-    const clone = createBall(2, 150, 350);
-    clone.stocked = false;
-    world.balls = [clone];
-    world.bullets = [{ x: clone.x, y: clone.y, vx: 0, vy: 0, r: 3, damage: 0, lifetime: 1, enemy: true }];
-    step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.balls).not.toContain(clone);
-  });
-
-  it('boss two automatically aims a rare shot at a player ball', () => {
-    const world = createWorld();
-    world.phase = 'battle';
-    world.boss = createBoss(LEVEL.boss, 1);
-    world.boss.shotTimer = 0;
-    world.balls = [createBall(1, 180, 500)];
-
-    step(world, NO_CONTROLS, FIXED_DT);
-
-    expect(world.bullets.some((bullet) => bullet.enemy)).toBe(true);
-  });
-
   it('boss three warns before destroying nearby player balls only', () => {
     const world = createWorld();
     world.phase = 'battle';
@@ -732,11 +734,10 @@ describe('outcomes', () => {
     expect(world.balls).toContain(core);
   });
 
-  it('gives boss four two counter-rotating armor rings and every attack', () => {
+  it('gives boss four two counter-rotating armor rings and every remaining attack', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 3);
-    world.boss.shotTimer = 0;
     world.boss.specialTimer = 0;
     world.boss.spawnTimer = 0;
     world.balls = [createBall(1, 180, 500)];
@@ -752,7 +753,6 @@ describe('outcomes', () => {
 
     expect(inner.angle).toBeGreaterThan(innerAngle);
     expect(outer.angle).toBeLessThan(outerAngle);
-    expect(world.bullets.some((bullet) => bullet.enemy)).toBe(true);
     expect(world.boss.warningTimer).toBeGreaterThan(0);
     expect(world.balls.some((ball) => ball.role === 'hostile')).toBe(true);
     expect(ARMOR_ORBIT_RADIUS + ARMOR_RING_GAP).toBe(56);
@@ -762,7 +762,6 @@ describe('outcomes', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 4);
-    world.boss.shotTimer = 0;
     world.boss.specialTimer = 0;
     world.balls = [createBall(1, 180, 500)];
 
@@ -774,7 +773,6 @@ describe('outcomes', () => {
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.bullets.some((bullet) => bullet.enemy)).toBe(true);
     expect(world.boss.warningTimer).toBeGreaterThan(0);
     expect(world.boss.specialTimer).toBe(8);
   });

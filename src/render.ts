@@ -100,7 +100,8 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
 
   ctx.fillStyle = LIME;
   ctx.textAlign = 'left';
-  ctx.fillText(`POINTS ${Math.round(world.points)} / ${world.nextUpgradeAt}`, pad, 40);
+  ctx.fillText(`POINTS ${Math.round(world.points)}`, pad, 40);
+  drawBar(ctx, pad, 44, 70, 3, (world.points - world.nextUpgradeAt + world.upgradeGap) / world.upgradeGap, LIME);
   const seconds = Math.floor(world.time);
   ctx.fillStyle = STRUCTURE;
   ctx.textAlign = 'center';
@@ -162,7 +163,7 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.font = '9px monospace';
     description.forEach((line, i) => ctx.fillText(line, x + cardW / 2, y + 68 + i * 15));
     ctx.fillStyle = STRUCTURE;
-    ctx.fillText(`RANK ${world.upgrades[id] + 1}/${ability.maxStacks}`, x + cardW / 2, y + 145);
+    ctx.fillText(`LEVEL ${world.upgrades[id] + 1}/${ability.maxStacks}`, x + cardW / 2, y + 145);
     ctx.fillStyle = color;
     ctx.font = 'bold 12px monospace';
     ctx.fillText(String(index + 1), x + cardW / 2, y + 174);
@@ -442,7 +443,7 @@ function drawFlippers(ctx: CanvasRenderingContext2D, world: World): void {
 
 function drawBullets(ctx: CanvasRenderingContext2D, world: World): void {
   for (const bullet of world.bullets) {
-    const color = bullet.enemy ? RED : bullet.paint ? ORANGE : YELLOW;
+    const color = bullet.paint ? ORANGE : YELLOW;
     withGlow(ctx, color, bullet.paint ? 12 : 7, () => {
       ctx.fillStyle = color;
       if (bullet.paint) {
