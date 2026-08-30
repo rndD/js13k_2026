@@ -512,6 +512,7 @@ function updateBalls(world: World, dt: number): void {
 
       for (const f of world.flippers) {
         const hit = resolveFlipper(ball, f, FLIPPER_BOOST_SPEED, FLIPPER_THICKNESS);
+        if (hit) world.contacts.push({ kind: 'flipper', x: ball.x, y: ball.y });
         // An ACTIVE flipper swing catching the ball opens the contact-aim
         // window instead of applying its usual instant boost: freeze the
         // ball right where it landed and let the player pick the exact
