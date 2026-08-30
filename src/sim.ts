@@ -597,8 +597,8 @@ function updateBalls(world: World, dt: number): void {
         if (critical) world.sfx.push('energyChime');
         ball.multiplier = Math.max(baseMultiplier(world), ball.multiplier - HIT_MULTIPLIER_COST);
         if (world.upgrades[3] > 0) {
+          if (!world.boss.poisonDamage) world.boss.poisonTimer = POISON_DELAY;
           world.boss.poisonDamage += POISON_DAMAGE * world.upgrades[3];
-          world.boss.poisonTimer = POISON_DELAY;
         }
         expired = spendEchoStability(ball);
       }

@@ -641,6 +641,26 @@ describe('wild upgrades', () => {
     expect(world.boss.hp).toBe(hp - 18);
     expect(world.boss.poisonDamage).toBe(0);
   });
+
+  it('poison ticks on schedule while fresh hits keep adding damage', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades[3] = 1;
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    world.balls = [createBall(1, world.boss.x, world.boss.y)];
+    const hp = world.boss.hp;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+    world.balls = [];
+    for (let i = 0; i < 29; i++) step(world, NO_CONTROLS, FIXED_DT);
+    world.balls = [createBall(2, world.boss.x, world.boss.y)];
+    step(world, NO_CONTROLS, FIXED_DT);
+    world.balls = [];
+    for (let i = 0; i < 31; i++) step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.hp).toBe(hp - 36);
+    expect(world.boss.poisonDamage).toBe(0);
+  });
 });
 
 describe('combat model', () => {

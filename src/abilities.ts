@@ -15,7 +15,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Recruiter
   { id: 2, description: ['Temporary balls', 'hit harder &', 'last longer'], rarity: 'common', maxStacks: 3 },
   // Poison
-  { id: 3, description: ['Hits add poison', '+8 delayed damage'], rarity: 'common', maxStacks: 3 },
+  { id: 3, description: ['Hits stack poison', '+8 each hit', 'Bursts every second'], rarity: 'common', maxStacks: 3 },
   // Auto Gun
   { id: 4, description: ['Main balls fire', '4 damage bullets'], rarity: 'common', maxStacks: 4 },
   // Overcharge
@@ -44,7 +44,7 @@ export function abilityById(id: AbilityId): AbilityDefinition {
 
 export function abilityDescription(ability: AbilityDefinition, rank: number): string[] {
   if (ability.id === 1) return [`Add ${rank + 2} balls`, 'to your reserve'];
-  if (ability.id === 3) return ['Hits add poison', `+${[8, 16, 24][rank]} delayed damage`];
+  if (ability.id === 3) return ['Hits stack poison', `+${[8, 16, 24][rank]} each hit`, 'Bursts every second'];
   if (ability.id === 5) return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 6 && rank) return ['Quadruple all', 'your balls in play'];
   if (ability.id === 11) return [`Red bumper shot`, `${[8, 14, 22][rank]} base damage`];
