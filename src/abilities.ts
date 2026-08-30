@@ -31,7 +31,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Critical
   { id: 10, description: ['15% chance to', 'deal double damage'], rarity: 'common', maxStacks: 3 },
   // Paint Cannon
-  { id: 11, description: ['Red bumpers shoot', 'through the table'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 11, description: ['Red bumpers fire', '8 damage bullets'], rarity: 'uncommon', maxStacks: 3 },
   // Echo Spark
   { id: 12, description: ['Blue bumper: 18%', 'spawn temporary ball', 'above the boss'], rarity: 'uncommon', maxStacks: 3 },
   { id: 13, description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare', maxStacks: 1 },
@@ -48,7 +48,7 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 3) return ['Hits stack poison', `+${[8, 16, 24][rank]} each hit`];
   if (ability.id === 5) return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 6 && rank) return ['Quadruple all', 'your balls in play'];
-  if (ability.id === 11) return [`Red bumper shot`, `${[8, 14, 22][rank]} base damage`];
+  if (ability.id === 11) return ['Red bumpers fire', `${[8, 14, 22][rank]} damage bullets`];
   if (ability.id === 12) return [`Blue bumper: ${[18, 38, 60][rank]}%`, 'spawn temporary ball', 'above the boss'];
   if (ability.id === 9) return ['Restore 1 ball', `every ${[30, 25][rank]} sec`, 'max 4 in reserve'];
   if (ability.id === 10) return [`${[15, 30, 45][rank]}% chance to`, 'deal double damage'];
