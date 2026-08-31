@@ -207,7 +207,7 @@ function beginPick(world: World, resumePhase = world.phase): void {
     resumePhase: resumePhase as 'launch' | 'battle' | 'aim',
     timer: 0.5,
     armed: false,
-    selected: null,
+    selected: 0,
   };
   world.phase = 'pick';
   world.sfx.push('upgradeOpen');
@@ -218,17 +218,18 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
   if (!pick) return;
   pick.timer -= dt;
   if (pick.timer > 0) return;
-  const anyHeld = controls.choice !== null;
+  const anyHeld = controls.choice !== null || controls.left || controls.right || controls.launch;
   if (!pick.armed) {
     if (!anyHeld) pick.armed = true;
     return;
   }
-  const index = controls.choice ?? -1;
-  if (pick.selected === null) {
-    if (pick.offers[index]) pick.selected = index;
+  if (controls.choice !== null) pick.selected = controls.choice;
+  else if (controls.left || controls.right) {
+    pick.selected = Math.max(0, Math.min(pick.offers.length - 1, pick.selected! + (controls.right ? 1 : -1)));
+    pick.armed = false;
     return;
   }
-  if (anyHeld) return;
+  else if (!controls.launch) return;
   const id = pick.offers[pick.selected];
   if (!id) return;
 

@@ -86,16 +86,14 @@ export function bindInput(canvas: HTMLCanvasElement): ControlsState {
     unlockAudio(); // harmless no-op once already resumed, see pointerdown above
     if (e.key === 'ArrowLeft') keys.left = true;
     else if (e.key === 'ArrowRight') keys.right = true;
-    else if (e.key === 'ArrowUp') keys.launch = true;
-    else if (e.key === '1' || e.key === '2' || e.key === '3') keys.choice = Number(e.key) - 1;
+    else if (e.key === 'ArrowUp' || e.key === 'Enter') keys.launch = true;
     else return;
     recompute();
   });
   window.addEventListener('keyup', (e) => {
     if (e.key === 'ArrowLeft') keys.left = false;
     else if (e.key === 'ArrowRight') keys.right = false;
-    else if (e.key === 'ArrowUp') keys.launch = false;
-    else if (e.key === '1' || e.key === '2' || e.key === '3') keys.choice = null;
+    else if (e.key === 'ArrowUp' || e.key === 'Enter') keys.launch = false;
     else return;
     recompute();
   });

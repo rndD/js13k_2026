@@ -141,7 +141,7 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillText('CHOOSE UPGRADE', FIELD_W / 2, 145);
   ctx.fillStyle = STRUCTURE;
   ctx.font = '9px monospace';
-  ctx.fillText(world.pick.armed ? 'TAP A CARD  /  KEYS 1 2 3' : 'RELEASE CONTROLS', FIELD_W / 2, 164);
+  ctx.fillText(world.pick.armed ? 'TAP  /  ← → THEN ↑ OR ENTER' : 'RELEASE CONTROLS', FIELD_W / 2, 164);
 
   const gap = 7;
   const margin = 8;
@@ -172,9 +172,6 @@ function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
     });
     ctx.fillStyle = STRUCTURE;
     ctx.fillText(`LEVEL ${world.upgrades[id] + 1}/${ability.maxStacks}`, x + cardW / 2, y + 145);
-    ctx.fillStyle = color;
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(String(index + 1), x + cardW / 2, y + 174);
   });
 }
 

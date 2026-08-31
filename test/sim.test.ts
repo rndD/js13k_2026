@@ -10,7 +10,7 @@ import type { AbilityId } from '../src/types';
 function applyUpgrade(world: ReturnType<typeof createWorld>, id: AbilityId): void {
   world.phase = 'pick';
   world.pick = { offers: [id], resumePhase: 'battle', timer: 0, armed: true, selected: 0 };
-  step(world, NO_CONTROLS, FIXED_DT);
+  step(world, { ...NO_CONTROLS, launch: true }, FIXED_DT);
 }
 
 describe('launch', () => {
@@ -270,12 +270,13 @@ describe('upgrade milestones', () => {
     step(world, { ...NO_CONTROLS, choice: 0 }, FIXED_DT); // accidental early click is ignored
     for (let i = 0; i < 31; i++) step(world, NO_CONTROLS, FIXED_DT); // wait out the input guard and arm
     expect(world.balls.map(({ x, y, vx, vy }) => ({ x, y, vx, vy }))).toEqual(frozen);
-    expect(world.pick?.selected).toBeNull();
-    step(world, { ...NO_CONTROLS, left: true }, FIXED_DT);
-    expect(world.pick?.selected).toBeNull(); // flipper/arrow controls never select cards
-    step(world, { ...NO_CONTROLS, choice: extraIndex }, FIXED_DT);
-    expect(world.phase).toBe('pick'); // applies on release, so gameplay input cannot leak through
-    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.pick?.selected).toBe(0);
+    for (let index = 0; index < extraIndex; index++) {
+      step(world, { ...NO_CONTROLS, right: true }, FIXED_DT);
+      step(world, NO_CONTROLS, FIXED_DT);
+    }
+    expect(world.pick?.selected).toBe(extraIndex);
+    step(world, { ...NO_CONTROLS, launch: true }, FIXED_DT);
 
     expect(world.phase).toBe('battle');
     expect(world.pick).toBeNull();
