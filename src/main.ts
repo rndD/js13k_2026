@@ -15,18 +15,22 @@ import { playSfx } from './sound';
 import { LEVELS, type LevelData } from './level';
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
-canvas.width = FIELD_W;
-canvas.height = CANVAS_H;
+const ctx = canvas.getContext('2d')!;
+let crt: ReturnType<typeof createCrtState>;
 
 function resize(): void {
-  const scale = Math.min(window.innerWidth / FIELD_W, window.innerHeight / CANVAS_H);
+  const scale = Math.min(innerWidth / FIELD_W, innerHeight / CANVAS_H);
   canvas.style.width = `${FIELD_W * scale}px`;
   canvas.style.height = `${CANVAS_H * scale}px`;
+  const pixels = scale * devicePixelRatio;
+  canvas.width = FIELD_W * pixels;
+  canvas.height = CANVAS_H * pixels;
+  ctx.scale(pixels, pixels);
+  crt = createCrtState(ctx);
 }
-window.addEventListener('resize', resize);
+window.onresize = resize;
 resize();
 
-const ctx = canvas.getContext('2d')!;
 const controls = bindInput(canvas);
 let touch = matchMedia('(pointer:coarse)').matches;
 
@@ -103,7 +107,6 @@ function drawTrails(): void {
 
 let fx = createFxState();
 let bgFx = createBgFx();
-const crt = createCrtState(ctx);
 
 function restart(): void {
   if ((world.phase !== 'win' && world.phase !== 'lose') || performance.now() - endedAt < 2000) return;
