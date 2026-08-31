@@ -130,8 +130,6 @@ export function step(world: World, controls: ControlsState, dt: number): World {
     return world;
   }
 
-  updateBallRestore(world, dt);
-
   updateFlippers(world, controls, dt);
   updateLaunch(world, controls, dt);
 
@@ -152,6 +150,7 @@ export function step(world: World, controls: ControlsState, dt: number): World {
   queueUpgradeMilestones(world);
   checkOutcome(world);
   checkAllBallsLost(world);
+  updateBallRestore(world, dt);
   if (world.pendingUpgrades > 0 && !isFinished(world)) beginPick(world);
 
   return world;
@@ -280,6 +279,7 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
   const resumePhase = pick.resumePhase;
   world.pick = null;
   world.phase = resumePhase;
+  controls.launch = false;
   if (world.pendingUpgrades > 0) beginPick(world, resumePhase);
 }
 
@@ -970,8 +970,8 @@ function checkOutcome(world: World): void {
   if (world.boss.hp <= 0) {
     addPoints(world, POINTS_BOSS_DEFEAT);
     // Stocked cores are already included in coreBalls until they are lost.
-    // Only surviving echoes/clones become newly stored balls here.
-    world.coreBalls += world.balls.filter((ball) => ball.role !== 'hostile' && !ball.stocked).length;
+    // Only surviving core clones become newly stored balls here.
+    world.coreBalls += world.balls.filter((ball) => ball.role === 'core' && !ball.stocked).length;
     world.balls = [];
     world.bullets = [];
     const finished = world.boss.rank === BOSS_HPS.length - 1;

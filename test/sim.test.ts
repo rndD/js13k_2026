@@ -320,6 +320,20 @@ describe('upgrade milestones', () => {
 });
 
 describe('wild upgrades', () => {
+  it('does not leak card confirmation into the launcher', () => {
+    const world = createWorld();
+    world.phase = 'pick';
+    world.pick = { offers: [1], resumePhase: 'launch', timer: 0, armed: true, selected: 0 };
+    const controls = { ...NO_CONTROLS, launch: true };
+
+    step(world, controls, FIXED_DT);
+    step(world, controls, FIXED_DT);
+
+    expect(world.phase).toBe('launch');
+    expect(world.balls).toHaveLength(0);
+    expect(world.launch.charging).toBe(false);
+  });
+
   it('explains every sacrifice consequence on the card', () => {
     expect(abilityById(7).description).toEqual([
       'Halve boss HP',
@@ -740,7 +754,7 @@ describe('outcomes', () => {
     expect(world.phase).toBe('win');
   });
 
-  it('banks temporary player balls, discards hostiles, and changes production table', () => {
+  it('banks core clones, discards temporary balls, and changes production table', () => {
     const world = createWorld(LEVELS[0], 0);
     world.phase = 'battle';
     const core = createBall(1, 40, 400);
@@ -753,7 +767,7 @@ describe('outcomes', () => {
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.coreBalls).toBe(6); // two temporary survivors plus level reward
+    expect(world.coreBalls).toBe(5); // core clone plus level reward
     expect(world.balls).toHaveLength(0);
     for (let i = 0; i < 121; i++) step(world, NO_CONTROLS, FIXED_DT);
     expect(world.tableIndex).toBe(1);
@@ -954,6 +968,20 @@ describe('outcomes', () => {
 });
 
 describe('drain', () => {
+  it('loses before Ball Regen can restore the final drained ball', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades[9] = 1;
+    world.restoreTimer = 30;
+    world.coreBalls = 1;
+    world.balls = [createBall(1, 180, 700)];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.coreBalls).toBe(0);
+    expect(world.phase).toBe('lose');
+  });
+
   it('consumes a core ball without interrupting battle when reserve remains', () => {
     const world = createWorld();
     expect(world.coreBalls).toBe(3);
