@@ -53,7 +53,7 @@ async function main() {
     [{ data: minified, type: 'js', action: 'eval' }],
     {
       allowFreeVars: true,
-      modelRecipBaseCount: 32,
+      modelRecipBaseCount: 39,
       modelMaxCount: 4,
       dynamicModels: 1,
       numAbbreviations: 27,

@@ -1,7 +1,7 @@
 // Factory functions that build the initial World and its entities. Kept
 // separate from sim.ts (behavior) so tests can construct fresh worlds and
-// custom fixtures easily. Positions/shapes come from a LevelData (level.ts
-// by default) - this file only assembles behavioral fields from constants.ts.
+// custom fixtures easily. Positions/shapes come from a LevelData (level.ts);
+// this file only assembles behavioral fields from constants.ts.
 import {
   BALL_RADIUS,
   BOSS_ARMOR_ARCS,
@@ -17,10 +17,10 @@ import {
   HOSTILE_LIFETIME,
   STARTING_CORE_BALLS,
 } from './constants';
-import { LEVEL, type LevelData, type LevelFlipper } from './level';
+import type { LevelData, LevelFlipper } from './level';
 import type { Ball, BallRole, Boss, Bumper, Flipper, World } from './types';
 
-export function createFlippers(levelFlippers: LevelFlipper[] = LEVEL.flippers): Flipper[] {
+export function createFlippers(levelFlippers: LevelFlipper[]): Flipper[] {
   return levelFlippers.map((lf) => {
     const mirror = lf.side === 'right';
     const restAngle = mirror ? Math.PI - FLIPPER_REST_ANGLE : FLIPPER_REST_ANGLE;
@@ -41,7 +41,7 @@ export function createBumper(base: { x: number; y: number; r: number; kind: Bump
   return { ...base, cooldown: 0 };
 }
 
-export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, role: BallRole = 'core'): Ball {
+export function createBall(id: number, x: number, y: number, role: BallRole = 'core'): Ball {
   return {
     id,
     role,
@@ -116,7 +116,7 @@ export function loadTable(world: World, level: LevelData): void {
   world.launch = { x: level.launch.x, y: level.launch.y, charging: false, power: 0, autoTimer: 0 };
 }
 
-export function createWorld(level: LevelData = LEVEL, tableIndex = -1): World {
+export function createWorld(level: LevelData, tableIndex = -1): World {
   return {
     time: 0,
     damageLog: [],

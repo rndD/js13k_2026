@@ -3,11 +3,12 @@
 // fall through the drain and hand control back to the launch phase.
 import { describe, expect, it } from 'vitest';
 import { createWorld } from '../../src/entities';
+import { LEVEL } from '../../src/level';
 import { runScript } from '../harness';
 
 describe('scenario: launch and drain', () => {
   it('spawns a ball on launch release, then returns to the launch phase once it drains', () => {
-    const world = createWorld();
+    const world = createWorld(LEVEL);
 
     const { world: result } = runScript(
       world,

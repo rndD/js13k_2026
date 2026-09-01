@@ -9,8 +9,6 @@ describe('built-in tables', () => {
   it('keeps all gameplay objects inside the field with a playable core layout', () => {
     expect(LEVELS).toHaveLength(2);
     for (const level of LEVELS) {
-      expect(level.fieldW).toBe(FIELD_W);
-      expect(level.fieldH).toBe(FIELD_H);
       expect(level.flippers.map((flipper) => flipper.side)).toEqual(['left', 'right']);
       expect(level.walls.length).toBeGreaterThanOrEqual(2);
       expect(level.bumpers.length).toBeGreaterThanOrEqual(2);

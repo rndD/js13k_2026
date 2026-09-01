@@ -38,6 +38,8 @@ import {
   BOSS_MOVE_Y,
   BOSS_HP_TRAIL_DELAY,
   BOSS_HP_TRAIL_SPEED,
+  BOSS_MAGNET_RADIUS,
+  BOSS_MAGNET_STRENGTH,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   CRITICAL_CHANCE,
@@ -464,14 +466,16 @@ function updateBalls(world: World, dt: number): void {
         continue;
       }
     }
-    if (ball.role !== 'hostile' && !ball.frozen && world.upgrades[8] > 0) {
+    if (ball.role === 'core' && !ball.frozen && world.upgrades[8] > 0) {
       const dx = world.boss.x - ball.x;
       const dy = world.boss.y - ball.y;
       const distance = Math.hypot(dx, dy) || 1;
-      const speed = Math.hypot(ball.vx, ball.vy) || 1;
-      const pull = world.upgrades[8] * dt * 2;
-      ball.vx += (dx / distance * speed - ball.vx) * pull;
-      ball.vy += (dy / distance * speed - ball.vy) * pull;
+      if (distance < BOSS_MAGNET_RADIUS) {
+        const speed = Math.hypot(ball.vx, ball.vy) || 1;
+        const pull = world.upgrades[8] * dt * BOSS_MAGNET_STRENGTH;
+        ball.vx += (dx / distance * speed - ball.vx) * pull;
+        ball.vy += (dy / distance * speed - ball.vy) * pull;
+      }
     }
     let drained = false;
     let aiming = false;

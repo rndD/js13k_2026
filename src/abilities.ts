@@ -26,7 +26,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Sacrifice
   { id: 7, description: ['Halve boss HP', 'Lose ALL balls', 'in play', 'Pick 2 more cards'], rarity: 'rare', maxStacks: 1 },
   // Boss Magnet
-  { id: 8, description: ['Your balls home in', 'on the boss'], rarity: 'uncommon', maxStacks: 2 },
+  { id: 8, description: ['Main balls home in', 'near the boss'], rarity: 'uncommon', maxStacks: 2 },
   // Ball Regen
   { id: 9, description: ['Restore lost ball'], rarity: 'uncommon', maxStacks: 2 },
   // Critical

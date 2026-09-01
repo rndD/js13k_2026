@@ -485,8 +485,15 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
     if (ball.role === 'hostile') drawHostileBall(ctx, ball);
     else {
       const opacity = ball.role === 'echo' ? Math.min(1, Math.max(0.25, ball.stability / ECHO_STABILITY)) : 1;
-      drawBallSphere(ctx, ball, ball.frozen ? CYAN : color, world.time, ball.frozen ? 0.4 : opacity);
-      if (ball.role === 'core' && world.upgrades[4] > 0) {
+      drawBallSphere(ctx, ball, ball.frozen ? CYAN : color, world.time, ball.frozen ? 0.8 : opacity);
+      if (ball.frozen) {
+        ctx.strokeStyle = WHITE;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r + 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (ball.role === 'core' && !ball.frozen && world.upgrades[4] > 0) {
         const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);
         ctx.strokeStyle = YELLOW;
         ctx.lineWidth = 3;

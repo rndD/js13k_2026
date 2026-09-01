@@ -12,7 +12,7 @@ import { BG, CYAN, ORANGE } from './palette';
 import { ballColor, render } from './render';
 import { step } from './sim';
 import { playSfx } from './sound';
-import { LEVELS, type LevelData } from './level';
+import { LEVELS } from './level';
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
@@ -38,17 +38,17 @@ let touch = matchMedia('(pointer:coarse)').matches;
 // localStorage and opens this page with ?level=draft, so `LEVEL` can be
 // swapped for the draft without a rebuild. Storage key must match
 // leveleditor.ts's STORAGE_KEY. Harmless/inert for a normal play session.
-function loadLevelOverride(): [LevelData | undefined, number] {
+function loadLevel(): [typeof LEVELS[number], number] {
   const value = new URLSearchParams(location.search).get('level');
-  if (value === 'draft') {
+  if (import.meta.env.DEV && value === 'draft') {
     const raw = localStorage.getItem('js13k-level-draft');
-    return [raw ? JSON.parse(raw) : undefined, -1];
+    return [raw ? JSON.parse(raw) : LEVELS[0], -1];
   }
   const index = value === null ? Math.floor(Math.random() * LEVELS.length) : Number(value);
-  return [LEVELS[index], index];
+  return [LEVELS[index] ?? LEVELS[0], index];
 }
 
-let world = createWorld(...loadLevelOverride());
+let world = createWorld(...loadLevel());
 let started = false;
 let waitForRelease = false;
 let endedAt = 0;
@@ -110,7 +110,7 @@ let bgFx = createBgFx();
 
 function restart(): void {
   if ((world.phase !== 'win' && world.phase !== 'lose') || performance.now() - endedAt < 2000) return;
-  world = createWorld(...loadLevelOverride());
+  world = createWorld(...loadLevel());
   fx = createFxState();
   bgFx = createBgFx();
   trails.clear();

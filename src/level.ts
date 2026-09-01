@@ -34,8 +34,6 @@ export interface LevelLaunchPad {
 }
 
 export interface LevelData {
-  fieldW: number;
-  fieldH: number;
   walls: Wall[];
   pegs: { x: number; y: number; r: number }[];
   bumpers: LevelBumper[];
@@ -62,11 +60,18 @@ function angleTo(from: Vec2, to: Vec2): number {
 
 const leftPad = { x: 14, y: FLOOR_Y - 6 };
 const rightPad = { x: FIELD_W - 14, y: FLOOR_Y - 6 };
+const flippers: LevelFlipper[] = [
+  { side: 'left', pivot: { x: FIELD_W * 0.3, y: FLIPPER_PIVOT_Y } },
+  { side: 'right', pivot: { x: FIELD_W * 0.7, y: FLIPPER_PIVOT_Y } },
+];
+const pads: LevelLaunchPad[] = [
+  { x: leftPad.x, y: leftPad.y, angle: angleTo(leftPad, { x: BOSS_X, y: BOSS_Y }) },
+  { x: rightPad.x, y: rightPad.y, angle: angleTo(rightPad, { x: BOSS_X, y: BOSS_Y }) },
+];
+const boss = { x: BOSS_X, y: BOSS_Y, r: BOSS_RADIUS };
+const launch = { x: FIELD_W - 20, y: FLIPPER_PIVOT_Y - 20 };
 
 export const LEVEL: LevelData = {
-  fieldW: FIELD_W,
-  fieldH: FIELD_H,
-
   // Floor/apron with a gap between the flippers (the drain).
   walls: [
     [{ x: 0, y: FLOOR_Y }, { x: DRAIN_X0, y: FLOOR_Y }],
@@ -84,27 +89,19 @@ export const LEVEL: LevelData = {
     { x: FIELD_W * 0.7, y: FIELD_H * 0.45, r: 18, kind: 'energy' },
   ],
 
-  flippers: [
-    { side: 'left', pivot: { x: FIELD_W * 0.3, y: FLIPPER_PIVOT_Y } },
-    { side: 'right', pivot: { x: FIELD_W * 0.7, y: FLIPPER_PIVOT_Y } },
-  ],
+  flippers,
 
   // Corner boost pads, aimed at the boss, just outside the flippers.
-  pads: [
-    { x: leftPad.x, y: leftPad.y, angle: angleTo(leftPad, { x: BOSS_X, y: BOSS_Y }) },
-    { x: rightPad.x, y: rightPad.y, angle: angleTo(rightPad, { x: BOSS_X, y: BOSS_Y }) },
-  ],
+  pads,
 
-  boss: { x: BOSS_X, y: BOSS_Y, r: BOSS_RADIUS },
-  launch: { x: FIELD_W - 20, y: FLIPPER_PIVOT_Y - 20 },
+  boss,
+  launch,
 };
 
 const common = {
-  fieldW: FIELD_W,
-  fieldH: FIELD_H,
-  flippers: LEVEL.flippers,
-  boss: LEVEL.boss,
-  launch: LEVEL.launch,
+  flippers,
+  boss,
+  launch,
 };
 
 // Crossfire: opposing automatic pads keep changing lanes while the slanted
@@ -129,12 +126,12 @@ export const CROSSFIRE: LevelData = {
     { x: 92, y: 286, r: 17, kind: 'paint' },
     { x: 268, y: 286, r: 17, kind: 'energy' },
     { x: 180, y: 382, r: 15, kind: 'paint' },
-    { x: 267, y: 60.08, r: 18, kind: 'paint' },
-    { x: 92.2, y: 60.84, r: 18, kind: 'paint' },
-    { x: 181.34, y: 39.68, r: 18, kind: 'energy' },
+    { x: 267, y: 60.1, r: 18, kind: 'paint' },
+    { x: 92.2, y: 60.8, r: 18, kind: 'paint' },
+    { x: 181.3, y: 39.7, r: 18, kind: 'energy' },
   ],
   pads: [
-    LEVEL.pads[0], LEVEL.pads[1],
+    pads[0], pads[1],
     { x: 70, y: 414, angle: angleTo({ x: 70, y: 414 }, { x: 270, y: 250 }) },
     { x: 290, y: 414, angle: angleTo({ x: 290, y: 414 }, { x: 90, y: 250 }) },
     { x: 180, y: 305, angle: -Math.PI / 2 },
@@ -169,18 +166,18 @@ export const ORBIT: LevelData = {
     { x: 286, y: 304, r: 16, kind: 'paint' },
     { x: 130, y: 270, r: 15, kind: 'paint' },
     { x: 230, y: 270, r: 15, kind: 'energy' },
-    { x: 62.97, y: 59, r: 18, kind: 'energy' },
-    { x: 298.66, y: 59, r: 18, kind: 'paint' },
+    { x: 63, y: 59, r: 18, kind: 'energy' },
+    { x: 298.7, y: 59, r: 18, kind: 'paint' },
   ],
   pads: [
-    { x: 2, y: 526, angle: -1.127 },
-    { x: 357, y: 527, angle: -2.015 },
-    { x: 74, y: 365, angle: -0.72 },
-    { x: 286, y: 365, angle: Math.PI + 0.72 },
+    { x: 2, y: 526, angle: -1.1 },
+    { x: 357, y: 527, angle: -2 },
+    { x: 74, y: 365, angle: -0.7 },
+    { x: 286, y: 365, angle: Math.PI + 0.7 },
     { x: 120, y: 190, angle: 0.3 },
     { x: 240, y: 190, angle: Math.PI - 0.3 },
-    { x: 180, y: 393, angle: -1.554 },
-    { x: 181, y: 10, angle: 1.577 },
+    { x: 180, y: 393, angle: -1.6 },
+    { x: 181, y: 10, angle: 1.6 },
   ],
 };
 

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ARMOR_ORBIT_RADIUS, ARMOR_RING_GAP, AUTO_LAUNCH_DELAY, BOSS_HPS, BOSS_MOVE_X, BOSS_MOVE_Y, ECHO_LIFETIME, FIXED_DT, MAX_SPEED, PAINT_SHOT_DAMAGES } from '../src/constants';
-import { createBall, createBoss, createWorld, loadTable } from '../src/entities';
+import { createBall, createBoss, createWorld as createLevelWorld, loadTable } from '../src/entities';
 import { abilityById, abilityDescription } from '../src/abilities';
 import { LEVEL, LEVELS } from '../src/level';
 import { step } from '../src/sim';
 import { NO_CONTROLS } from '../src/types';
 import type { AbilityId } from '../src/types';
+
+const createWorld = (level = LEVEL, tableIndex = -1) => createLevelWorld(level, tableIndex);
 
 function applyUpgrade(world: ReturnType<typeof createWorld>, id: AbilityId): void {
   world.phase = 'pick';
@@ -376,7 +378,7 @@ describe('wild upgrades', () => {
     expect(world.coreBalls).toBe(4);
     expect(world.restoreTimer).toBe(29);
 
-    world.balls = [createBall(1)];
+    world.balls = [createBall(1, LEVEL.launch.x, LEVEL.launch.y)];
     for (let i = 0; i < 2 / FIXED_DT; i++) step(world, NO_CONTROLS, FIXED_DT);
     expect(world.coreBalls).toBe(5); // one active plus four actually stored
   });
@@ -645,18 +647,25 @@ describe('wild upgrades', () => {
     expect(world.sfx.filter((event) => event === 'ballExplode')).toHaveLength(2);
   });
 
-  it('boss magnet curves player-owned balls but not boss balls', () => {
+  it('boss magnet softly curves only nearby, unfrozen main balls', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.upgrades[8] = 1;
-    const mine = createBall(1, 40, world.boss.y);
-    const bossBall = createBall(2, 40, world.boss.y, 'hostile');
-    world.balls = [mine, bossBall];
+    const mine = createBall(1, world.boss.x - 100, world.boss.y);
+    const far = createBall(2, world.boss.x - 151, world.boss.y);
+    const echo = createBall(3, world.boss.x - 100, world.boss.y, 'echo');
+    const frozen = createBall(4, world.boss.x - 100, world.boss.y);
+    for (const ball of [mine, far, echo, frozen]) ball.vy = 200;
+    frozen.frozen = 1;
+    world.balls = [mine, far, echo, frozen];
 
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(mine.vx).toBeGreaterThan(0);
-    expect(bossBall.vx).toBe(0);
+    expect(mine.vx).toBeLessThan(5);
+    expect(far.vx).toBe(0);
+    expect(echo.vx).toBe(0);
+    expect(frozen.vx).toBe(0);
   });
 
   it('enlarges flippers and strengthens their active bounce', () => {
@@ -812,6 +821,8 @@ describe('outcomes', () => {
     expect(world.balls).not.toContain(echo);
     expect(core.frozen).toBeCloseTo(1 - FIXED_DT);
     expect(world.coreBalls).toBe(3);
+    expect(world.fx).toContainEqual({ kind: 'echoBurst', x: echo.x, y: echo.y });
+    expect(world.sfx).toContain('ballExplode');
   });
 
   it('boss three starts its warning before the blast becomes dangerous', () => {

@@ -10,6 +10,7 @@ import {
   resolveWalls,
 } from '../src/physics';
 import { createFlippers } from '../src/entities';
+import { LEVEL } from '../src/level';
 import type { Flipper } from '../src/types';
 
 describe('clampSpeed', () => {
@@ -191,7 +192,7 @@ describe('resolveFlipper', () => {
     // createFlippers() already mirrors the right flipper's angle (Math.PI - restAngle).
     // The tip must point toward the center of the table, same as the left flipper's
     // tip does but reflected - NOT in the same absolute direction as the left one.
-    const [left, right] = createFlippers();
+    const [left, right] = createFlippers(LEVEL.flippers);
 
     const leftTipX = left.pivot.x + Math.cos(left.angle) * left.length;
     const rightTipX = right.pivot.x + Math.cos(right.angle) * right.length;
