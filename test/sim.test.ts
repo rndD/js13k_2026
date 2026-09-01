@@ -446,7 +446,7 @@ describe('wild upgrades', () => {
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.bullets[0].damage).toBe(8);
+    expect(world.bullets[0].damage).toBe(4);
   });
 
   it('makes the final Auto Gun shot stronger than the final red-bumper shot', () => {
@@ -933,7 +933,7 @@ describe('outcomes', () => {
 
     const shot = world.bullets.find((bullet) => bullet.paint)!;
     expect(shot).toBeDefined();
-    expect(shot.damage).toBe(12);
+    expect(shot.damage).toBe(6);
   });
 
   it('starts final boss regeneration at half health and doubles it at quarter health', () => {

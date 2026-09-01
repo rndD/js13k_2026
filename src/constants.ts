@@ -139,8 +139,8 @@ export const HIT_MULTIPLIER_COST = 0.5;
 export const BULLET_SPEED = 420;
 export const BULLET_LIFETIME = 1.5;
 export const BULLET_INTERVALS = [0.9, 0.6, 0.6, 0.4];
-export const BULLET_DAMAGES = [4, 4, 8, 24];
-export const PAINT_SHOT_DAMAGES = [8, 14, 22];
+export const BULLET_DAMAGES = [2, 2, 4, 12];
+export const PAINT_SHOT_DAMAGES = [4, 7, 11];
 export const ENERGY_ECHO_CHANCES = [0.18, 0.38, 0.6];
 
 // Visual-only feedback (fx.ts): hit-flash, screen shake, floating damage

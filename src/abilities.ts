@@ -18,7 +18,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Poison
   { id: 3, description: [], rarity: 'common', maxStacks: 3 },
   // Auto Gun
-  { id: 4, description: ['Main balls fire', '4 damage bullets'], rarity: 'common', maxStacks: 4 },
+  { id: 4, description: ['Main balls fire', '2 damage bullets'], rarity: 'common', maxStacks: 4 },
   // Overcharge
   { id: 5, description: ['Raise base power', 'of all your balls'], rarity: 'uncommon', maxStacks: 3 },
   // Split All
@@ -32,7 +32,7 @@ export const ABILITIES: AbilityDefinition[] = [
   // Critical
   { id: 10, description: ['15% chance to', 'deal double damage'], rarity: 'common', maxStacks: 3 },
   // Paint Cannon
-  { id: 11, description: ['Red bumpers fire', '8 damage bullets'], rarity: 'uncommon', maxStacks: 3 },
+  { id: 11, description: ['Red bumpers fire', '4 damage bullets'], rarity: 'uncommon', maxStacks: 3 },
   // Echo Spark
   { id: 12, description: ['Blue bumper: 18%', 'spawn temporary ball', 'above the boss'], rarity: 'uncommon', maxStacks: 3 },
   { id: 13, description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare+', maxStacks: 1 },
@@ -54,5 +54,5 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 9) return ['Restore 1 ball', `every ${[30, 25][rank]} sec`, 'max 4 in reserve'];
   if (ability.id === 10) return [`${[12, 24, 36][rank]}% chance to`, 'deal double damage'];
   if (ability.id !== 4 || rank === 0) return ability.description;
-  return rank === 2 ? ['Double bullet', 'damage'] : rank === 3 ? ['24 damage bullets', '50% faster'] : ['Fire bullets', '50% faster'];
+  return rank === 2 ? ['Double bullet', 'damage'] : rank === 3 ? ['12 damage bullets', '50% faster'] : ['Fire bullets', '50% faster'];
 }
