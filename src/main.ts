@@ -176,7 +176,7 @@ function frame(now: number): void {
 
   // CRT overlay is drawn last and untransformed (no shake) so it always
   // reads as glass in front of the tube, not part of the shaking field.
-  drawCrtFrame(ctx, crt, world.time);
+  drawCrtFrame(ctx, crt, world.time, world.vibrancy);
 
   requestAnimationFrame(frame);
 }

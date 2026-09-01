@@ -94,7 +94,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
 
   ctx.font = '9px monospace';
   ctx.textAlign = 'left';
-  ctx.fillStyle = STRUCTURE;
+  ctx.fillStyle = WHITE;
   ctx.fillText(`BOSS ${boss.rank + 1}`, pad, 14);
   ctx.fillStyle = WHITE;
   ctx.fillRect(pad, 17, w * boss.trailHp / boss.maxHp, barH);
@@ -108,7 +108,7 @@ function drawHudBar(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.fillText(`LV ${world.upgradeCount + 1}`, 84, 47);
   const seconds = Math.floor(world.time);
   ctx.font = 'bold 13px monospace';
-  ctx.fillStyle = STRUCTURE;
+  ctx.fillStyle = WHITE;
   ctx.textAlign = 'center';
   ctx.fillText(`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, FIELD_W / 2, 40);
   ctx.textAlign = 'right';
