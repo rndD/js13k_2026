@@ -641,17 +641,17 @@ function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean, time: number): 
   ctx.textAlign = 'center';
   ctx.fillStyle = rainbowGradient(ctx, 315, 0, false, 1, time);
   ctx.font = 'bold 27px monospace';
-  ctx.fillText('TECHNICOLOR TILT', FIELD_W / 2, 235);
+  ctx.fillText('TECHNICOLOR TILT', FIELD_W / 2, 160);
   ctx.font = 'bold 13px monospace';
-  ctx.fillText('DEFEAT ALL 5 BOSSES', FIELD_W / 2, 270);
+  ctx.fillText('DEFEAT ALL 5 BOSSES', FIELD_W / 2, 250);
   ctx.fillStyle = RED;
-  ctx.fillText('NO BALLS LEFT = GAME OVER', FIELD_W / 2, 305);
+  ctx.fillText('NO BALLS LEFT = GAME OVER', FIELD_W / 2, 280);
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
-  ctx.fillText(touch ? 'TAP TO START' : 'PRESS ANY KEY TO START', FIELD_W / 2, 425);
+  ctx.fillText(touch ? 'TAP TO START' : 'PRESS ANY KEY TO START', FIELD_W / 2, 510);
   ctx.fillStyle = STRUCTURE;
-  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'USE ↑ ← → TO CONTROL', FIELD_W / 2, 340);
-  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : 'HOLD ↑ TO LAUNCH   ← → FLIPPERS', FIELD_W / 2, 365);
+  ctx.fillText(touch ? 'UPPER RIGHT: LAUNCH' : 'USE ↑ ← → TO CONTROL', FIELD_W / 2, 365);
+  ctx.fillText(touch ? 'BOTTOM CORNERS: FLIPPERS' : 'HOLD ↑ TO LAUNCH   ← → FLIPPERS', FIELD_W / 2, 395);
   ctx.fillStyle = RED;
-  ctx.fillText(touch ? 'HOLD ON BALL HIT TO AIM' : 'HOLD ← / → ON BALL HIT TO AIM', FIELD_W / 2, 390);
+  ctx.fillText(touch ? 'HOLD ON BALL HIT TO AIM' : 'HOLD ← / → ON BALL HIT TO AIM', FIELD_W / 2, 425);
 }
