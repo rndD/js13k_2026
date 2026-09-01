@@ -242,14 +242,14 @@ describe('energy target', () => {
 });
 
 describe('upgrade milestones', () => {
-  it('pauses at 100 points, grants a free choice, and resumes the frozen fight', () => {
+  it('pauses at 150 points, grants a free choice, and resumes the frozen fight', () => {
     const world = createWorld();
     world.upgrades[3] = 3;
     world.upgrades[4] = 4;
     world.upgrades[10] = 3;
     world.upgrades[15] = 1;
     world.phase = 'battle';
-    world.points = 90;
+    world.points = 140;
     const target = world.bumpers.find((bumper) => bumper.kind === 'paint')!;
     const ball = createBall(1, target.x + target.r + 3, target.y);
     ball.vx = -10;
@@ -259,8 +259,8 @@ describe('upgrade milestones', () => {
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.phase).toBe('pick');
-    expect(world.points).toBe(110);
-    expect(world.nextUpgradeAt).toBe(250);
+    expect(world.points).toBe(160);
+    expect(world.nextUpgradeAt).toBe(350);
     expect(world.pick?.offers).toHaveLength(3);
     expect(new Set(world.pick?.offers).size).toBe(3);
     const extraIndex = world.pick!.offers.indexOf(1);
@@ -280,7 +280,7 @@ describe('upgrade milestones', () => {
 
     expect(world.phase).toBe('battle');
     expect(world.pick).toBeNull();
-    expect(world.points).toBe(110);
+    expect(world.points).toBe(160);
     expect(world.coreBalls).toBe(5);
     expect(world.upgrades[1]).toBe(1);
   });
@@ -288,14 +288,14 @@ describe('upgrade milestones', () => {
   it('queues every crossed Fibonacci milestone even if points later fall', () => {
     const world = createWorld();
     world.phase = 'battle';
-    world.points = 510;
+    world.points = 710;
     world.balls = [createBall(1, 30, 300)];
 
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.phase).toBe('pick');
     expect(world.pendingUpgrades).toBe(2);
-    expect(world.nextUpgradeAt).toBe(900);
+    expect(world.nextUpgradeAt).toBe(1250);
     world.points = 0; // queued choices are earned permanently
 
     for (let i = 0; i < 3; i++) {
