@@ -644,6 +644,8 @@ function drawMenu(ctx: CanvasRenderingContext2D, touch: boolean, time: number): 
   ctx.fillText('TECHNICOLOR TILT', FIELD_W / 2, 235);
   ctx.font = 'bold 13px monospace';
   ctx.fillText('DEFEAT ALL 5 BOSSES', FIELD_W / 2, 270);
+  ctx.fillStyle = RED;
+  ctx.fillText('NO BALLS LEFT = GAME OVER', FIELD_W / 2, 305);
   ctx.fillStyle = WHITE;
   ctx.font = '13px monospace';
   ctx.fillText(touch ? 'TAP TO START' : 'PRESS ANY KEY TO START', FIELD_W / 2, 425);
