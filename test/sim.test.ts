@@ -326,6 +326,7 @@ describe('upgrade milestones', () => {
   });
 
   it('makes Rare+ less likely than Rare', () => {
+    expect(abilityById(13).rarity).toBe('rare+');
     expect(abilityById(14).rarity).toBe('rare+');
     expect(abilityById(15).rarity).toBe('rare+');
   });

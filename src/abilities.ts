@@ -35,7 +35,7 @@ export const ABILITIES: AbilityDefinition[] = [
   { id: 11, description: ['Red bumpers fire', '8 damage bullets'], rarity: 'uncommon', maxStacks: 3 },
   // Echo Spark
   { id: 12, description: ['Blue bumper: 18%', 'spawn temporary ball', 'above the boss'], rarity: 'uncommon', maxStacks: 3 },
-  { id: 13, description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare', maxStacks: 1 },
+  { id: 13, description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare+', maxStacks: 1 },
   { id: 14, description: ['IDLE MODE', 'Flippers hit nearby', 'balls automatically'], rarity: 'rare+', maxStacks: 1 },
   { id: 15, description: ['15% longer flippers', '20% stronger hits'], rarity: 'rare+', maxStacks: 1 },
 ];
@@ -52,7 +52,7 @@ export function abilityDescription(ability: AbilityDefinition, rank: number): st
   if (ability.id === 11) return ['Red bumpers fire', `${PAINT_SHOT_DAMAGES[rank]} damage bullets`];
   if (ability.id === 12) return [`Blue bumper: ${[18, 38, 60][rank]}%`, 'spawn temporary ball', 'above the boss'];
   if (ability.id === 9) return ['Restore 1 ball', `every ${[30, 25][rank]} sec`, 'max 4 in reserve'];
-  if (ability.id === 10) return [`${[15, 30, 45][rank]}% chance to`, 'deal double damage'];
+  if (ability.id === 10) return [`${[12, 24, 36][rank]}% chance to`, 'deal double damage'];
   if (ability.id !== 4 || rank === 0) return ability.description;
   return rank === 2 ? ['Double bullet', 'damage'] : rank === 3 ? ['24 damage bullets', '50% faster'] : ['Fire bullets', '50% faster'];
 }
