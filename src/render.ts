@@ -488,11 +488,11 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
       drawBallSphere(ctx, ball, ball.frozen ? CYAN : color, world.time, ball.frozen ? 0.8 : opacity);
       if (ball.frozen) {
         ctx.fillStyle = WHITE;
-        ctx.font = '9px monospace';
+        ctx.font = '12px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('×', ball.x, ball.y + 3);
+        ctx.fillText('×', ball.x, ball.y + 4);
         ctx.textAlign = 'left';
-        ctx.fillText(`${Math.ceil(ball.frozen)}`, ball.x + 9, ball.y + 3);
+        ctx.fillText(`${Math.ceil(ball.frozen)}`, ball.x + 10, ball.y + 4);
       }
       if (ball.role === 'core' && !ball.frozen && world.upgrades[4] > 0) {
         const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);

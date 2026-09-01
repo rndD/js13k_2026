@@ -946,6 +946,14 @@ describe('outcomes', () => {
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.armor.every((armor) => armor.hp === 0)).toBe(true);
+
+    world.boss.hp = world.boss.maxHp / 20;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.rage).toBe(3);
+    expect(world.boss.armor.every((armor) => armor.hp === armor.maxHp)).toBe(true);
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.armor.every((armor) => armor.hp === 0)).toBe(true);
   });
 
   it('boss four blast destroys echoes but knocks and freezes cores for four seconds', () => {
