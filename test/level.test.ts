@@ -39,4 +39,17 @@ describe('built-in tables', () => {
       expect(world.balls.some((ball) => ball.role === 'core')).toBe(true);
     }
   });
+
+  it('keeps the new Crossfire rails and pads perfectly mirrored', () => {
+    const level = LEVELS[0];
+    const [leftWall, rightWall] = level.walls.slice(-2);
+    const pads = level.pads.slice(-4);
+    for (let i = 0; i < 2; i++) {
+      expect(leftWall[i].x + rightWall[i].x).toBe(FIELD_W);
+      expect(leftWall[i].y).toBe(rightWall[i].y);
+      expect(pads[i * 2].x + pads[i * 2 + 1].x).toBe(FIELD_W);
+      expect(pads[i * 2].y).toBe(pads[i * 2 + 1].y);
+      expect(pads[i * 2].angle + pads[i * 2 + 1].angle).toBe(Math.PI);
+    }
+  });
 });

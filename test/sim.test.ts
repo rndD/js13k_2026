@@ -829,6 +829,22 @@ describe('outcomes', () => {
     expect(world.balls).toContain(core);
   });
 
+  it('boss three laughs and restores armor once at ten percent health', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 2);
+    world.boss.hp = world.boss.maxHp / 10;
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.boss.armor.every((armor) => armor.hp === armor.maxHp)).toBe(true);
+    expect(world.sfx).toContain('bossLaugh');
+    world.boss.armor.forEach((armor) => armor.hp = 0);
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.armor.every((armor) => armor.hp === 0)).toBe(true);
+  });
+
   it('gives boss four two counter-rotating armor rings and every remaining attack', () => {
     const world = createWorld();
     world.phase = 'battle';

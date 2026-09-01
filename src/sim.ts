@@ -897,6 +897,11 @@ function updateBoss(world: World, dt: number): void {
   const boss = world.boss;
   boss.hitTimer -= dt;
   if (boss.hitTimer < 0) boss.trailHp = Math.max(boss.hp, boss.trailHp - boss.maxHp * BOSS_HP_TRAIL_SPEED * dt);
+  if (boss.rank === 2 && !boss.rage && boss.hp <= boss.maxHp / 10) {
+    boss.rage = 1;
+    for (const armor of boss.armor) armor.hp = armor.maxHp;
+    world.sfx.push('bossLaugh');
+  }
   if (boss.rank > 2 && !boss.rage && boss.hp <= boss.maxHp / 2) {
     boss.rage = 1;
     boss.heal = 1;

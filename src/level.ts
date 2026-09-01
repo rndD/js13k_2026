@@ -118,6 +118,8 @@ export const CROSSFIRE: LevelData = {
     [{ x: 326, y: 396 }, { x: 254, y: 348 }],
     [{ x: 38, y: 244 }, { x: 108, y: 270 }],
     [{ x: 322, y: 244 }, { x: 252, y: 270 }],
+    [{ x: 0, y: 33.8 }, { x: 37.9, y: 2.9 }],
+    [{ x: 360, y: 33.8 }, { x: 322.1, y: 2.9 }],
   ],
   pegs: [
     { x: 70, y: 150, r: 8 }, { x: 180, y: 116, r: 9 }, { x: 290, y: 150, r: 8 },
@@ -136,6 +138,10 @@ export const CROSSFIRE: LevelData = {
     { x: 70, y: 414, angle: angleTo({ x: 70, y: 414 }, { x: 270, y: 250 }) },
     { x: 290, y: 414, angle: angleTo({ x: 290, y: 414 }, { x: 90, y: 250 }) },
     { x: 180, y: 305, angle: -Math.PI / 2 },
+    { x: 29.8, y: 82.5, angle: 0.5 },
+    { x: 330.2, y: 82.5, angle: Math.PI - 0.5 },
+    { x: 61.2, y: 233.5, angle: -0.5 },
+    { x: 298.8, y: 233.5, angle: Math.PI + 0.5 },
   ],
 };
 
