@@ -899,20 +899,27 @@ function updateBoss(world: World, dt: number): void {
   const boss = world.boss;
   boss.hitTimer -= dt;
   if (boss.hitTimer < 0) boss.trailHp = Math.max(boss.hp, boss.trailHp - boss.maxHp * BOSS_HP_TRAIL_SPEED * dt);
-  if (boss.rank === 2 && !boss.rage && boss.hp <= boss.maxHp / 10) {
-    boss.rage = 1;
-    for (const armor of boss.armor) armor.hp = armor.maxHp;
-    world.sfx.push('bossLaugh');
+  if (boss.rank === 2 && boss.rage < 2) {
+    if (boss.hp <= boss.maxHp / 10) {
+      boss.rage = 2;
+      boss.heal = .333;
+      for (const armor of boss.armor) armor.hp = armor.maxHp;
+      world.sfx.push('bossLaugh');
+    } else if (!boss.rage && boss.hp <= boss.maxHp / 4) {
+      boss.rage = 1;
+      boss.heal = .333;
+      world.sfx.push('bossLaugh');
+    }
   }
   if (boss.rank > 2 && !boss.rage && boss.hp <= boss.maxHp / 2) {
     boss.rage = 1;
-    boss.heal = 1;
+    boss.heal = .333;
     if (boss.rank === 3) for (const armor of boss.armor) armor.hp = armor.maxHp;
     world.sfx.push('bossLaugh');
   }
   if (boss.rank > 2 && boss.rage < 2 && boss.hp <= boss.maxHp / 4) {
     boss.rage = 2;
-    boss.heal = 1;
+    boss.heal = .333;
     if (boss.rank === 4) {
       for (const armor of boss.armor) if (!armor.ring) armor.hp = armor.maxHp;
     }
@@ -923,10 +930,10 @@ function updateBoss(world: World, dt: number): void {
     for (const armor of boss.armor) armor.hp = armor.maxHp;
     world.sfx.push('bossLaugh');
   }
-  if ((boss.rage === 2 || boss.rank === 4 && boss.rage) && (boss.heal -= dt) <= 0) {
-    boss.heal = 1;
+  if ((boss.rank === 2 && boss.rage || boss.rage === 2 || boss.rank === 4 && boss.rage) && (boss.heal -= dt) <= 0) {
+    boss.heal = .333;
     if (boss.hp < boss.maxHp) {
-      const amount = Math.min(boss.rank === 4 ? Math.min(boss.rage, 2) * 50 : 20, boss.maxHp - boss.hp);
+      const amount = Math.min(boss.rank === 2 ? 1 : boss.rank === 3 ? 8 : boss.rage > 1 ? 50 : 20, boss.maxHp - boss.hp);
       boss.hp += amount;
       boss.trailHp = Math.max(boss.trailHp, boss.hp);
       world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });

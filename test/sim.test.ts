@@ -847,10 +847,17 @@ describe('outcomes', () => {
     expect(world.balls).toContain(core);
   });
 
-  it('boss three laughs and restores armor once at ten percent health', () => {
+  it('boss three regenerates at quarter health and restores armor once at ten percent', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 2);
+    world.boss.hp = world.boss.maxHp / 4;
+    step(world, NO_CONTROLS, FIXED_DT);
+    for (let i = 0; i < 18; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 4);
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 1);
+
     world.boss.hp = world.boss.maxHp / 10;
     world.boss.armor.forEach((armor) => armor.hp = 0);
 
@@ -933,15 +940,17 @@ describe('outcomes', () => {
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.rage).toBe(1);
     expect(world.sfx).toContain('bossLaugh');
-    for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 2 + 50);
+    world.boss.heal = 0;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 2 + 20);
 
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.armor.filter((armor) => armor.ring === 0).every((armor) => armor.hp === armor.maxHp)).toBe(true);
     expect(world.boss.armor.filter((armor) => armor.ring > 0).every((armor) => armor.hp === 0)).toBe(true);
-    for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 100);
+    world.boss.heal = 0;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 50);
     world.boss.armor.forEach((armor) => armor.hp = 0);
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
@@ -1014,7 +1023,7 @@ describe('outcomes', () => {
     expect(world.bullets).toHaveLength(0);
   });
 
-  it('restores boss four armor once at half health, then regenerates 20 HP per second below quarter health', () => {
+  it('restores boss four armor once at half health, then regenerates 8 HP per tick below quarter health', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 3);
@@ -1032,8 +1041,9 @@ describe('outcomes', () => {
 
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
-    for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 20);
+    world.boss.heal = 0;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 8);
   });
 
   it('holds recent boss damage in the health trail before it catches up', () => {
