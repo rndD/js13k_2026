@@ -614,7 +614,7 @@ function drawFieldOverlay(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.font = '12px monospace';
   ctx.textAlign = 'center';
   for (const ball of world.balls) {
-    if (ball.role !== 'core') continue;
+    if (ball.role !== 'core' || ball.frozen) continue;
     // LIME (previously unused) reads as a distinct "power" readout, separate
     // from the plain white HUD/status text - dis_doc.md's color-progression
     // table treats build strength as its own visual channel.

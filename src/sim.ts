@@ -926,7 +926,7 @@ function updateBoss(world: World, dt: number): void {
   if ((boss.rage === 2 || boss.rank === 4 && boss.rage) && (boss.heal -= dt) <= 0) {
     boss.heal = 1;
     if (boss.hp < boss.maxHp) {
-      const amount = Math.min(boss.rank === 4 ? Math.min(boss.rage, 2) * 25 : 10, boss.maxHp - boss.hp);
+      const amount = Math.min(boss.rank === 4 ? Math.min(boss.rage, 2) * 50 : 20, boss.maxHp - boss.hp);
       boss.hp += amount;
       boss.trailHp = Math.max(boss.trailHp, boss.hp);
       world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });
