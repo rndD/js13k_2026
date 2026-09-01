@@ -53,13 +53,13 @@ async function main() {
     [{ data: minified, type: 'js', action: 'eval' }],
     {
       allowFreeVars: true,
-      modelRecipBaseCount: 17,
+      modelRecipBaseCount: 32,
       modelMaxCount: 4,
       dynamicModels: 1,
       numAbbreviations: 27,
-      sparseSelectors: [0, 1, 2, 3, 6, 7, 13, 21, 27, 42, 170, 481],
-      precision: 14,
-      recipLearningRate: 1333,
+      sparseSelectors: [0, 1, 2, 3, 6, 7, 13, 21, 27, 42, 116, 481],
+      precision: 16,
+      recipLearningRate: 1910,
     },
   );
   const { firstLine, secondLine } = packer.makeDecoder();

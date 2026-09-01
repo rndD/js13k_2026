@@ -176,7 +176,7 @@ function updateVibrancy(world: World, dt: number): void {
 function queueUpgradeMilestones(world: World): void {
   while (world.points >= world.nextUpgradeAt) {
     world.pendingUpgrades += 1;
-    const nextGap = Math.min(5000, world.previousUpgradeGap + world.upgradeGap);
+    const nextGap = Math.min(3000, world.previousUpgradeGap + world.upgradeGap);
     world.previousUpgradeGap = world.upgradeGap;
     world.upgradeGap = nextGap;
     world.nextUpgradeAt += nextGap;
@@ -187,8 +187,8 @@ function beginPick(world: World, resumePhase = world.phase): void {
   const eligible = ABILITIES.filter((ability) => world.upgrades[ability.id] < ability.maxStacks);
   const offers: AbilityId[] = [];
   while (offers.length < 3 && eligible.length) {
-    const groups = ['common', 'uncommon', 'rare'].map((rarity) => eligible.filter((ability) => ability.rarity === rarity));
-    const weights = [10, 7, 3];
+    const groups = ['common', 'uncommon', 'rare', 'rare+'].map((rarity) => eligible.filter((ability) => ability.rarity === rarity));
+    const weights = [10, 7, 3, 1];
     let roll = random(world) * groups.reduce((sum, group, i) => sum + (group.length ? weights[i] : 0), 0);
     let tier = 0;
     while (!groups[tier].length || (roll -= weights[tier]) > 0) tier++;
@@ -235,7 +235,7 @@ function updatePick(world: World, controls: ControlsState, dt: number): void {
   world.upgrades[id] += 1;
   world.upgradeCount += 1;
   if (id === 1) {
-    const amount = world.upgrades[1] + 1;
+    const amount = world.upgrades[1] * 2;
     world.coreBalls += amount;
   }
   if (id === 2) {
@@ -378,7 +378,7 @@ function updateGun(world: World, dt: number): void {
   const interval = BULLET_INTERVALS[rank - 1];
   const damage = BULLET_DAMAGES[rank - 1];
   for (const ball of world.balls) {
-    if (ball.role !== 'core' || Math.hypot(ball.vx, ball.vy) < 100 || ball.y > world.launch.y - 15) continue;
+    if (ball.role !== 'core' || ball.frozen || Math.hypot(ball.vx, ball.vy) < 100 || ball.y > world.launch.y - 15) continue;
     ball.gunTimer -= dt;
     if (ball.gunTimer > 0) continue;
     const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);
@@ -454,7 +454,8 @@ function updateBalls(world: World, dt: number): void {
 
   for (const ball of world.balls) {
     recoverEscapedBall(world, ball);
-    ball.r = ball.role === 'hostile' ? BALL_RADIUS : BALL_RADIUS * (1 + Math.max(0, ball.multiplier - 1) * BALL_SIZE_PER_MULT);
+    ball.frozen = Math.max(0, ball.frozen - dt);
+    ball.r = ball.role === 'hostile' || ball.frozen ? BALL_RADIUS : BALL_RADIUS * (1 + Math.max(0, ball.multiplier - 1) * BALL_SIZE_PER_MULT);
     ball.roleFlash -= dt;
     ball.wallSoundTicks = Math.max(0, ball.wallSoundTicks - 1);
     if (ball.role !== 'core') {
@@ -464,7 +465,7 @@ function updateBalls(world: World, dt: number): void {
         continue;
       }
     }
-    if (ball.role !== 'hostile' && world.upgrades[8] > 0) {
+    if (ball.role !== 'hostile' && !ball.frozen && world.upgrades[8] > 0) {
       const dx = world.boss.x - ball.x;
       const dy = world.boss.y - ball.y;
       const distance = Math.hypot(dx, dy) || 1;
@@ -499,7 +500,7 @@ function updateBalls(world: World, dt: number): void {
       }
 
       for (const f of world.flippers) {
-        const hit = resolveFlipper(ball, f, FLIPPER_BOOST_SPEED * (world.upgrades[15] ? 1.2 : 1), FLIPPER_THICKNESS);
+        const hit = resolveFlipper(ball, f, FLIPPER_BOOST_SPEED * (world.upgrades[15] && !ball.frozen ? 1.2 : 1), FLIPPER_THICKNESS);
         if (hit) world.contacts.push({ kind: 'flipper', x: ball.x, y: ball.y });
         // An ACTIVE flipper swing catching the ball opens the contact-aim
         // window instead of applying its usual instant boost: freeze the
@@ -508,7 +509,7 @@ function updateBalls(world: World, dt: number): void {
         // on reflex to an unpredictable bounce.
         if (hit && f.active && ball.role === 'hostile') {
           convertHostile(world, ball);
-        } else if (hit && f.active && ball.role === 'core' && !world.aim) {
+        } else if (hit && f.active && ball.role === 'core' && !ball.frozen && !world.aim) {
           ball.vx = 0;
           ball.vy = 0;
           // Lift the ball clear of the flipper's entire swept arc (not just
@@ -533,6 +534,10 @@ function updateBalls(world: World, dt: number): void {
         }
       }
       if (aiming) break;
+      if (ball.frozen) {
+        clampSpeed(ball);
+        continue;
+      }
 
       if (ball.role !== 'hostile') for (const peg of world.pegs) {
         if (resolveBumper(ball, peg, PEG_IMPULSE)) {
@@ -892,23 +897,24 @@ function updateBoss(world: World, dt: number): void {
   const boss = world.boss;
   boss.hitTimer -= dt;
   if (boss.hitTimer < 0) boss.trailHp = Math.max(boss.hp, boss.trailHp - boss.maxHp * BOSS_HP_TRAIL_SPEED * dt);
-  if (boss.rank === 3 && !boss.rage && boss.hp <= boss.maxHp / 2) {
+  if (boss.rank > 2 && !boss.rage && boss.hp <= boss.maxHp / 2) {
     boss.rage = 1;
-    for (const armor of boss.armor) armor.hp = armor.maxHp;
-    world.sfx.push('energyChime');
+    boss.heal = 1;
+    if (boss.rank === 3) for (const armor of boss.armor) armor.hp = armor.maxHp;
+    world.sfx.push('bossLaugh');
   }
   if (boss.rank > 2 && boss.rage < 2 && boss.hp <= boss.maxHp / 4) {
     boss.rage = 2;
     boss.heal = 1;
     if (boss.rank === 4) {
       for (const armor of boss.armor) if (!armor.ring) armor.hp = armor.maxHp;
-      world.sfx.push('energyChime');
     }
+    world.sfx.push('bossLaugh');
   }
-  if (boss.rage === 2 && (boss.heal -= dt) <= 0) {
+  if ((boss.rage === 2 || boss.rank === 4 && boss.rage) && (boss.heal -= dt) <= 0) {
     boss.heal = 1;
     if (boss.hp < boss.maxHp) {
-      const amount = Math.min(boss.rank === 3 ? 5 : 10, boss.maxHp - boss.hp);
+      const amount = Math.min(boss.rank === 4 ? boss.rage * 5 : 5, boss.maxHp - boss.hp);
       boss.hp += amount;
       boss.trailHp = Math.max(boss.trailHp, boss.hp);
       world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });
@@ -922,7 +928,16 @@ function updateBoss(world: World, dt: number): void {
       boss.warningTimer -= dt;
       if (boss.warningTimer <= 0) {
         world.balls = world.balls.filter((ball) => {
-          if (ball.role === 'hostile' || Math.hypot(ball.x - boss.x, ball.y - boss.y) > BOSS_BLAST_RADIUS) return true;
+          const dx = ball.x - boss.x;
+          const dy = ball.y - boss.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          if (ball.role === 'hostile' || distance > BOSS_BLAST_RADIUS) return true;
+          if (ball.role === 'core' && boss.rank > 2) {
+            ball.vx = dx / distance * 300;
+            ball.vy = dy / distance * 300;
+            ball.frozen = boss.rank * 2 - 3;
+            return true;
+          }
           if (ball.role === 'core' && ball.stocked) world.coreBalls = Math.max(0, world.coreBalls - 1);
           explodeBall(world, ball);
           return false;
@@ -975,6 +990,7 @@ function checkOutcome(world: World): void {
     world.balls = [];
     world.bullets = [];
     const finished = world.boss.rank === BOSS_HPS.length - 1;
+    if (finished) addPoints(world, world.coreBalls * 1000);
     if (!finished) world.coreBalls += 1;
     world.phase = finished ? 'win' : 'transition';
     world.transitionTimer = LEVEL_TRANSITION_TIME;

@@ -310,12 +310,17 @@ describe('upgrade milestones', () => {
     expect(world.upgradeCount).toBe(3);
   });
 
-  it('caps late-game upgrade gaps at 5000 points', () => {
+  it('caps late-game upgrade gaps at 3000 points', () => {
     const world = createWorld();
     world.points = 1e6;
     step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.upgradeGap).toBe(5000);
-    expect(world.nextUpgradeAt - 1e6).toBeLessThanOrEqual(5000);
+    expect(world.upgradeGap).toBe(3000);
+    expect(world.nextUpgradeAt - 1e6).toBeLessThanOrEqual(3000);
+  });
+
+  it('makes Rare+ less likely than Rare', () => {
+    expect(abilityById(14).rarity).toBe('rare+');
+    expect(abilityById(15).rarity).toBe('rare+');
   });
 });
 
@@ -343,11 +348,11 @@ describe('wild upgrades', () => {
     ]);
   });
 
-  it('adds 2, 3, 4, then 5 stock balls across Extra Ball ranks', () => {
+  it('adds 2, 4, 6, then 8 stock balls across Extra Ball ranks', () => {
     const world = createWorld();
     world.phase = 'battle';
 
-    for (const expected of [5, 8, 12, 17]) {
+    for (const expected of [5, 9, 15, 23]) {
       applyUpgrade(world, 1);
       expect(world.coreBalls).toBe(expected);
     }
@@ -774,6 +779,22 @@ describe('outcomes', () => {
     expect(world.bumpers).toHaveLength(LEVELS[1].bumpers.length);
   });
 
+  it('scores 1000 points for each remaining main ball on final victory', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 4);
+    const clone = createBall(1, 40, 400);
+    clone.stocked = false;
+    world.balls = [clone, createBall(2, 80, 400, 'echo')];
+    world.boss.hp = 0;
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.phase).toBe('win');
+    expect(world.coreBalls).toBe(4);
+    expect(world.points).toBe(4250);
+  });
+
   it('boss three warns before destroying nearby player balls only', () => {
     const world = createWorld();
     world.phase = 'battle';
@@ -863,13 +884,20 @@ describe('outcomes', () => {
     expect(shot.damage).toBe(12);
   });
 
-  it('enrages the final boss once at quarter health, restoring inner armor and 10 HP each second', () => {
+  it('starts final boss regeneration at half health and doubles it at quarter health', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 4);
-    world.boss.hp = world.boss.maxHp / 4;
+    world.boss.hp = world.boss.maxHp / 2;
     world.boss.armor.forEach((armor) => armor.hp = 0);
 
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.rage).toBe(1);
+    expect(world.sfx).toContain('bossLaugh');
+    for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 2 + 5);
+
+    world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.armor.filter((armor) => armor.ring === 0).every((armor) => armor.hp === armor.maxHp)).toBe(true);
     expect(world.boss.armor.filter((armor) => armor.ring > 0).every((armor) => armor.hp === 0)).toBe(true);
@@ -879,6 +907,60 @@ describe('outcomes', () => {
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.armor.every((armor) => armor.hp === 0)).toBe(true);
+  });
+
+  it('boss four blast destroys echoes but knocks and freezes cores for three seconds', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 3);
+    world.boss.warningTimer = FIXED_DT / 2;
+    const core = createBall(1, world.boss.x + 20, world.boss.y);
+    const echo = createBall(2, world.boss.x + 30, world.boss.y, 'echo');
+    world.balls = [core, echo];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(world.balls).toContain(core);
+    expect(world.balls).not.toContain(echo);
+    expect(core.frozen).toBeCloseTo(3 - FIXED_DT);
+    expect(core.vx).toBeCloseTo(300, 0);
+    expect(world.coreBalls).toBe(3);
+    for (let i = 0; i < 181; i++) {
+      core.x = 180;
+      core.y = 300;
+      core.vx = core.vy = 0;
+      step(world, NO_CONTROLS, FIXED_DT);
+    }
+    expect(core.frozen).toBe(0);
+  });
+
+  it('boss five freezes cores for five seconds', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.boss = createBoss(LEVEL.boss, 4);
+    world.boss.warningTimer = FIXED_DT / 2;
+    const core = createBall(1, world.boss.x + 20, world.boss.y);
+    world.balls = [core];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(core.frozen).toBeCloseTo(5 - FIXED_DT);
+  });
+
+  it('frozen cores ignore magnet and Auto Gun bonuses', () => {
+    const world = createWorld();
+    world.phase = 'battle';
+    world.upgrades[4] = 1;
+    world.upgrades[8] = 3;
+    const core = createBall(1, 30, 300);
+    core.vx = 200;
+    core.frozen = 1;
+    world.balls = [core];
+
+    step(world, NO_CONTROLS, FIXED_DT);
+
+    expect(core.vx).toBe(200);
+    expect(world.bullets).toHaveLength(0);
   });
 
   it('restores boss four armor once at half health, then regenerates 5 HP per second below quarter health', () => {

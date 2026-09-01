@@ -50,6 +50,7 @@ export interface Ball {
   wallSoundTicks: number;
   gunTimer: number;
   roleFlash: number;
+  frozen: number;
 }
 
 export interface Bullet {
@@ -169,6 +170,7 @@ export type SfxEvent =
   | 'energyChime'
   | 'bossHitThud'
   | 'hostileSpawn'
+  | 'bossLaugh'
   | 'echoCapture'
   | 'ballExplode'
   | 'upgradeOpen'

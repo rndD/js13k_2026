@@ -128,6 +128,7 @@ const RARITY_COLOR: Record<AbilityRarity, string> = {
   common: WHITE,
   uncommon: CYAN,
   rare: VIOLET,
+  'rare+': ORANGE,
 };
 
 function drawPickCards(ctx: CanvasRenderingContext2D, world: World): void {
@@ -380,18 +381,20 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
     ctx.globalAlpha = 0.5 + 0.5 * charge;
     ctx.strokeStyle = RED;
     ctx.lineWidth = 3 + charge * 3;
+    ctx.setLineDash([8, 8]);
     ctx.stroke();
+    ctx.setLineDash([]);
     ctx.globalAlpha = 1;
   }
 
-  drawAngryFace(ctx, boss.x, boss.y, r);
+  drawAngryFace(ctx, boss.x, boss.y, r, boss.rank, world.vibrancy > 0.9);
 }
 
 /** A small angry face (angled eyebrows, dot eyes, frown) drawn inside the
  * boss circle so it reads as a hostile enemy at a glance. */
-function drawAngryFace(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-  const eyeY = cy - r * 0.15;
-  const eyeDx = r * 0.4;
+function drawAngryFace(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, rank: number, hurt: boolean): void {
+  const eyeY = cy - r * (0.1 + rank % 2 * 0.08);
+  const eyeDx = r * (0.34 + rank * 0.02);
 
   ctx.strokeStyle = WHITE;
   ctx.lineWidth = 2;
@@ -405,16 +408,25 @@ function drawAngryFace(ctx: CanvasRenderingContext2D, cx: number, cy: number, r:
   ctx.lineTo(cx + eyeDx - r * 0.2, eyeY - r * 0.05);
   ctx.stroke();
 
-  // eyes
-  ctx.fillStyle = WHITE;
   ctx.beginPath();
-  ctx.arc(cx - eyeDx, eyeY + r * 0.15, r * 0.1, 0, Math.PI * 2);
-  ctx.arc(cx + eyeDx, eyeY + r * 0.15, r * 0.1, 0, Math.PI * 2);
-  ctx.fill();
+  if (hurt) {
+    for (const x of [-eyeDx, eyeDx]) {
+      ctx.moveTo(cx + x - 3, eyeY);
+      ctx.lineTo(cx + x + 3, eyeY + 6);
+      ctx.moveTo(cx + x + 3, eyeY);
+      ctx.lineTo(cx + x - 3, eyeY + 6);
+    }
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = WHITE;
+    ctx.arc(cx - eyeDx, eyeY + r * 0.15, r * (0.08 + rank * 0.01), 0, Math.PI * 2);
+    ctx.arc(cx + eyeDx, eyeY + r * 0.15, r * (0.08 + rank * 0.01), 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // frown (arc bulging up in the middle)
   ctx.beginPath();
-  ctx.arc(cx, cy + r * 0.75, r * 0.35, Math.PI, Math.PI * 2);
+  ctx.arc(cx, cy + r * (hurt ? 0.55 : 0.75), r * (hurt ? 0.2 : 0.25 + rank % 3 * 0.06), hurt ? 0 : Math.PI, Math.PI * 2);
   ctx.stroke();
 }
 
@@ -472,7 +484,7 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
     if (ball.role === 'hostile') drawHostileBall(ctx, ball);
     else {
       const opacity = ball.role === 'echo' ? Math.min(1, Math.max(0.25, ball.stability / ECHO_STABILITY)) : 1;
-      drawBallSphere(ctx, ball, color, world.time, opacity);
+      drawBallSphere(ctx, ball, ball.frozen ? CYAN : color, world.time, ball.frozen ? 0.4 : opacity);
       if (ball.role === 'core' && world.upgrades[4] > 0) {
         const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);
         ctx.strokeStyle = YELLOW;

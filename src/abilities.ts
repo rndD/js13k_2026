@@ -1,7 +1,7 @@
 import type { AbilityId } from './types';
 import { PAINT_SHOT_DAMAGES } from './constants';
 
-export type AbilityRarity = 'common' | 'uncommon' | 'rare';
+export type AbilityRarity = 'common' | 'uncommon' | 'rare' | 'rare+';
 
 export interface AbilityDefinition {
   id: AbilityId;
@@ -36,8 +36,8 @@ export const ABILITIES: AbilityDefinition[] = [
   // Echo Spark
   { id: 12, description: ['Blue bumper: 18%', 'spawn temporary ball', 'above the boss'], rarity: 'uncommon', maxStacks: 3 },
   { id: 13, description: ['All balls stay', 'rainbow forever', '+25% damage'], rarity: 'rare', maxStacks: 1 },
-  { id: 14, description: ['IDLE MODE', 'Flippers hit nearby', 'balls automatically'], rarity: 'rare', maxStacks: 1 },
-  { id: 15, description: ['15% longer flippers', '20% stronger hits'], rarity: 'common', maxStacks: 1 },
+  { id: 14, description: ['IDLE MODE', 'Flippers hit nearby', 'balls automatically'], rarity: 'rare+', maxStacks: 1 },
+  { id: 15, description: ['15% longer flippers', '20% stronger hits'], rarity: 'rare+', maxStacks: 1 },
 ];
 
 export function abilityById(id: AbilityId): AbilityDefinition {
@@ -45,7 +45,7 @@ export function abilityById(id: AbilityId): AbilityDefinition {
 }
 
 export function abilityDescription(ability: AbilityDefinition, rank: number): string[] {
-  if (ability.id === 1) return [`Add ${rank + 2} balls`, 'to your reserve'];
+  if (ability.id === 1) return [`Add ${(rank + 1) * 2} balls`, 'to your reserve'];
   if (ability.id === 3) return ['Hits stack poison', `+${[8, 16, 24][rank]} each hit`];
   if (ability.id === 5) return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 6 && rank) return ['Quadruple all', 'your balls in play'];

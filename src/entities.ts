@@ -66,6 +66,7 @@ export function createBall(id: number, x = LEVEL.launch.x, y = LEVEL.launch.y, r
     wallSoundTicks: 0,
     gunTimer: 0,
     roleFlash: 0,
+    frozen: 0,
   };
 }
 

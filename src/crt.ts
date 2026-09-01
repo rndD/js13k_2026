@@ -54,7 +54,7 @@ export function createCrtState(ctx: CanvasRenderingContext2D): CrtState {
 export function drawCrtFrame(ctx: CanvasRenderingContext2D, crt: CrtState, time: number, vibrancy: number): void {
   const drift = vibrancy ** 8 * 3;
   ctx.save();
-  ctx.translate(Math.sin(time) * drift, Math.cos(time * 0.7) * drift);
+  ctx.translate(Math.sin(time * 2) * drift, Math.cos(time * 1.4) * drift);
   const flicker = 1 + Math.sin(time * 37) * CRT_FLICKER_AMOUNT;
   ctx.globalAlpha = Math.max(0, Math.min(1, flicker));
   ctx.fillStyle = crt.scanlines;

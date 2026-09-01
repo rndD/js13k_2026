@@ -22,6 +22,7 @@ const SFX: Record<SfxEvent, SfxParams> = {
   // Direct pass-through boss damage (no paint charge involved): ZzFX "Hit" preset.
   bossHitThud: [1.4, , 112, 0.01, 0.06, 0.19, 4, 3.2, , , , , , 1.1, 22, , 0.14, 0.58, , , 1099],
   hostileSpawn: [0.8, , 180, 0.02, 0.08, 0.16, 2, 1.4, -3, -35, , , , 0.7],
+  bossLaugh: [0.7, , 180, 0.03, 0.08, 0.35, 2, 2, 8, -30, , , , 0.8, , 0.2],
   echoCapture: [1.1, , 720, 0.01, 0.08, 0.18, , 2.2, , 90, , , , , , , , 0.7],
   ballExplode: [0.75, , 110, 0.01, 0.06, 0.18, 4, 1.7, , -55, , , , 0.8, , 0.15, 0.03, 0.5],
   upgradeOpen: [0.6, , 420, 0.02, 0.1, 0.2, , 1.6, , 120, , , , , , , , 0.65],
