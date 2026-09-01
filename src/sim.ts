@@ -175,7 +175,7 @@ function updateVibrancy(world: World, dt: number): void {
 function queueUpgradeMilestones(world: World): void {
   while (world.points >= world.nextUpgradeAt) {
     world.pendingUpgrades += 1;
-    const nextGap = Math.min(4000, world.previousUpgradeGap + world.upgradeGap);
+    const nextGap = world.nextUpgradeAt > 25e3 ? 5000 : Math.min(4000, world.previousUpgradeGap + world.upgradeGap);
     world.previousUpgradeGap = world.upgradeGap;
     world.upgradeGap = nextGap;
     world.nextUpgradeAt += nextGap;

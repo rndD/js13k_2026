@@ -312,12 +312,17 @@ describe('upgrade milestones', () => {
     expect(world.upgradeCount).toBe(3);
   });
 
-  it('caps late-game upgrade gaps at 4000 points', () => {
+  it('uses 5000-point upgrade gaps after level twelve', () => {
+    const before = createWorld();
+    before.points = 25749;
+    step(before, NO_CONTROLS, FIXED_DT);
+    expect(before.nextUpgradeAt).toBe(25750);
+
     const world = createWorld();
-    world.points = 1e6;
+    world.points = 25750;
     step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.upgradeGap).toBe(4000);
-    expect(world.nextUpgradeAt - 1e6).toBeLessThanOrEqual(4000);
+    expect(world.upgradeGap).toBe(5000);
+    expect(world.nextUpgradeAt).toBe(30750);
   });
 
   it('makes Rare+ less likely than Rare', () => {
