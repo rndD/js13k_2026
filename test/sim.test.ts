@@ -652,20 +652,27 @@ describe('wild upgrades', () => {
     world.phase = 'battle';
     world.upgrades[8] = 1;
     const mine = createBall(1, world.boss.x - 100, world.boss.y);
-    const far = createBall(2, world.boss.x - 151, world.boss.y);
+    const far = createBall(2, world.boss.x, world.boss.y + 201);
     const echo = createBall(3, world.boss.x - 100, world.boss.y, 'echo');
     const frozen = createBall(4, world.boss.x - 100, world.boss.y);
-    for (const ball of [mine, far, echo, frozen]) ball.vy = 200;
+    for (const ball of [mine, echo, frozen]) ball.vy = 200;
+    far.vx = 200;
     frozen.frozen = 1;
     world.balls = [mine, far, echo, frozen];
 
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(mine.vx).toBeGreaterThan(0);
-    expect(mine.vx).toBeLessThan(5);
-    expect(far.vx).toBe(0);
+    expect(mine.vx).toBeLessThan(10);
+    expect(far.vx).toBe(200);
     expect(echo.vx).toBe(0);
     expect(frozen.vx).toBe(0);
+
+    world.upgrades[8] = 2;
+    far.y = world.boss.y + 249;
+    far.vy = 0;
+    step(world, NO_CONTROLS, FIXED_DT);
+    expect(far.vy).toBeLessThan(10);
   });
 
   it('enlarges flippers and strengthens their active bounce', () => {

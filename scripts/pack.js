@@ -41,7 +41,9 @@ async function main() {
     mangle: {
       module: true,
       toplevel: true,
-      properties: false, // keep property names for now; MVP correctness > extra bytes
+      properties: {
+        regex: /^(bossCooldown|armorCooldown|wallSoundTicks|roleFlash|rescueCount|stuckTimer|specialTimer|warningTimer|transitionTimer|previousUpgradeGap|pendingUpgrades|nextUpgradeAt|spectrumPhase|poisonDamage|poisonTimer|spawnTimer|hitTimer|trailHp|centerAngle|autoTimer|randomSeed|upgradeCount|upgradeGap|restoreTimer|nextBallId|activeAngle|restAngle|anchorX|anchorY|gunTimer|armorArc|damageLog|tableIndex)$/,
+      },
     },
     format: { comments: false },
   });
@@ -53,7 +55,7 @@ async function main() {
     [{ data: minified, type: 'js', action: 'eval' }],
     {
       allowFreeVars: true,
-      modelRecipBaseCount: 39,
+      modelRecipBaseCount: 32,
       modelMaxCount: 4,
       dynamicModels: 1,
       numAbbreviations: 27,

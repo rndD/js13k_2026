@@ -38,8 +38,6 @@ import {
   BOSS_MOVE_Y,
   BOSS_HP_TRAIL_DELAY,
   BOSS_HP_TRAIL_SPEED,
-  BOSS_MAGNET_RADIUS,
-  BOSS_MAGNET_STRENGTH,
   BUMPER_COOLDOWN,
   BUMPER_IMPULSE,
   CRITICAL_CHANCE,
@@ -470,9 +468,9 @@ function updateBalls(world: World, dt: number): void {
       const dx = world.boss.x - ball.x;
       const dy = world.boss.y - ball.y;
       const distance = Math.hypot(dx, dy) || 1;
-      if (distance < BOSS_MAGNET_RADIUS) {
+      if (distance < 150 + world.upgrades[8] * 50) {
         const speed = Math.hypot(ball.vx, ball.vy) || 1;
-        const pull = world.upgrades[8] * dt * BOSS_MAGNET_STRENGTH;
+        const pull = world.upgrades[8] * dt * 1.3;
         ball.vx += (dx / distance * speed - ball.vx) * pull;
         ball.vy += (dy / distance * speed - ball.vy) * pull;
       }

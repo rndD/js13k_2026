@@ -112,8 +112,6 @@ export const POINTS_ARMOR_BREAK = 75;
 export const BOSS_BLAST_INTERVALS = [13, 13, 18, 13, 8];
 export const BOSS_BLAST_WARNING = 1.5;
 export const BOSS_BLAST_RADIUS = 95;
-export const BOSS_MAGNET_RADIUS = 150;
-export const BOSS_MAGNET_STRENGTH = 0.6;
 export const LEVEL_TRANSITION_TIME = 2;
 
 // Anti-stuck watchdog: pinball physics can pathologically trap a ball
