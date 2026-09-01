@@ -811,7 +811,7 @@ describe('outcomes', () => {
     expect(world.points).toBe(4250);
   });
 
-  it('boss three destroys echoes but freezes cores for one second', () => {
+  it('boss three destroys echoes but freezes cores for two seconds', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 2);
@@ -826,7 +826,7 @@ describe('outcomes', () => {
     expect(world.balls).toContain(core);
     expect(world.balls).toContain(hostile);
     expect(world.balls).not.toContain(echo);
-    expect(core.frozen).toBeCloseTo(1 - FIXED_DT);
+    expect(core.frozen).toBeCloseTo(2 - FIXED_DT);
     expect(world.coreBalls).toBe(3);
     expect(world.fx).toContainEqual({ kind: 'echoBurst', x: echo.x, y: echo.y });
     expect(world.sfx).toContain('ballExplode');
@@ -934,21 +934,21 @@ describe('outcomes', () => {
     expect(world.boss.rage).toBe(1);
     expect(world.sfx).toContain('bossLaugh');
     for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 2 + 15);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 2 + 25);
 
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.armor.filter((armor) => armor.ring === 0).every((armor) => armor.hp === armor.maxHp)).toBe(true);
     expect(world.boss.armor.filter((armor) => armor.ring > 0).every((armor) => armor.hp === 0)).toBe(true);
     for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 30);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 50);
     world.boss.armor.forEach((armor) => armor.hp = 0);
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.armor.every((armor) => armor.hp === 0)).toBe(true);
   });
 
-  it('boss four blast destroys echoes but knocks and freezes cores for three seconds', () => {
+  it('boss four blast destroys echoes but knocks and freezes cores for four seconds', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 3);
@@ -961,10 +961,10 @@ describe('outcomes', () => {
 
     expect(world.balls).toContain(core);
     expect(world.balls).not.toContain(echo);
-    expect(core.frozen).toBeCloseTo(3 - FIXED_DT);
+    expect(core.frozen).toBeCloseTo(4 - FIXED_DT);
     expect(core.vx).toBeCloseTo(300, 0);
     expect(world.coreBalls).toBe(3);
-    for (let i = 0; i < 181; i++) {
+    for (let i = 0; i < 241; i++) {
       core.x = 180;
       core.y = 300;
       core.vx = core.vy = 0;
@@ -973,7 +973,7 @@ describe('outcomes', () => {
     expect(core.frozen).toBe(0);
   });
 
-  it('boss five freezes cores for five seconds', () => {
+  it('boss five freezes cores for six seconds', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 4);
@@ -983,7 +983,7 @@ describe('outcomes', () => {
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(core.frozen).toBeCloseTo(5 - FIXED_DT);
+    expect(core.frozen).toBeCloseTo(6 - FIXED_DT);
   });
 
   it('frozen cores ignore magnet and Auto Gun bonuses', () => {
@@ -1002,7 +1002,7 @@ describe('outcomes', () => {
     expect(world.bullets).toHaveLength(0);
   });
 
-  it('restores boss four armor once at half health, then regenerates 5 HP per second below quarter health', () => {
+  it('restores boss four armor once at half health, then regenerates 10 HP per second below quarter health', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 3);
@@ -1021,7 +1021,7 @@ describe('outcomes', () => {
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 5);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 10);
   });
 
   it('holds recent boss damage in the health trail before it catches up', () => {

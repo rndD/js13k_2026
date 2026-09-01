@@ -921,7 +921,7 @@ function updateBoss(world: World, dt: number): void {
   if ((boss.rage === 2 || boss.rank === 4 && boss.rage) && (boss.heal -= dt) <= 0) {
     boss.heal = 1;
     if (boss.hp < boss.maxHp) {
-      const amount = Math.min(boss.rank === 4 ? boss.rage * 15 : 5, boss.maxHp - boss.hp);
+      const amount = Math.min(boss.rank === 4 ? boss.rage * 25 : 10, boss.maxHp - boss.hp);
       boss.hp += amount;
       boss.trailHp = Math.max(boss.trailHp, boss.hp);
       world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });
@@ -942,7 +942,7 @@ function updateBoss(world: World, dt: number): void {
           if (ball.role === 'core' && boss.rank > 1) {
             ball.vx = dx / distance * 300;
             ball.vy = dy / distance * 300;
-            ball.frozen = boss.rank * 2 - 3;
+            ball.frozen = boss.rank * 2 - 2;
             return true;
           }
           if (ball.role === 'core' && ball.stocked) world.coreBalls = Math.max(0, world.coreBalls - 1);
