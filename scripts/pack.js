@@ -42,7 +42,7 @@ async function main() {
       module: true,
       toplevel: true,
       properties: {
-        regex: /^(bossCooldown|armorCooldown|wallSoundTicks|roleFlash|rescueCount|stuckTimer|specialTimer|warningTimer|transitionTimer|previousUpgradeGap|pendingUpgrades|nextUpgradeAt|spectrumPhase|poisonDamage|poisonTimer|spawnTimer|hitTimer|trailHp|centerAngle|autoTimer|randomSeed|upgradeCount|upgradeGap|restoreTimer|nextBallId|activeAngle|restAngle|anchorX|anchorY|gunTimer|armorArc|damageLog|tableIndex|frozen|stability|lifetime|stocked|rage|heal|multiplier)$/,
+        regex: /^(bossCooldown|armorCooldown|wallSoundTicks|roleFlash|rescueCount|stuckTimer|specialTimer|warningTimer|transitionTimer|previousUpgradeGap|pendingUpgrades|nextUpgradeAt|spectrumPhase|poisonDamage|poisonTimer|spawnTimer|hitTimer|trailHp|centerAngle|autoTimer|randomSeed|upgradeCount|upgradeGap|restoreTimer|nextBallId|activeAngle|restAngle|anchorX|anchorY|gunTimer|armorArc|damageLog|tableIndex|frozen|stability|lifetime|stocked|rage|heal|multiplier|charge)$/,
       },
     },
     format: { comments: false },
