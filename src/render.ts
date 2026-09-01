@@ -492,6 +492,10 @@ function drawBalls(ctx: CanvasRenderingContext2D, world: World): void {
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ball.r + 3, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.fillStyle = WHITE;
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${Math.ceil(ball.frozen)}`, ball.x, ball.y + 3);
       }
       if (ball.role === 'core' && !ball.frozen && world.upgrades[4] > 0) {
         const angle = Math.atan2(world.boss.y - ball.y, world.boss.x - ball.x);
