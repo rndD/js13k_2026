@@ -46,7 +46,7 @@ export function abilityById(id: AbilityId): AbilityDefinition {
 
 export function abilityDescription(ability: AbilityDefinition, rank: number): string[] {
   if (ability.id === 1) return [`Add ${(rank + 1) * 2} balls`, 'to your reserve'];
-  if (ability.id === 3) return ['Hits stack poison', `+${[8, 16, 24][rank]} each hit`];
+  if (ability.id === 3) return ['Hits stack poison', `+${[4, 8, 12][rank]} each hit`];
   if (ability.id === 5) return [`All balls gain`, `+${[0.5, 1, 2.5][rank]}x base power`];
   if (ability.id === 6 && rank) return ['Quadruple all', 'your balls in play'];
   if (ability.id === 11) return ['Red bumpers fire', `${PAINT_SHOT_DAMAGES[rank]} damage bullets`];

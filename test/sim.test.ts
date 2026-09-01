@@ -710,11 +710,11 @@ describe('wild upgrades', () => {
 
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.hp).toBe(hp - 10);
-    expect(world.boss.poisonDamage).toBe(8);
+    expect(world.boss.poisonDamage).toBe(4);
     world.balls = [];
     for (let i = 0; i < 61; i++) step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.boss.hp).toBe(hp - 18);
+    expect(world.boss.hp).toBe(hp - 14);
     expect(world.boss.poisonDamage).toBe(0);
   });
 
@@ -734,7 +734,7 @@ describe('wild upgrades', () => {
     world.balls = [];
     for (let i = 0; i < 31; i++) step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.boss.hp).toBe(hp - 36);
+    expect(world.boss.hp).toBe(hp - 28);
     expect(world.boss.poisonDamage).toBe(0);
   });
 });
