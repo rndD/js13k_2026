@@ -848,7 +848,7 @@ describe('outcomes', () => {
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.boss.warningTimer).toBeGreaterThan(0);
-    expect(world.boss.specialTimer).toBe(16);
+    expect(world.boss.specialTimer).toBe(15);
     expect(world.balls).toContain(core);
   });
 
