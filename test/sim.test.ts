@@ -848,7 +848,7 @@ describe('outcomes', () => {
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.boss.warningTimer).toBeGreaterThan(0);
-    expect(world.boss.specialTimer).toBe(18);
+    expect(world.boss.specialTimer).toBe(16);
     expect(world.balls).toContain(core);
   });
 
@@ -915,7 +915,7 @@ describe('outcomes', () => {
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.boss.warningTimer).toBeGreaterThan(0);
-    expect(world.boss.specialTimer).toBe(8);
+    expect(world.boss.specialTimer).toBe(7);
   });
 
   it('fires a geometry-piercing paint shot without Auto Gun bonus damage', () => {
