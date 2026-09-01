@@ -850,6 +850,7 @@ describe('outcomes', () => {
 
     expect(world.boss.warningTimer).toBeGreaterThan(0);
     expect(world.boss.specialTimer).toBe(15);
+    expect(world.sfx).toContain('bossLaugh');
     expect(world.balls).toContain(core);
   });
 
@@ -917,6 +918,7 @@ describe('outcomes', () => {
 
     expect(world.boss.warningTimer).toBeGreaterThan(0);
     expect(world.boss.specialTimer).toBe(7);
+    expect(world.sfx).toContain('bossLaugh');
   });
 
   it('fires a geometry-piercing paint shot without Auto Gun bonus damage', () => {

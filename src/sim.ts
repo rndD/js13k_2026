@@ -968,7 +968,7 @@ function updateBoss(world: World, dt: number): void {
       if (boss.specialTimer <= 0) {
         boss.specialTimer = BOSS_BLAST_INTERVALS[boss.rank];
         boss.warningTimer = BOSS_BLAST_WARNING;
-        world.sfx.push('energyChime');
+        world.sfx.push('bossLaugh');
       }
     }
   }
