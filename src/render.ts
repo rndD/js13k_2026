@@ -319,6 +319,7 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
   const { boss } = world;
   const r = boss.r;
   const exposed = boss.armor.every((armor) => armor.hp <= 0);
+  const bossColor = [RED, CYAN, LIME, VIOLET, ORANGE][boss.rank];
 
   ctx.fillStyle = rainbowColor(world.time);
   ctx.beginPath();
@@ -353,8 +354,8 @@ function drawBoss(ctx: CanvasRenderingContext2D, world: World): void {
     });
   }
 
-  withGlow(ctx, RED, exposed ? 10 : 6, () => {
-    ctx.strokeStyle = RED;
+  withGlow(ctx, bossColor, exposed ? 10 : 6, () => {
+    ctx.strokeStyle = bossColor;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);

@@ -36,7 +36,6 @@ import {
   BOSS_MOVE_SPEED,
   BOSS_MOVE_X,
   BOSS_MOVE_Y,
-  BOSS_MAGNET_FORCE,
   BOSS_HP_TRAIL_DELAY,
   BOSS_HP_TRAIL_SPEED,
   BUMPER_COOLDOWN,
@@ -176,7 +175,7 @@ function updateVibrancy(world: World, dt: number): void {
 function queueUpgradeMilestones(world: World): void {
   while (world.points >= world.nextUpgradeAt) {
     world.pendingUpgrades += 1;
-    const nextGap = Math.min(3000, world.previousUpgradeGap + world.upgradeGap);
+    const nextGap = Math.min(4000, world.previousUpgradeGap + world.upgradeGap);
     world.previousUpgradeGap = world.upgradeGap;
     world.upgradeGap = nextGap;
     world.nextUpgradeAt += nextGap;
@@ -469,9 +468,10 @@ function updateBalls(world: World, dt: number): void {
       const dx = world.boss.x - ball.x;
       const dy = world.boss.y - ball.y;
       const distance = Math.hypot(dx, dy) || 1;
-      const pull = BOSS_MAGNET_FORCE * world.upgrades[8] * dt;
-      ball.vx += dx / distance * pull;
-      ball.vy += dy / distance * pull;
+      const speed = Math.hypot(ball.vx, ball.vy) || 1;
+      const pull = world.upgrades[8] * dt * 2;
+      ball.vx += (dx / distance * speed - ball.vx) * pull;
+      ball.vy += (dy / distance * speed - ball.vy) * pull;
     }
     let drained = false;
     let aiming = false;
@@ -914,7 +914,7 @@ function updateBoss(world: World, dt: number): void {
   if ((boss.rage === 2 || boss.rank === 4 && boss.rage) && (boss.heal -= dt) <= 0) {
     boss.heal = 1;
     if (boss.hp < boss.maxHp) {
-      const amount = Math.min(boss.rank === 4 ? boss.rage * 5 : 5, boss.maxHp - boss.hp);
+      const amount = Math.min(boss.rank === 4 ? boss.rage * 15 : 5, boss.maxHp - boss.hp);
       boss.hp += amount;
       boss.trailHp = Math.max(boss.trailHp, boss.hp);
       world.fx.push({ kind: 'boss', x: boss.x, y: boss.y, amount, heal: true });
@@ -932,7 +932,7 @@ function updateBoss(world: World, dt: number): void {
           const dy = ball.y - boss.y;
           const distance = Math.hypot(dx, dy) || 1;
           if (ball.role === 'hostile' || distance > BOSS_BLAST_RADIUS) return true;
-          if (ball.role === 'core' && boss.rank > 2) {
+          if (ball.role === 'core' && boss.rank > 1) {
             ball.vx = dx / distance * 300;
             ball.vy = dy / distance * 300;
             ball.frozen = boss.rank * 2 - 3;

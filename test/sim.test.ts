@@ -310,12 +310,12 @@ describe('upgrade milestones', () => {
     expect(world.upgradeCount).toBe(3);
   });
 
-  it('caps late-game upgrade gaps at 3000 points', () => {
+  it('caps late-game upgrade gaps at 4000 points', () => {
     const world = createWorld();
     world.points = 1e6;
     step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.upgradeGap).toBe(3000);
-    expect(world.nextUpgradeAt - 1e6).toBeLessThanOrEqual(3000);
+    expect(world.upgradeGap).toBe(4000);
+    expect(world.nextUpgradeAt - 1e6).toBeLessThanOrEqual(4000);
   });
 
   it('makes Rare+ less likely than Rare', () => {
@@ -795,19 +795,23 @@ describe('outcomes', () => {
     expect(world.points).toBe(4250);
   });
 
-  it('boss three warns before destroying nearby player balls only', () => {
+  it('boss three destroys echoes but freezes cores for one second', () => {
     const world = createWorld();
     world.phase = 'battle';
     world.boss = createBoss(LEVEL.boss, 2);
     world.boss.warningTimer = FIXED_DT / 2;
     const core = createBall(1, world.boss.x + 20, world.boss.y);
+    const echo = createBall(3, world.boss.x + 30, world.boss.y, 'echo');
     const hostile = createBall(2, world.boss.x + 20, world.boss.y, 'hostile');
-    world.balls = [core, hostile];
+    world.balls = [core, echo, hostile];
 
     step(world, NO_CONTROLS, FIXED_DT);
 
-    expect(world.balls).toEqual([hostile]);
-    expect(world.coreBalls).toBe(2);
+    expect(world.balls).toContain(core);
+    expect(world.balls).toContain(hostile);
+    expect(world.balls).not.toContain(echo);
+    expect(core.frozen).toBeCloseTo(1 - FIXED_DT);
+    expect(world.coreBalls).toBe(3);
   });
 
   it('boss three starts its warning before the blast becomes dangerous', () => {
@@ -821,6 +825,7 @@ describe('outcomes', () => {
     step(world, NO_CONTROLS, FIXED_DT);
 
     expect(world.boss.warningTimer).toBeGreaterThan(0);
+    expect(world.boss.specialTimer).toBe(18);
     expect(world.balls).toContain(core);
   });
 
@@ -895,14 +900,14 @@ describe('outcomes', () => {
     expect(world.boss.rage).toBe(1);
     expect(world.sfx).toContain('bossLaugh');
     for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 2 + 5);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 2 + 15);
 
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
     expect(world.boss.armor.filter((armor) => armor.ring === 0).every((armor) => armor.hp === armor.maxHp)).toBe(true);
     expect(world.boss.armor.filter((armor) => armor.ring > 0).every((armor) => armor.hp === 0)).toBe(true);
     for (let i = 0; i < 60; i++) step(world, NO_CONTROLS, FIXED_DT);
-    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 10);
+    expect(world.boss.hp).toBe(world.boss.maxHp / 4 + 30);
     world.boss.armor.forEach((armor) => armor.hp = 0);
     world.boss.hp = world.boss.maxHp / 4;
     step(world, NO_CONTROLS, FIXED_DT);
