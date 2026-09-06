@@ -1,8 +1,10 @@
 # Technicolor Tilt
 
-🌈 Made by [@rndD](https://github.com/rndD) for [js13kGames 2026](https://js13kgames.com/2026/) and its **Unicorns and Rainbows** theme.
+🌈 Made by [@rndD](https://github.com/rndD) for [js13kGames 2026](https://js13kgames.com/2026/).
 
-🎮 **[Play Technicolor Tilt](https://rndd.github.io/js13k_2026/)**
+🎮 **[Play Technicolor Tilt js13k](https://js13kgames.com/2026/games/technicolor-tilt)**
+
+🎮 **[Play Technicolor Tilt wavedash version](https://wavedash.com/games/technicolor-tilt-js13k-version)** - version with achivments and leaderboards hosted on wavedash.
 
 ## ✨ Description
 
